@@ -1,13 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { assertPermission } from "@/lib/session";
 import { notifyStatus, notifyTemplate } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 import { fail, ok, type ActionState } from "@/lib/action-state";
-import { cohortSchema, EMPLOYER_FIELD_OPTIONS } from "@/lib/validation";
+import { cohortSchema, EMPLOYER_FIELD_OPTIONS, locationSchema } from "@/lib/validation";
 import { STATUS_LABEL, type Status } from "@/lib/workflow";
 import { errorMessage } from "@/lib/utils";
 import { ROLES, type Role } from "@/lib/rbac";
@@ -210,7 +211,7 @@ export async function saveCohort(_prev: ActionState, formData: FormData): Promis
   if (parsed.data.end_date < parsed.data.start_date) return fail("End date must be after the start date.");
   const id = String(formData.get("id") || "");
   const supabase = await createClient();
-  const row = { ...parsed.data, address: parsed.data.address || null };
+  const row = parsed.data;
   const { error } = id ? await supabase.from("cohorts").update(row).eq("id", id) : await supabase.from("cohorts").insert(row);
   if (error) return fail(errorMessage(error));
 
@@ -222,6 +223,70 @@ export async function saveCohort(_prev: ActionState, formData: FormData): Promis
   await audit(supabase, id ? "cohort.update" : "cohort.create", "cohort", id || null, { name: row.name });
   revalidatePath("/admin/cohorts");
   return ok(id ? "Cohort updated." : "Cohort created.");
+}
+
+export async function deleteCohort(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const cohortId = String(formData.get("cohort_id") || "");
+  const note = String(formData.get("note") || "").trim().slice(0, 500);
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_delete_cohort", { p_cohort: cohortId, p_note: note || null });
+  if (error) return fail(errorMessage(error));
+  for (const id of (data as string[]) ?? []) {
+    await notifyTemplate(supabase, id, "status_update", {
+      statusLabel: STATUS_LABEL.cohort_selection,
+      note: `The cohort you were in has been cancelled${note ? ` (${note})` : ""}. We're sorry for the change. Your application is still active: log in and choose your new top 3 cohorts.`,
+    });
+  }
+  revalidatePath("/admin/cohorts");
+  redirect("/admin/cohorts?deleted=1");
+}
+
+// ---------------------------------------------------------------------------
+// Training locations
+// ---------------------------------------------------------------------------
+
+export async function saveLocation(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const parsed = locationSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return fail(parsed.error.issues.map((i) => `${String(i.path[0])}: ${i.message}`).join(", "));
+  const id = String(formData.get("id") || "");
+  const row = { ...parsed.data, notes: parsed.data.notes || null, ...(id ? { active: formData.get("active") === "on" } : {}) };
+  const supabase = await createClient();
+  const { error } = id ? await supabase.from("training_locations").update(row).eq("id", id) : await supabase.from("training_locations").insert(row);
+  if (error) {
+    if (error.message.includes("training_locations_name")) return fail("A location with that name already exists.");
+    return fail(errorMessage(error));
+  }
+  await audit(supabase, id ? "location.update" : "location.create", "training_location", id || null, { name: row.name });
+  revalidatePath("/admin/locations");
+  revalidatePath("/admin/cohorts");
+  return ok(id ? "Location updated. Cohorts at this location now show the new details." : "Location added.");
+}
+
+export async function deleteLocation(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const id = String(formData.get("id") || "");
+  const supabase = await createClient();
+  const { count } = await supabase.from("cohorts").select("id", { count: "exact", head: true }).eq("location_id", id);
+  if (count) return fail(`${count} cohort(s) use this location. Move them to another location first, or mark this one inactive to hide it.`);
+  const { error } = await supabase.from("training_locations").delete().eq("id", id);
+  if (error) return fail(errorMessage(error));
+  await audit(supabase, "location.delete", "training_location", id, {});
+  revalidatePath("/admin/locations");
+  return ok("Location deleted.");
 }
 
 export async function promoteWaitlist(_prev: ActionState, formData: FormData): Promise<ActionState> {

@@ -160,7 +160,8 @@ These accounts exist in the Supabase project. **The password is not stored in th
 
 These values are **seeded placeholders**. Program admins can edit them in the admin console:
 
-- **Cohort dates, times, locations and capacities**: Admin → Cohorts. Training locations are "spread across the Phoenix metro". The seeded campuses are examples.
+- **Training locations**: Admin → Training locations (name + address, managed once; cohorts pick one from a dropdown). The seeded campuses are examples; locations are "spread across the Phoenix metro".
+- **Cohort dates, times and capacities**: Admin → Cohorts. Program admins can also delete a cohort there (affected applicants are emailed and sent back to cohort selection).
 - **Agreement text**: Admin → Programs → ASU-TSMC → Program agreements. Each agreement is marked `PLACEHOLDER`. Editing the text creates a new version.
 - **TestGorilla link**: Admin → Programs (default link), or per applicant when sending the invite.
 - **Curriculum topic names**: the published topics include electronics, sensors, pneumatics, vacuum systems and safety. The other three names are best guesses, editable under Admin → Site content.
@@ -186,6 +187,8 @@ The hero clips and section images were generated with Higgsfield and are served 
   - that web developers can't read applications
   - that IT admins can't change status
   - applicant self-deletion: wrong email and staff accounts are refused; a confirmed applicant's seat goes to the waitlist; all their rows and their login are removed
+  - training locations: cohorts copy the chosen location, edits sync to every cohort there, and a location in use can't be deleted
+  - cohort deletion: program admins only; registered applicants and anyone waitlisted only there go back to cohort selection, and people still on another waitlist stay there
 
 ## Security notes
 

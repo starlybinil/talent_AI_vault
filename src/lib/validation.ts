@@ -56,10 +56,15 @@ export const cohortSchema = z.object({
   start_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   end_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   schedule: z.string().trim().min(2).max(120),
-  location: z.string().trim().min(2).max(120),
-  address: z.string().trim().max(200).optional().default(""),
+  location_id: z.string().uuid("Choose a training location"),
   capacity: z.coerce.number().int().min(0).max(1000),
   status: z.enum(["open", "closed", "archived"]).default("open"),
+});
+
+export const locationSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  address: z.string().trim().min(5).max(200),
+  notes: z.string().trim().max(500).optional().default(""),
 });
 
 export const EMPLOYER_FIELD_OPTIONS = [

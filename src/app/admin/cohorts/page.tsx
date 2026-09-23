@@ -3,19 +3,21 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
 import { CohortForm } from "@/components/admin/CohortForm";
 import { SeatsBar } from "@/components/program/CohortCard";
-import { Badge, Card, PageHeader } from "@/components/ui";
+import { Alert, Badge, Card, PageHeader } from "@/components/ui";
 import type { CohortAvailability } from "@/lib/data";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Cohorts" };
 
-export default async function CohortsPage() {
+export default async function CohortsPage({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
   await requirePermission("cohorts.manage", "/admin/cohorts");
+  const { deleted } = await searchParams;
   const supabase = await createClient();
-  const [{ data: cohorts }, { data: programs }, { data: archived }] = await Promise.all([
+  const [{ data: cohorts }, { data: programs }, { data: archived }, { data: locations }] = await Promise.all([
     supabase.rpc("cohort_availability"),
     supabase.from("programs").select("id, short_name, formats").order("sort"),
     supabase.from("cohorts").select("id, name, start_date").eq("status", "archived").order("start_date", { ascending: false }),
+    supabase.from("training_locations").select("id, name, address, active").order("name"),
   ]);
   const rows = (cohorts ?? []) as CohortAvailability[];
   const programName = Object.fromEntries((programs ?? []).map((p) => [p.id, p.short_name]));
@@ -24,6 +26,11 @@ export default async function CohortsPage() {
   return (
     <div>
       <PageHeader eyebrow="Scheduling" title="Cohorts" description="Dates, locations, capacity and live seat counts. Increasing capacity automatically promotes from the waitlist." />
+      {deleted && (
+        <Alert tone="success" className="mb-6">
+          Cohort deleted. Anyone who was registered or waitlisted in it has been emailed and asked to choose new cohorts.
+        </Alert>
+      )}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {rows.map((c) => (
           <Link key={c.cohort_id} href={`/admin/cohorts/${c.cohort_id}`} className="block rounded-2xl border border-ink/10 bg-white p-5 shadow-sm transition hover:border-maroon">
@@ -58,7 +65,7 @@ export default async function CohortsPage() {
       )}
       <Card className="mt-8">
         <h2 className="mb-5 text-lg font-black">Add a cohort</h2>
-        <CohortForm programs={programs ?? []} formats={formats} />
+        <CohortForm programs={programs ?? []} formats={formats} locations={locations ?? []} />
       </Card>
     </div>
   );

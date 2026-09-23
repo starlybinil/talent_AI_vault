@@ -25,6 +25,8 @@ describe("rbac", () => {
   it("stops program admins from managing users", () => {
     expect(isAllowed(["program_admin"], "/admin/users")).toBe(false);
     expect(isAllowed(["program_admin"], "/admin/applications/abc")).toBe(true);
+    expect(isAllowed(["program_admin"], "/admin/locations")).toBe(true);
+    expect(isAllowed(["web_developer"], "/admin/locations")).toBe(false);
   });
 
   it("gates the employer portal and admin console", () => {

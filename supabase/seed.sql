@@ -71,9 +71,16 @@ insert into public.program_partners (program_id, employer_org_id)
 select p.id, o.id from public.programs p, public.employer_orgs o
 where p.slug = 'asu-tsmc' and o.name = 'TSMC Arizona';
 
-insert into public.cohorts (program_id, name, format, start_date, end_date, schedule, location, address, capacity)
-select p.id, c.name, c.format, c.start_date::date, c.end_date::date, c.schedule, c.location, c.address, c.capacity
-from public.programs p,
+insert into public.training_locations (name, address) values
+  ('Tempe', 'ASU Tempe campus, Tempe, AZ'),
+  ('Mesa', 'ASU Polytechnic campus, Mesa, AZ'),
+  ('Glendale', 'ASU West Valley campus, Glendale, AZ'),
+  ('North Phoenix', 'North Phoenix training site, Phoenix, AZ');
+
+-- location / address are filled from training_locations by the cohorts_fill_location trigger.
+insert into public.cohorts (program_id, name, format, start_date, end_date, schedule, location_id, location, capacity)
+select p.id, c.name, c.format, c.start_date::date, c.end_date::date, c.schedule, l.id, l.name, c.capacity
+from public.programs p, public.training_locations l,
 (values
   ('Accelerator · Oct 2026', '5-Week Accelerator', '2026-10-19', '2026-11-20', 'Mon–Fri · 8:00 AM – 4:30 PM', 'Tempe', 'ASU Tempe campus, Tempe, AZ', 24),
   ('Intensive · Nov 2026', '16-Week Intensive', '2026-11-02', '2027-02-25', 'Mon–Thu · 5:30 PM – 8:30 PM', 'Mesa', 'ASU Polytechnic campus, Mesa, AZ', 24),
@@ -82,7 +89,7 @@ from public.programs p,
   ('Intensive · Feb 2027', '16-Week Intensive', '2027-02-01', '2027-05-27', 'Mon–Thu · 5:30 PM – 8:30 PM', 'Tempe', 'ASU Tempe campus, Tempe, AZ', 24),
   ('Saturday · Mar 2027', '18-Week Saturday', '2027-03-06', '2027-07-10', 'Saturdays · 8:00 AM – 5:00 PM', 'North Phoenix', 'North Phoenix training site, Phoenix, AZ', 20)
 ) as c(name, format, start_date, end_date, schedule, location, address, capacity)
-where p.slug = 'asu-tsmc';
+where p.slug = 'asu-tsmc' and l.name = c.location;
 
 insert into public.agreement_templates (program_id, title, body, version, required, sort)
 select p.id, t.title, t.body, 1, true, t.sort
