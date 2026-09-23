@@ -70,19 +70,18 @@ test("admissions screens, invites and records a passing assessment", async ({ pa
   await signIn(page, ADMIN, PASSWORD);
   await adminOp(page, applicationPath, "Pass screening & send assessment");
   await adminOp(page, applicationPath, "Record: passed (TSMC verified)");
-  await expect(page.getByText("Choosing cohorts").first()).toBeVisible();
+  await expect(page.getByText("Enrollment open").first()).toBeVisible();
   await signOut(page);
 });
 
-test("applicant ranks cohorts and signs every agreement", async ({ page }) => {
+test("applicant enrolls: ranks cohorts, then signs every agreement on the same page", async ({ page }) => {
   await signIn(page, applicantEmail, applicantPassword);
-  await page.goto(applicationPath.replace("/admin/", "/portal/") + "?tab=cohorts");
+  await page.goto(applicationPath.replace("/admin/", "/portal/") + "?tab=enrollment");
   const cards = page.locator("button[aria-pressed]");
   for (let i = 0; i < 3; i++) await cards.nth(i).click();
-  await page.getByRole("button", { name: "Submit my choices" }).click();
-  await expect(page.getByText(/You're registered in your choice #1/)).toBeVisible();
+  await page.getByRole("button", { name: /Submit choices/ }).click();
+  await expect(page.getByText("Your seat is reserved!")).toBeVisible();
 
-  await page.goto(applicationPath.replace("/admin/", "/portal/") + "?tab=agreements");
   while ((await page.getByRole("button", { name: "Sign document" }).count()) > 0) {
     const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Sign document" }) }).first();
     await form.locator('input[name="agree"]').check();
@@ -102,7 +101,7 @@ test("applicant ranks cohorts and signs every agreement", async ({ page }) => {
 
 test("admissions verifies and confirms; applicant sees Confirmed", async ({ page }) => {
   await signIn(page, ADMIN, PASSWORD);
-  await adminOp(page, applicationPath, "Verify documents & send final confirmation");
+  await adminOp(page, applicationPath, "Confirm enrollment & send final confirmation");
   await expect(page.getByText("Confirmed").first()).toBeVisible();
   await expect(page.getByText("You're confirmed — welcome")).toBeVisible(); // email log entry
   await signOut(page);

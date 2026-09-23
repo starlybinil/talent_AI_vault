@@ -162,6 +162,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                 <option value="send_invite">Send assessment invite</option>
                 <option value="send_reminder">Send assessment reminder</option>
                 <option value="not_selected">Mark not selected</option>
+                <option value="confirm">Confirm enrollment (enrolled &amp; signed)</option>
               </Select>
               <SubmitButton variant="dark" size="sm" pendingText="Applying…">
                 Apply to selected

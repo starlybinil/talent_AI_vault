@@ -31,7 +31,7 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
       <div>
         <p className="text-sm text-ink/60">
           Tap cohorts to add them to your ranking (up to 3). We&apos;ll register you in the highest-ranked cohort with a seat available. If
-          all three are full, you&apos;ll join their waitlists.
+          all three are full, you&apos;ll join their waitlists. Right after you submit, you&apos;ll sign your program agreements below.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           {cohorts.map((c) => {
@@ -112,7 +112,7 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
             }
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            Submit my choices
+            Submit choices &amp; continue to agreements
           </Button>
         </div>
         {result?.error && <Alert tone="danger" className="mt-3">{result.error}</Alert>}

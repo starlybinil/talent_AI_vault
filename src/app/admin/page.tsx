@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/session";
@@ -25,7 +26,7 @@ const FUNNEL: Array<[Status, string]> = [
   ["exam_invited", "Invited to assessment"],
   ["exam_passed", "Passed assessment"],
   ["cohort_registered", "Registered in cohort"],
-  ["agreements_submitted", "Agreements signed"],
+  ["agreements_submitted", "Enrolled & signed"],
   ["confirmed", "Confirmed"],
   ["completed", "Completed program"],
   ["hired", "Hired"],
@@ -66,7 +67,9 @@ export default async function AdminDashboard() {
         <Stat label="Total applications" value={a.total} />
         <Stat label="Needs review" value={needsReview} hint="Submitted + in screening" />
         <Stat label="Awaiting assessment" value={awaitingExam} />
-        <Stat label="Agreements to verify" value={toVerify} />
+        <Link href="/admin/applications?status=agreements_submitted" className="block rounded-2xl transition hover:-translate-y-0.5 hover:shadow-md">
+          <Stat label="Ready to confirm" value={toVerify} hint={toVerify ? "Enrolled & signed · review now →" : "Enrolled & signed"} />
+        </Link>
         <Stat label="In training (confirmed)" value={confirmed} hint={seats ? `${filled}/${seats} seats filled` : undefined} />
         <Stat label="Program graduates" value={graduates} hint="Completed + hired" />
         <Stat label="Hired" value={hired} />

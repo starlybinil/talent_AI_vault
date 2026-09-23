@@ -73,11 +73,11 @@ export const STATUS_LABEL: Record<Status, string> = {
   exam_invited: "Assessment invited",
   exam_passed: "Assessment passed",
   exam_failed: "Assessment not passed",
-  cohort_selection: "Choosing cohorts",
+  cohort_selection: "Enrollment open",
   cohort_registered: "Cohort registered",
   waitlisted: "Waitlisted",
   agreements_pending: "Agreements to sign",
-  agreements_submitted: "Agreements under review",
+  agreements_submitted: "Awaiting final confirmation",
   confirmed: "Confirmed",
   completed: "Program completed",
   hired: "Hired",
@@ -110,8 +110,7 @@ export const STAGES = [
   { key: "apply", label: "Apply", description: "Submit your application" },
   { key: "screening", label: "Screening", description: "Admissions reviews your application" },
   { key: "assessment", label: "Assessment", description: "Complete the TestGorilla assessment" },
-  { key: "cohort", label: "Cohort", description: "Pick your top 3 cohorts" },
-  { key: "agreements", label: "Agreements", description: "Sign your program agreements" },
+  { key: "enroll", label: "Enrollment", description: "Choose your cohorts and sign your agreements" },
   { key: "confirmed", label: "Confirmed", description: "You're in — see you in the lab" },
   { key: "completed", label: "Completed", description: "Successfully complete the program" },
   { key: "hired", label: "Hired", description: "Interview with employer partners and start your career" },
@@ -125,12 +124,12 @@ const STAGE_OF: Record<Status, StageKey> = {
   screening_passed: "assessment",
   not_selected: "screening",
   exam_invited: "assessment",
-  exam_passed: "cohort",
+  exam_passed: "enroll",
   exam_failed: "assessment",
-  cohort_selection: "cohort",
-  cohort_registered: "agreements",
-  waitlisted: "cohort",
-  agreements_pending: "agreements",
+  cohort_selection: "enroll",
+  cohort_registered: "enroll",
+  waitlisted: "enroll",
+  agreements_pending: "enroll",
   agreements_submitted: "confirmed",
   confirmed: "completed",
   completed: "hired",
@@ -207,27 +206,27 @@ export function applicantNextAction(status: Status): { title: string; body: stri
     case "exam_passed":
     case "cohort_selection":
       return {
-        title: "Choose your top 3 cohorts",
-        body: "Congratulations on passing the assessment! Rank up to three cohorts — we'll place you in the highest one with an open seat.",
-        tab: "cohorts",
+        title: "Enroll: choose your cohorts and sign",
+        body: "Congratulations on passing the assessment! Rank up to three cohorts, then sign your program agreements on the same page.",
+        tab: "enrollment",
       };
     case "waitlisted":
       return {
         title: "You're on the waitlist",
-        body: "Your chosen cohorts are full right now. We'll move you up automatically and email you the moment a seat opens.",
-        tab: "cohorts",
+        body: "Your chosen cohorts are full right now. Sign your program agreements now so you're ready: we'll move you up automatically and email you the moment a seat opens.",
+        tab: "enrollment",
       };
     case "cohort_registered":
     case "agreements_pending":
       return {
         title: "Sign your program agreements",
         body: "Your seat is reserved. Review and e-sign each program agreement to lock it in.",
-        tab: "agreements",
+        tab: "enrollment",
       };
     case "agreements_submitted":
       return {
-        title: "Final verification in progress",
-        body: "Admissions is verifying your documents. You'll receive your final confirmation by email.",
+        title: "Awaiting final confirmation",
+        body: "You're enrolled and your agreements are signed. Admissions will review everything and send your final confirmation by email.",
       };
     case "confirmed":
       return {

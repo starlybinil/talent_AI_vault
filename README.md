@@ -19,12 +19,11 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 5. Passing applicants get the **TestGorilla** assessment link by email, plus automatic reminders (day 3 and day 7) and a manual "send reminder" button
 6. Admissions records the result verified by TSMC Arizona
 7. The applicant is emailed next steps
-8. They rank their **top 3 cohorts** (dates, times, locations, **live seats left**)
-9. They are registered in the highest-ranked cohort with a free seat, or **waitlisted** and auto-promoted when a seat opens
-10. They **e-sign the program agreements** (typed name + drawn signature → signed PDF with timestamp/IP/document fingerprint)
-11. Admissions verifies the documents and sends the **final confirmation** (with a calendar invite)
-12. When the trainee finishes, admissions records **successful program completion** (date + credentials earned)
-13. Once they accept an offer, admissions records the **hire** (employer, job title, start date). The trainee and partner employers both see these outcomes, and each one sends a congratulations email
+8. **Enrollment** (one step, one page): they rank their **top 3 cohorts** (dates, times, locations, **live seats left**) and are registered in the highest-ranked cohort with a free seat, or **waitlisted** and auto-promoted when a seat opens
+9. Right after submitting their choices they **e-sign the program agreements** on the same page (typed name + drawn signature → signed PDF with timestamp/IP/document fingerprint). Waitlisted applicants can sign too, so a promotion goes straight to final confirmation. Signatures are program-wide and carry over if they change cohort
+10. The application shows as **Ready to confirm** on the admin dashboard; admissions reviews it and **confirms the enrollment** (individually or in bulk from the queue), which sends the **final confirmation** (with a calendar invite)
+11. When the trainee finishes, admissions records **successful program completion** (date + credentials earned)
+12. Once they accept an offer, admissions records the **hire** (employer, job title, start date). The trainee and partner employers both see these outcomes, and each one sends a congratulations email
 
 **Status flow:** `submitted → screening → screening_passed → exam_invited → exam_passed → cohort_selection → cohort_registered | waitlisted → agreements_pending → agreements_submitted → confirmed → completed → hired` (plus `not_selected`, `exam_failed`, `withdrawn`). Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.
@@ -192,6 +191,7 @@ The hero clips and section images were generated with Higgsfield and are served 
   - training locations: cohorts copy the chosen location, edits sync to every cohort there, and a location in use can't be deleted
   - cohort calendar: program and IT admins see every cohort with waitlist numbers, employers see only their partnered programs without waitlist details, and web developers and applicants are refused
   - program outcomes: only program admins record completion/hire, completion must come before hire, graduates can't withdraw, the applicant and consenting candidates' partner employers see the outcome, and undo steps back one stage
+  - enrollment: applicants can sign while waitlisted, a promotion with agreements already signed goes straight to awaiting final confirmation, and signatures carry over when changing cohort
   - cohort deletion: program admins only; registered applicants and anyone waitlisted only there go back to cohort selection, and people still on another waitlist stay there
 
 ## Security notes

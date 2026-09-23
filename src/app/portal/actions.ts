@@ -68,10 +68,10 @@ export async function submitCohortPreferences(appId: string, cohortIds: string[]
   if (error) return fail(errorMessage(error));
   await notifyStatus(supabase, appId);
   revalidatePath(`/portal/applications/${appId}`);
-  const result = (data as { result: string; rank?: number }) ?? { result: "waitlisted" };
-  return result.result === "registered"
-    ? ok(`You're registered in your choice #${result.rank}! Next: sign your program agreements.`)
-    : ok("Your choices are full right now — you're on the waitlist and we'll email you when a seat opens.");
+  revalidatePath("/portal");
+  // Enrollment continues on the same page: the agreements are presented right away.
+  const result = (data as { result: string }) ?? { result: "waitlisted" };
+  redirect(`/portal/applications/${appId}?tab=enrollment&chosen=${result.result === "registered" ? "registered" : "waitlisted"}#agreements`);
 }
 
 export async function signAgreement(_prev: ActionState, formData: FormData): Promise<ActionState> {
@@ -188,7 +188,7 @@ export async function changeCohort(_prev: ActionState, formData: FormData): Prom
   if (service) for (const id of (promoted as string[]) ?? []) await notifyTemplate(service, id, "waitlist_promoted");
   revalidatePath(`/portal/applications/${appId}`);
   revalidatePath("/portal");
-  redirect(`/portal/applications/${appId}?tab=cohorts`);
+  redirect(`/portal/applications/${appId}?tab=enrollment`);
 }
 
 /** Signed download link for one of the applicant's own files (resume, signed PDFs). */

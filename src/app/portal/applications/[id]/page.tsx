@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Download, ExternalLink, FileSignature, PartyPopper } from "lucide-react";
+import { ArrowLeft, Check, Download, ExternalLink, FileSignature, PartyPopper } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/session";
 import { StatusTracker } from "@/components/portal/StatusTracker";
@@ -33,8 +33,7 @@ export const metadata = { title: "Application" };
 const TABS = [
   { key: "overview", label: "Overview" },
   { key: "exam", label: "Assessment" },
-  { key: "cohorts", label: "Cohorts" },
-  { key: "agreements", label: "Agreements" },
+  { key: "enrollment", label: "Enrollment" },
   { key: "messages", label: "Messages" },
   { key: "details", label: "My application" },
 ] as const;
@@ -44,7 +43,7 @@ export default async function ApplicationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; submitted?: string }>;
+  searchParams: Promise<{ tab?: string; submitted?: string; chosen?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -61,7 +60,9 @@ export default async function ApplicationPage({
 
   const status = app.status as Status;
   const program = Array.isArray(app.programs) ? app.programs[0] : app.programs;
-  const tab = TABS.some((t) => t.key === sp.tab) ? sp.tab! : "overview";
+  // Cohorts and agreements used to be separate tabs; old links (emails) land on Enrollment.
+  const requested = sp.tab === "cohorts" || sp.tab === "agreements" ? "enrollment" : sp.tab;
+  const tab = TABS.some((t) => t.key === requested) ? requested! : "overview";
 
   const [{ data: events }, { data: messages }, { data: enrollments }, { data: prefs }, { data: templates }, { data: signatures }, cohortsRes] =
     await Promise.all([
@@ -79,6 +80,12 @@ export default async function ApplicationPage({
   const next = applicantNextAction(status);
   const hasSeat = (enrollments ?? []).some((e) => e.status === "registered");
   const signedIds = new Map((signatures ?? []).map((s) => [s.template_id, s]));
+  // Enrollment = cohorts + agreements. Signing opens once cohorts are chosen (even on the waitlist).
+  const chosen = !["submitted", "screening", "screening_passed", "not_selected", "exam_invited", "exam_passed", "exam_failed", "cohort_selection", "withdrawn"].includes(status);
+  const canSign = status === "agreements_pending" || status === "waitlisted";
+  const requiredTemplates = (templates ?? []).filter((t) => t.required);
+  const signedRequired = requiredTemplates.filter((t) => signedIds.get(t.id)?.template_version === t.version).length;
+  const allSigned = requiredTemplates.length > 0 && signedRequired === requiredTemplates.length;
 
   return (
     <div>
@@ -211,133 +218,161 @@ export default async function ApplicationPage({
           </Card>
         )}
 
-        {tab === "cohorts" && (
-          <div>
-            {status === "cohort_selection" ? (
-              <CohortPicker applicationId={app.id} cohorts={cohorts} />
-            ) : (enrollments ?? []).length > 0 || (prefs ?? []).length > 0 ? (
-              <Card>
-                <h2 className="text-lg font-black">Your cohort choices</h2>
-                {status === "waitlisted" && (
-                  <Alert tone="warn" className="mt-4" title="You're on the waitlist">
-                    We&apos;ll register you automatically and email you if a seat opens in any of your choices.
-                  </Alert>
-                )}
-                <ol className="mt-5 grid gap-4 md:grid-cols-3">
-                  {(prefs ?? []).map((p) => {
-                    const c = cohortById[p.cohort_id];
-                    const e = (enrollments ?? []).find((x) => x.cohort_id === p.cohort_id);
-                    if (!c) return null;
-                    return (
-                      <li key={p.cohort_id} className={cn("rounded-2xl border p-5", e?.status === "registered" ? "border-emerald-400 bg-emerald-50" : "border-ink/10")}>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-black text-maroon">Choice #{p.rank}</span>
-                          {e && (
-                            <Badge tone={e.status === "registered" ? "success" : e.status === "waitlisted" ? "warn" : "neutral"}>
-                              {e.status === "waitlisted" ? `Waitlist #${e.waitlist_position}` : e.status}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="mt-2 font-black">{c.name}</p>
-                        <div className="mt-3">
-                          <CohortDetails c={c} />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ol>
-              </Card>
-            ) : (
-              <Card>
-                <p className="text-ink/60">Cohort selection opens after a successful assessment result.</p>
-              </Card>
-            )}
-          </div>
-        )}
-
-        {tab === "agreements" && (
+        {tab === "enrollment" && (
           <div className="grid gap-6">
-            {isTrainee(status) && (
-              <Alert tone="success" title="You're confirmed!">
-                <span className="inline-flex items-center gap-2">
-                  <PartyPopper className="h-4 w-4" /> Your documents were verified on {formatDate(app.confirmed_at)}.
-                </span>
+            {sp.chosen === "registered" && (
+              <Alert tone="success" title="Your seat is reserved!">
+                Last step: sign your program agreements below. Once they&apos;re signed, admissions sends your final confirmation.
               </Alert>
             )}
-            {!(["agreements_pending", "agreements_submitted"].includes(status) || isTrainee(status)) && (
-              <>
-                <Alert tone="info" title="Preview — nothing to sign yet">
-                  These are the agreements every participant in this program signs. You can read them now; you&apos;ll be asked to e-sign them
-                  once you&apos;re registered in a cohort.
-                </Alert>
+            {sp.chosen === "waitlisted" && (
+              <Alert tone="warn" title="You're on the waitlist">
+                Your chosen cohorts are full right now. Sign your agreements below so you&apos;re ready: when a seat opens you&apos;ll go
+                straight to final confirmation.
+              </Alert>
+            )}
+
+            {/* Step 1: cohorts */}
+            <section aria-labelledby="step-cohorts">
+              <StepHeading id="step-cohorts" n={1} title="Choose your cohorts" done={chosen} current={status === "cohort_selection" || status === "exam_passed"} />
+              {status === "cohort_selection" ? (
+                <CohortPicker applicationId={app.id} cohorts={cohorts} />
+              ) : (enrollments ?? []).length > 0 || (prefs ?? []).length > 0 ? (
+                <Card>
+                  {status === "waitlisted" && (
+                    <Alert tone="warn" className="mb-5" title="You're on the waitlist">
+                      We&apos;ll register you automatically and email you if a seat opens in any of your choices.
+                    </Alert>
+                  )}
+                  <ol className="grid gap-4 md:grid-cols-3">
+                    {(prefs ?? []).map((p) => {
+                      const c = cohortById[p.cohort_id];
+                      const e = (enrollments ?? []).find((x) => x.cohort_id === p.cohort_id);
+                      if (!c) return null;
+                      return (
+                        <li key={p.cohort_id} className={cn("rounded-2xl border p-5", e?.status === "registered" ? "border-emerald-400 bg-emerald-50" : "border-ink/10")}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-black text-maroon">Choice #{p.rank}</span>
+                            {e && (
+                              <Badge tone={e.status === "registered" ? "success" : e.status === "waitlisted" ? "warn" : "neutral"}>
+                                {e.status === "waitlisted" ? `Waitlist #${e.waitlist_position}` : e.status}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="mt-2 font-black">{c.name}</p>
+                          <div className="mt-3">
+                            <CohortDetails c={c} />
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                  {canChangeCohort(status) && (
+                    <Link href="?tab=details#change-cohort" className="mt-5 inline-block text-sm font-bold text-maroon hover:underline">
+                      Switch to a different cohort →
+                    </Link>
+                  )}
+                </Card>
+              ) : (
+                <Card>
+                  <p className="text-ink/60">Cohort selection opens after a successful assessment result.</p>
+                </Card>
+              )}
+            </section>
+
+            {/* Step 2: agreements */}
+            <section id="agreements" aria-labelledby="step-agreements" className="scroll-mt-24">
+              <StepHeading
+                id="step-agreements"
+                n={2}
+                title="Sign your program agreements"
+                done={allSigned}
+                current={canSign && !allSigned}
+                aside={requiredTemplates.length > 0 ? `${signedRequired} of ${requiredTemplates.length} signed` : undefined}
+              />
+              <div className="grid gap-4">
+                {isTrainee(status) && (
+                  <Alert tone="success" title="You're confirmed!">
+                    <span className="inline-flex items-center gap-2">
+                      <PartyPopper className="h-4 w-4" /> Admissions confirmed your enrollment on {formatDate(app.confirmed_at)}.
+                    </span>
+                  </Alert>
+                )}
+                {status === "agreements_submitted" && (
+                  <Alert tone="success" title="All signed: awaiting final confirmation">
+                    Admissions will review your enrollment and send your final confirmation by email.
+                  </Alert>
+                )}
+                {!chosen && (
+                  <Alert tone="info" title="Preview: nothing to sign yet">
+                    These are the agreements every participant in this program signs. You can read them now; you&apos;ll sign them right
+                    after you submit your cohort choices.
+                  </Alert>
+                )}
                 {(templates ?? []).length === 0 ? (
                   <Card>
                     <p className="text-ink/60">The program agreements will be posted here soon.</p>
                   </Card>
                 ) : (
-                  (templates ?? []).map((t) => (
-                    <Card key={t.id}>
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <h2 className="flex items-center gap-2 text-lg font-black">
-                          <FileSignature className="h-5 w-5 text-maroon" /> {t.title}
-                        </h2>
-                        <Badge tone="neutral">{t.required ? "Required" : "Optional"} · v{t.version}</Badge>
-                      </div>
-                      <div className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl bg-mist p-4 text-sm leading-relaxed text-ink/80">{t.body}</div>
-                    </Card>
-                  ))
-                )}
-              </>
-            )}
-            {(["agreements_pending", "agreements_submitted"].includes(status) || isTrainee(status)) &&
-              (templates ?? []).map((t) => {
-                const sig = signedIds.get(t.id);
-                const signedCurrent = sig && sig.template_version === t.version;
-                return (
-                  <Card key={t.id}>
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <h2 className="flex items-center gap-2 text-lg font-black">
-                        <FileSignature className="h-5 w-5 text-maroon" /> {t.title}
-                      </h2>
-                      {signedCurrent ? <Badge tone="success">Signed {formatDate(sig.signed_at)}</Badge> : <Badge tone="progress">Signature needed</Badge>}
-                    </div>
-                    <div className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl bg-mist p-4 text-sm leading-relaxed text-ink/80">{t.body}</div>
-                    {signedCurrent ? (
-                      <p className="mt-4 text-sm text-ink/60">
-                        Signed as <strong>{sig.typed_name}</strong>.{" "}
-                        {sig.pdf_path && (
-                          <a href={`/api/files?path=${encodeURIComponent(sig.pdf_path)}`} className="inline-flex items-center gap-1 font-bold text-maroon hover:underline">
-                            <Download className="h-4 w-4" /> Download signed PDF
-                          </a>
-                        )}
-                      </p>
-                    ) : status === "agreements_pending" ? (
-                      <ActionForm action={signAgreement} className="mt-5 grid gap-4">
-                        <input type="hidden" name="application_id" value={app.id} />
-                        <input type="hidden" name="template_id" value={t.id} />
-                        <label className="flex items-start gap-3 text-sm">
-                          <input type="checkbox" name="agree" className="mt-0.5 h-5 w-5 accent-maroon" required />
-                          I have read this document and agree to sign it electronically. My electronic signature is legally binding, just like a
-                          handwritten one.
-                        </label>
-                        <div className="grid gap-4 sm:grid-cols-2">
-                          <div>
-                            <Label htmlFor={`name-${t.id}`}>Type your full legal name</Label>
-                            <Input id={`name-${t.id}`} name="typed_name" required defaultValue={`${app.first_name} ${app.last_name}`} />
-                          </div>
-                          <div>
-                            <Label>Draw your signature</Label>
-                            <SignaturePad />
-                          </div>
+                  (templates ?? []).map((t) => {
+                    const sig = signedIds.get(t.id);
+                    const signedCurrent = !!sig && sig.template_version === t.version;
+                    return (
+                      <Card key={t.id}>
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <h3 className="flex items-center gap-2 text-lg font-black">
+                            <FileSignature className="h-5 w-5 text-maroon" /> {t.title}
+                          </h3>
+                          {signedCurrent ? (
+                            <Badge tone="success">Signed {formatDate(sig.signed_at)}</Badge>
+                          ) : canSign ? (
+                            <Badge tone="progress">Signature needed</Badge>
+                          ) : (
+                            <Badge tone="neutral">
+                              {t.required ? "Required" : "Optional"} · v{t.version}
+                            </Badge>
+                          )}
                         </div>
-                        <SubmitButton pendingText="Signing…" className="justify-self-start">
-                          Sign document
-                        </SubmitButton>
-                      </ActionForm>
-                    ) : null}
-                  </Card>
-                );
-              })}
+                        <div className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl bg-mist p-4 text-sm leading-relaxed text-ink/80">{t.body}</div>
+                        {signedCurrent ? (
+                          <p className="mt-4 text-sm text-ink/60">
+                            Signed as <strong>{sig.typed_name}</strong>.{" "}
+                            {sig.pdf_path && (
+                              <a href={`/api/files?path=${encodeURIComponent(sig.pdf_path)}`} className="inline-flex items-center gap-1 font-bold text-maroon hover:underline">
+                                <Download className="h-4 w-4" /> Download signed PDF
+                              </a>
+                            )}
+                          </p>
+                        ) : canSign ? (
+                          <ActionForm action={signAgreement} className="mt-5 grid gap-4">
+                            <input type="hidden" name="application_id" value={app.id} />
+                            <input type="hidden" name="template_id" value={t.id} />
+                            <label className="flex items-start gap-3 text-sm">
+                              <input type="checkbox" name="agree" className="mt-0.5 h-5 w-5 accent-maroon" required />
+                              I have read this document and agree to sign it electronically. My electronic signature is legally binding, just like a
+                              handwritten one.
+                            </label>
+                            <div className="grid gap-4 sm:grid-cols-2">
+                              <div>
+                                <Label htmlFor={`name-${t.id}`}>Type your full legal name</Label>
+                                <Input id={`name-${t.id}`} name="typed_name" required defaultValue={`${app.first_name} ${app.last_name}`} />
+                              </div>
+                              <div>
+                                <Label>Draw your signature</Label>
+                                <SignaturePad />
+                              </div>
+                            </div>
+                            <SubmitButton pendingText="Signing…" className="justify-self-start">
+                              Sign document
+                            </SubmitButton>
+                          </ActionForm>
+                        ) : null}
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
+            </section>
           </div>
         )}
 
@@ -396,7 +431,7 @@ export default async function ApplicationPage({
                   {hasSeat
                     ? `Give up your seat in ${assigned?.name ?? "your current cohort"} and choose new cohorts. Your application stays active — you won't need to reapply or retake the assessment.`
                     : "Leave the waitlists you're on and choose different cohorts. Your application stays active."}{" "}
-                  Your current seat goes to the next person on the waitlist, and you&apos;ll re-sign your program agreements for the new cohort.
+                  Your current seat goes to the next person on the waitlist. Your signed agreements carry over, so you won&apos;t need to sign again.
                 </p>
                 <ActionForm
                   action={changeCohort}
@@ -408,7 +443,7 @@ export default async function ApplicationPage({
                         ? `Your seat in ${assigned?.name ?? "your current cohort"} will be released to the next person on the waitlist.`
                         : "You'll be removed from the waitlists you're currently on.",
                       "We can't hold your current seat — if you want it back you'll need to re-select it, subject to availability.",
-                      "You'll re-sign your program agreements for the new cohort.",
+                      "Your signed agreements carry over. Admissions confirms your new cohort once you're registered.",
                     ],
                     confirmLabel: "Leave cohort",
                     cancelLabel: "Keep my seat",
@@ -470,6 +505,26 @@ export default async function ApplicationPage({
           </Card>
         )}
       </div>
+    </div>
+  );
+}
+
+function StepHeading({ id, n, title, done, current, aside }: { id: string; n: number; title: string; done: boolean; current: boolean; aside?: string }) {
+  return (
+    <div className="mb-4 flex flex-wrap items-center gap-3">
+      <span
+        className={cn(
+          "flex h-9 w-9 items-center justify-center rounded-full text-sm font-black",
+          done ? "bg-maroon text-white" : current ? "bg-gold text-ink" : "bg-white text-ink/40 ring-1 ring-ink/10",
+        )}
+      >
+        {done ? <Check className="h-5 w-5" aria-hidden /> : n}
+      </span>
+      <h2 id={id} className="text-xl font-black">
+        <span className="text-ink/40">Step {n} · </span>
+        {title}
+      </h2>
+      {aside && <span className="ml-auto rounded-full bg-white px-3 py-1 text-xs font-bold text-ink/60 ring-1 ring-ink/10">{aside}</span>}
     </div>
   );
 }

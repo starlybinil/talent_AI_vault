@@ -22,7 +22,7 @@ export function queueQuery(supabase: SupabaseClient, f: QueueFilters, select = Q
   let q = supabase.from("applications").select(select).order("submitted_at", { ascending: false });
   if (f.program) q = q.eq("program_id", f.program);
   if (f.status && (STATUSES as readonly string[]).includes(f.status)) q = q.eq("status", f.status);
-  if (f.status === "active") q = q.not("status", "in", "(confirmed,withdrawn,not_selected,exam_failed)");
+  if (f.status === "active") q = q.not("status", "in", "(confirmed,completed,hired,withdrawn,not_selected,exam_failed)");
   if (f.visa && (VISA_OPTIONS as readonly string[]).includes(f.visa)) q = q.eq("visa_sponsorship", f.visa);
   if (f.education && (EDUCATION_LEVELS as readonly string[]).includes(f.education)) q = q.eq("highest_education", f.education);
   if (f.from && /^\d{4}-\d{2}-\d{2}$/.test(f.from)) q = q.gte("submitted_at", f.from);

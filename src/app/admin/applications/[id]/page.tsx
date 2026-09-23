@@ -56,8 +56,8 @@ function opsFor(status: Status, hasSeat: boolean): Op[] {
       if (hasSeat || status === "waitlisted") ops.push({ op: "release_seat", label: "Release seat & reopen selection", variant: "outline", confirm: "Release this applicant's seat? The next person on the waitlist will be promoted." });
       break;
     case "agreements_submitted":
-      ops.push({ op: "confirm", label: "Verify documents & send final confirmation" });
-      ops.push({ op: "return_agreements", label: "Return for correction", variant: "outline" });
+      ops.push({ op: "confirm", label: "Confirm enrollment & send final confirmation" });
+      ops.push({ op: "return_agreements", label: "Return agreements for correction", variant: "outline" });
       break;
   }
   if (canWithdraw(status)) ops.push({ op: "withdraw", label: "Withdraw application", variant: "danger", confirm: "Withdraw this application? Any seat is released to the waitlist." });

@@ -96,15 +96,15 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
       };
     case "exam_passed":
       return {
-        subject: "You passed! Choose your cohort",
+        subject: "You passed! Time to enroll",
         heading: "Assessment passed — next steps",
         paragraphs: [
           hi,
           "TSMC Arizona has confirmed a successful assessment result. 🎉",
-          "Next, log in and choose your <strong>top 3 cohorts</strong>. You can see dates, times, locations and how many seats are left. We'll register you in the highest-ranked cohort with an open seat.",
+          "Next, log in to <strong>enroll</strong>: choose your top 3 cohorts (you can see dates, times, locations and seats left), then sign your program agreements on the same page. We'll register you in the highest-ranked cohort with an open seat.",
           ...note,
         ],
-        cta: { label: "Choose my cohorts", href: `${portal(ctx.applicationId)}?tab=cohorts` },
+        cta: { label: "Enroll now", href: `${portal(ctx.applicationId)}?tab=enrollment` },
       };
     case "exam_failed":
       return {
@@ -139,7 +139,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           "To lock in your seat, review and e-sign your program agreements in the portal.",
           ...note,
         ],
-        cta: { label: "Sign my agreements", href: `${portal(ctx.applicationId)}?tab=agreements` },
+        cta: { label: "Sign my agreements", href: `${portal(ctx.applicationId)}?tab=enrollment#agreements` },
       };
     case "waitlist_promoted":
       return {
@@ -149,9 +149,9 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           hi,
           "Good news — a seat opened and you've been registered in:",
           ...cohortLines(ctx.cohort),
-          "Please sign your program agreements to confirm your seat.",
+          "If you haven't signed your program agreements yet, sign them now. Admissions then sends your final confirmation.",
         ],
-        cta: { label: "Sign my agreements", href: `${portal(ctx.applicationId)}?tab=agreements` },
+        cta: { label: "View my enrollment", href: `${portal(ctx.applicationId)}?tab=enrollment#agreements` },
       };
     case "waitlisted":
       return {
@@ -161,8 +161,9 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           hi,
           "All of the cohorts you selected are currently full, so we've added you to their waitlists in your ranked order.",
           "If a seat opens, you'll be registered automatically and we'll email you right away.",
+          "Sign your program agreements now so you're ready: once a seat opens you'll go straight to final confirmation.",
         ],
-        cta: { label: "View my status", href: portal(ctx.applicationId) },
+        cta: { label: "Sign my agreements", href: `${portal(ctx.applicationId)}?tab=enrollment#agreements` },
       };
     case "agreements_submitted":
       return {

@@ -88,6 +88,17 @@ describe("workflow transitions", () => {
     expect(stageStates("submitted")[0]).toBe("done");
   });
 
+  it("treats choosing cohorts and signing agreements as one Enrollment step", () => {
+    const enroll = STAGES.findIndex((s) => s.key === "enroll");
+    for (const s of ["exam_passed", "cohort_selection", "waitlisted", "cohort_registered", "agreements_pending"] as const) {
+      expect(stageStates(s)[enroll]).toBe("current");
+    }
+    expect(stageStates("agreements_submitted")[enroll]).toBe("done");
+    expect(applicantNextAction("cohort_selection").tab).toBe("enrollment");
+    expect(applicantNextAction("waitlisted").tab).toBe("enrollment");
+    expect(applicantNextAction("agreements_pending").tab).toBe("enrollment");
+  });
+
   it("emails at the key milestones", () => {
     expect(EMAIL_FOR_STATUS.exam_invited).toBe("exam_invite");
     expect(EMAIL_FOR_STATUS.cohort_selection).toBe("exam_passed");

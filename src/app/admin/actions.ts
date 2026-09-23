@@ -241,7 +241,7 @@ export async function bulkAct(_prev: ActionState, formData: FormData): Promise<A
   }
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   const op = String(formData.get("op") || "") as AdminOp;
-  const allowed: AdminOp[] = ["start_screening", "pass_screening", "pass_and_invite", "send_invite", "send_reminder", "not_selected"];
+  const allowed: AdminOp[] = ["start_screening", "pass_screening", "pass_and_invite", "send_invite", "send_reminder", "not_selected", "confirm"];
   if (!allowed.includes(op)) return fail("Choose a bulk action.");
   if (!ids.length) return fail("Select at least one application.");
   const supabase = await createClient();
