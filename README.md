@@ -2,7 +2,7 @@
 
 Application and admissions platform for Talent-Vault training programs, starting with the
 **ASU-TSMC Foundations for Equipment Technician Program** ($0 · 192+ hands-on hours · a guaranteed
-TSMC Arizona interview upon successful completion of programmatic elements).
+TSMC Arizona interview upon successful completion of ASU & TSMC program milestones).
 
 Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motion, Supabase (Auth, Postgres + RLS, Storage) and Resend.
 

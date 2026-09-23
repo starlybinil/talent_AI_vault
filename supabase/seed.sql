@@ -10,7 +10,7 @@ insert into public.programs (
   'ASU-TSMC Equipment Technician',
   'Arizona State University × TSMC Arizona',
   'Become a semiconductor equipment technician in weeks, not years.',
-  'A no-cost, hands-on accelerated training program that prepares you for semiconductor equipment technician roles. Train on industry-standard tools across the Phoenix metro and earn industry-recognized credentials plus a guaranteed TSMC Arizona interview upon successful completion of programmatic elements.',
+  'A no-cost, hands-on accelerated training program that prepares you for semiconductor equipment technician roles. Train on industry-standard tools across the Phoenix metro and earn industry-recognized credentials plus a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones.',
   '192+ hours',
   '$0 to participants',
   '5, 16 or 18 weeks',
@@ -36,7 +36,7 @@ insert into public.programs (
     {"q": "Do I need prior experience?", "a": "No. The program is designed for people who may not have previously considered a career in semiconductors."},
     {"q": "What happens after I apply?", "a": "Admissions reviews your application, then qualified applicants are invited to an online assessment (TestGorilla). After a successful result you choose your top 3 cohorts, sign your program agreements, and receive a final confirmation."},
     {"q": "Where is training held?", "a": "Training locations are spread across the Phoenix metro. Each cohort lists its location so you can pick what works for you."},
-    {"q": "Is a job guaranteed?", "a": "Graduates earn industry-recognized credentials and a guaranteed TSMC Arizona interview upon successful completion of programmatic elements. Hiring decisions are made by the employer."},
+    {"q": "Is a job guaranteed?", "a": "Graduates earn industry-recognized credentials and a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones. Hiring decisions are made by the employer."},
     {"q": "Will I need visa sponsorship?", "a": "We ask whether you require visa sponsorship now or in the future for employment at TSMC Arizona. Answering honestly helps us guide you — it does not by itself disqualify you from training."}
   ]'::jsonb,
   '[
@@ -88,7 +88,7 @@ insert into public.agreement_templates (program_id, title, body, version, requir
 select p.id, t.title, t.body, 1, true, t.sort
 from public.programs p,
 (values
-  ('Participant Agreement', E'PLACEHOLDER — replace with the official agreement text.\n\nBy signing, I agree to attend all scheduled sessions of my registered cohort, complete required coursework and assessments, and follow the instructions of program staff.\n\nI understand the program is offered at no cost to me and that my seat may be released to another applicant if I do not meet attendance requirements.\n\nI understand that completing the program provides a guaranteed TSMC Arizona interview upon successful completion of programmatic elements, and that hiring decisions are made solely by the employer.', 1),
+  ('Participant Agreement', E'PLACEHOLDER — replace with the official agreement text.\n\nBy signing, I agree to attend all scheduled sessions of my registered cohort, complete required coursework and assessments, and follow the instructions of program staff.\n\nI understand the program is offered at no cost to me and that my seat may be released to another applicant if I do not meet attendance requirements.\n\nI understand that completing the program provides a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones, and that hiring decisions are made solely by the employer.', 1),
   ('Safety & Cleanroom Conduct Acknowledgement', E'PLACEHOLDER — replace with the official safety acknowledgement.\n\nI will follow all safety, gowning and cleanroom protocols, wear required personal protective equipment, and immediately report unsafe conditions.\n\nI understand that failure to follow safety rules may result in removal from lab activities or the program.', 2),
   ('Information Release & Media Consent', E'PLACEHOLDER — replace with the official release.\n\nI authorize Talent-Vault and its program partners (Arizona State University and TSMC Arizona) to share my program status, attendance, assessment results and credentials with each other for the purposes of program administration and employment consideration.\n\nI understand I may revoke this consent in writing at any time.', 3)
 ) as t(title, body, sort)

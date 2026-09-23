@@ -89,7 +89,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
                 ))}
               </dl>
               <p className="mt-3 text-xs text-white/50">
-                *Guaranteed TSMC Arizona interview upon successful completion of programmatic elements.
+                *Guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones.
               </p>
             </Reveal>
           </div>
@@ -154,7 +154,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
             <ul className="mt-8 space-y-5">
               {[
                 [BadgeCheck, "Industry-recognized credentials", "Recognized across the semiconductor sector — not just at one company."],
-                [Handshake, "A guaranteed TSMC Arizona interview", "Upon successful completion of programmatic elements."],
+                [Handshake, "A guaranteed TSMC Arizona interview", "Upon successful completion of ASU & TSMC program milestones."],
                 [GraduationCap, "Real tools, real labs", "Multimeters, oscilloscopes, vacuum and pneumatic systems — hands-on from day one."],
               ].map(([Icon, title, body]) => {
                 const I = Icon as typeof BadgeCheck;
