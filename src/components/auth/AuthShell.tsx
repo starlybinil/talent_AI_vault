@@ -13,7 +13,7 @@ export function AuthShell({ children, title, subtitle }: { children: React.React
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">ASU × TSMC Arizona</p>
             <p className="mt-4 max-w-md text-4xl font-black leading-[1.05] tracking-tight text-white">
-              Your fab career starts <span className="highlight-gold-solid">here.</span>
+              Your fab career <span className="whitespace-nowrap">starts <span className="accent-gold">here.</span></span>
             </p>
             <p className="mt-4 max-w-md text-white/70">$0 tuition · 192+ hands-on hours · a guaranteed TSMC Arizona interview upon successful completion.</p>
           </div>

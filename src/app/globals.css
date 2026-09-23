@@ -107,3 +107,37 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Premium accent word: shimmering gold gradient text with a sweeping underline. */
+.accent-gold {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  background: linear-gradient(100deg, #e8ad00 0%, #ffc627 30%, #fff3c4 50%, #ffc627 70%, #e8ad00 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 24px rgba(255, 198, 39, 0.35));
+  animation: accent-shine 5s ease-in-out infinite;
+}
+.accent-gold::after {
+  content: "";
+  position: absolute;
+  left: 0.04em;
+  right: 0.04em;
+  bottom: -0.08em;
+  height: 0.09em;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #8c1d40, #ffc627 55%, rgba(255, 198, 39, 0));
+  transform-origin: left;
+  animation: accent-underline 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s both;
+}
+@keyframes accent-underline {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes accent-shine {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
