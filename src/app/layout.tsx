@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     "No-cost, hands-on training for semiconductor and advanced manufacturing careers. Apply to the ASU-TSMC Foundations for Equipment Technician Program.",
   openGraph: {
     title: "Talent-Vault — ASU-TSMC Equipment Technician Program",
-    description: "$0 · 192+ hands-on hours · a guaranteed TSMC Arizona interview upon successful completion.",
+    description: "$0 · 192+ hands-on hours · a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones.",
     type: "website",
   },
 };
