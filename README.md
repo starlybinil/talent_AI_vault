@@ -32,14 +32,14 @@ The rules are enforced in the database (`public.transition_allowed`) and mirrore
 | Role | Area | Can |
 |---|---|---|
 | **Applicant** | `/portal` | Apply, track status, open the assessment, rank cohorts, e-sign, message admissions, change cohort or withdraw, permanently delete their account (Account settings) |
-| **Employer partner** (e.g. TSMC Arizona) | `/employer` | See **only the fields the program allows**, and only for applicants who consented, for programs their organization partners on. Pipeline dashboard, shortlist, interview-interest and assessment-result notes to admissions, CSV export. |
+| **Employer partner** (e.g. TSMC Arizona) | `/employer` | Cohort calendar for partnered programs (where and when trainees learn, how many are admitted/confirmed, graduation dates). See **only the fields the program allows**, and only for applicants who consented, for programs their organization partners on. Pipeline dashboard, shortlist, interview-interest and assessment-result notes to admissions, CSV export. |
 | **Program admin** (admissions manager) | `/admin` | Analytics, queue with filters and bulk actions, CSV export, full workflow, cohorts and waitlists, programs, agreements, employer-visibility policy, messaging and internal notes |
-| **IT admin** | `/admin` | Users and roles, employer orgs, audit log, email log, integrations and settings; read-only admissions |
+| **IT admin** | `/admin` | Read-only cohort calendar; users and roles, employer orgs, audit log, email log, integrations and settings; read-only admissions |
 | **Web developer** | `/admin` | Site content CMS (landing copy, FAQs, stats, banners), feature flags, system health. **No access to applicant data.** |
 
 Access is enforced twice: route guards (`src/middleware.ts` + `src/lib/rbac.ts`) and Postgres RLS / SECURITY DEFINER RPCs that check the caller's role.
 
-**Extras included:** waitlist with auto-promotion, admin analytics (funnel, stage mix, sources, education, visa, cohort fill, 60-day trend), applicant–admin messaging with internal notes, a multi-program catalog, an audit log of sign-ins, record/file views, exports and role changes, and feature flags.
+**Extras included:** an interactive cohort calendar (year timeline by location, month calendar of class days, grid; hover previews and a detail panel tailored to each role), waitlist with auto-promotion, admin analytics (funnel, stage mix, sources, education, visa, cohort fill, 60-day trend), applicant–admin messaging with internal notes, a multi-program catalog, an audit log of sign-ins, record/file views, exports and role changes, and feature flags.
 
 ---
 
@@ -188,6 +188,7 @@ The hero clips and section images were generated with Higgsfield and are served 
   - that IT admins can't change status
   - applicant self-deletion: wrong email and staff accounts are refused; a confirmed applicant's seat goes to the waitlist; all their rows and their login are removed
   - training locations: cohorts copy the chosen location, edits sync to every cohort there, and a location in use can't be deleted
+  - cohort calendar: program and IT admins see every cohort with waitlist numbers, employers see only their partnered programs without waitlist details, and web developers and applicants are refused
   - cohort deletion: program admins only; registered applicants and anyone waitlisted only there go back to cohort selection, and people still on another waitlist stay there
 
 ## Security notes

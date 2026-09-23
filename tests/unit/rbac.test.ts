@@ -20,6 +20,9 @@ describe("rbac", () => {
     expect(can(["it_admin"], "admissions.read")).toBe(true);
     expect(can(["it_admin"], "admissions.manage")).toBe(false);
     expect(isAllowed(["it_admin"], "/admin/users")).toBe(true);
+    expect(isAllowed(["it_admin"], "/admin/cohorts")).toBe(true);
+    expect(can(["it_admin"], "cohorts.manage")).toBe(false);
+    expect(isAllowed(["web_developer"], "/admin/cohorts")).toBe(false);
   });
 
   it("stops program admins from managing users", () => {

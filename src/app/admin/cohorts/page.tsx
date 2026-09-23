@@ -1,72 +1,59 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
+import { can } from "@/lib/rbac";
 import { CohortForm } from "@/components/admin/CohortForm";
-import { SeatsBar } from "@/components/program/CohortCard";
-import { Alert, Badge, Card, PageHeader } from "@/components/ui";
-import type { CohortAvailability } from "@/lib/data";
-import { formatDate } from "@/lib/utils";
+import { CohortSchedule } from "@/components/schedule/CohortSchedule";
+import { Alert, Card, PageHeader } from "@/components/ui";
+import { todayInArizona, type ScheduleCohort } from "@/lib/schedule";
 
 export const metadata = { title: "Cohorts" };
 
 export default async function CohortsPage({ searchParams }: { searchParams: Promise<{ deleted?: string }> }) {
-  await requirePermission("cohorts.manage", "/admin/cohorts");
+  const session = await requirePermission("admissions.read", "/admin/cohorts");
+  const canManage = can(session.roles, "cohorts.manage");
   const { deleted } = await searchParams;
   const supabase = await createClient();
-  const [{ data: cohorts }, { data: programs }, { data: archived }, { data: locations }] = await Promise.all([
-    supabase.rpc("cohort_availability"),
-    supabase.from("programs").select("id, short_name, formats").order("sort"),
-    supabase.from("cohorts").select("id, name, start_date").eq("status", "archived").order("start_date", { ascending: false }),
-    supabase.from("training_locations").select("id, name, address, active").order("name"),
+  const [{ data: cohorts, error }, { data: programs }, { data: locations }] = await Promise.all([
+    supabase.rpc("cohort_schedule"),
+    canManage ? supabase.from("programs").select("id, short_name, formats").order("sort") : Promise.resolve({ data: [] }),
+    canManage ? supabase.from("training_locations").select("id, name, address, active").order("name") : Promise.resolve({ data: [] }),
   ]);
-  const rows = (cohorts ?? []) as CohortAvailability[];
-  const programName = Object.fromEntries((programs ?? []).map((p) => [p.id, p.short_name]));
-  const formats = Array.from(new Set((programs ?? []).flatMap((p) => ((p.formats as Array<{ name: string }>) ?? []).map((f) => f.name))));
+  const formats = Array.from(
+    new Set(((programs ?? []) as Array<{ formats: unknown }>).flatMap((p) => ((p.formats as Array<{ name: string }>) ?? []).map((f) => f.name))),
+  );
 
   return (
     <div>
-      <PageHeader eyebrow="Scheduling" title="Cohorts" description="Dates, locations, capacity and live seat counts. Increasing capacity automatically promotes from the waitlist." />
+      <PageHeader
+        eyebrow="Scheduling"
+        title="Cohorts"
+        description={
+          canManage
+            ? "Every cohort by year, month or grid: where it runs, how full it is and who's waiting. Click a cohort for details and its roster."
+            : "Every cohort by year, month or grid: where it runs and how full it is. Read-only."
+        }
+      />
       {deleted && (
         <Alert tone="success" className="mb-6">
           Cohort deleted. Anyone who was registered or waitlisted in it has been emailed and asked to choose new cohorts.
         </Alert>
       )}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((c) => (
-          <Link key={c.cohort_id} href={`/admin/cohorts/${c.cohort_id}`} className="block rounded-2xl border border-ink/10 bg-white p-5 shadow-sm transition hover:border-maroon">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-maroon">{programName[c.program_id]}</p>
-                <p className="mt-1 text-lg font-black">{c.name}</p>
-              </div>
-              <Badge tone={c.status === "open" ? "success" : "neutral"}>{c.status}</Badge>
-            </div>
-            <p className="mt-2 text-sm text-ink/60">
-              {formatDate(c.start_date)} – {formatDate(c.end_date)} · {c.location}
-            </p>
-            <div className="mt-4">
-              <SeatsBar c={c} />
-            </div>
-          </Link>
-        ))}
-      </div>
-      {(archived ?? []).length > 0 && (
-        <p className="mt-4 text-sm text-ink/50">
-          Archived:{" "}
-          {(archived ?? []).map((a, i) => (
-            <span key={a.id}>
-              {i > 0 && ", "}
-              <Link href={`/admin/cohorts/${a.id}`} className="underline">
-                {a.name}
-              </Link>
-            </span>
-          ))}
-        </p>
+      {error ? (
+        <Alert tone="danger">Couldn&apos;t load the cohort schedule: {error.message}</Alert>
+      ) : (
+        <CohortSchedule
+          cohorts={(cohorts ?? []) as ScheduleCohort[]}
+          audience={session.roles.includes("program_admin") ? "admin" : "it"}
+          canManage={canManage}
+          today={todayInArizona()}
+        />
       )}
-      <Card className="mt-8">
-        <h2 className="mb-5 text-lg font-black">Add a cohort</h2>
-        <CohortForm programs={programs ?? []} formats={formats} locations={locations ?? []} />
-      </Card>
+      {canManage && (
+        <Card className="mt-8">
+          <h2 className="mb-5 text-lg font-black">Add a cohort</h2>
+          <CohortForm programs={(programs ?? []) as Array<{ id: string; short_name: string }>} formats={formats} locations={locations ?? []} />
+        </Card>
+      )}
     </div>
   );
 }

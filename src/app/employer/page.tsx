@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CalendarDays } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
 import { Bars } from "@/components/admin/Bars";
@@ -34,9 +34,14 @@ export default async function EmployerHome() {
         title="Talent pipeline"
         description="Live progress of candidates in the programs you partner on. Individual details are shown only for applicants who consented."
         actions={
-          <ButtonLink href="/employer/candidates" variant="dark">
-            View candidates <ArrowRight className="h-4 w-4" />
-          </ButtonLink>
+          <>
+            <ButtonLink href="/employer/cohorts" variant="outline">
+              <CalendarDays className="h-4 w-4" /> Cohort calendar
+            </ButtonLink>
+            <ButtonLink href="/employer/candidates" variant="dark">
+              View candidates <ArrowRight className="h-4 w-4" />
+            </ButtonLink>
+          </>
         }
       />
       {programs.length === 0 ? (
