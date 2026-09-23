@@ -101,7 +101,7 @@ test("applicant enrolls: ranks cohorts, then signs every agreement on the same p
 
 test("admissions verifies and confirms; applicant sees Confirmed", async ({ page }) => {
   await signIn(page, ADMIN, PASSWORD);
-  await adminOp(page, applicationPath, "Confirm enrollment & send final confirmation");
+  await adminOp(page, applicationPath, "Confirm Enrollment");
   await expect(page.getByText("Confirmed").first()).toBeVisible();
   await expect(page.getByText("You're confirmed — welcome")).toBeVisible(); // email log entry
   await signOut(page);
