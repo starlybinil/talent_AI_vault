@@ -43,9 +43,15 @@ describe("workflow transitions", () => {
     expect(canTransition("withdrawn", "withdrawn")).toBe(false);
   });
 
+  it("lets applicants leave a cohort to pick another from any seat-holding stage", () => {
+    for (const s of ["cohort_registered", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed"] as const)
+      expect(canTransition(s, "cohort_selection")).toBe(true);
+    expect(canTransition("screening", "cohort_selection")).toBe(false);
+  });
+
   it("lists next statuses including withdraw", () => {
-    expect(nextStatuses("agreements_submitted")).toEqual(["agreements_pending", "confirmed", "withdrawn"]);
-    expect(nextStatuses("confirmed")).toEqual(["withdrawn"]);
+    expect(nextStatuses("agreements_submitted")).toEqual(["agreements_pending", "confirmed", "cohort_selection", "withdrawn"]);
+    expect(nextStatuses("confirmed")).toEqual(["cohort_selection", "withdrawn"]);
     expect(nextStatuses("withdrawn")).toEqual([]);
   });
 

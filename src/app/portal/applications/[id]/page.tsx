@@ -12,7 +12,7 @@ import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { CohortDetails } from "@/components/program/CohortCard";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Alert, Badge, ButtonLink, Card, Input, Label, Textarea } from "@/components/ui";
-import { sendApplicantMessage, signAgreement, withdrawApplication } from "@/app/portal/actions";
+import { changeCohort, sendApplicantMessage, signAgreement, withdrawApplication } from "@/app/portal/actions";
 import type { CohortAvailability } from "@/lib/data";
 import {
   EDUCATION_LABEL,
@@ -21,6 +21,7 @@ import {
   VISA_LABEL,
   applicantNextAction,
   canWithdraw,
+  canChangeCohort,
   type Status,
 } from "@/lib/workflow";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
@@ -154,11 +155,16 @@ export default async function ApplicationPage({
                   <div className="mt-3">
                     <CohortDetails c={assigned} />
                   </div>
+                  {canChangeCohort(status) && (
+                    <Link href="?tab=details#change-cohort" className="mt-4 inline-block text-sm font-bold text-maroon hover:underline">
+                      Switch to a different cohort →
+                    </Link>
+                  )}
                 </Card>
               )}
               {canWithdraw(status) && (
-                <Link href="?tab=details#withdraw" className="text-center text-sm font-bold text-ink/50 hover:text-red-700 hover:underline">
-                  Need to withdraw{hasSeat ? " and release your seat" : ""}?
+                <Link href={`?tab=details#${canChangeCohort(status) ? "change-cohort" : "withdraw"}`} className="text-center text-sm font-bold text-ink/50 hover:text-maroon hover:underline">
+                  {canChangeCohort(status) ? "Need a different cohort, or want to withdraw?" : "Need to withdraw?"}
                 </Link>
               )}
             </div>
@@ -349,9 +355,32 @@ export default async function ApplicationPage({
                 <Download className="h-4 w-4" /> View my resume
               </a>
             )}
+            {canChangeCohort(status) && (
+              <div id="change-cohort" className="mt-10 scroll-mt-24 rounded-2xl border border-gold/60 bg-gold/10 p-5">
+                <p className="font-bold text-ink">Option 1 · Leave my cohort and pick another</p>
+                <p className="mt-1 text-sm text-ink/70">
+                  {hasSeat
+                    ? `Give up your seat in ${assigned?.name ?? "your current cohort"} and choose new cohorts. Your application stays active — you won't need to reapply or retake the assessment.`
+                    : "Leave the waitlists you're on and choose different cohorts. Your application stays active."}{" "}
+                  Your current seat goes to the next person on the waitlist, and you&apos;ll re-sign your program agreements for the new cohort.
+                </p>
+                <ActionForm
+                  action={changeCohort}
+                  confirm="Leave your current cohort and choose a new one? Your current seat will be released and can't be held for you."
+                  className="mt-4 grid gap-3"
+                >
+                  <input type="hidden" name="application_id" value={app.id} />
+                  <Label htmlFor="change-reason">Reason (optional)</Label>
+                  <Textarea id="change-reason" name="reason" maxLength={500} placeholder="e.g. schedule changed, a closer location works better…" className="min-h-16 bg-white text-sm" />
+                  <SubmitButton variant="dark" size="sm" className="justify-self-start" pendingText="Releasing seat…">
+                    Leave cohort &amp; choose another
+                  </SubmitButton>
+                </ActionForm>
+              </div>
+            )}
             {canWithdraw(status) && (
-              <div id="withdraw" className="mt-10 scroll-mt-24 rounded-2xl border border-red-200 bg-red-50/50 p-5">
-                <p className="font-bold text-ink">Withdraw my application</p>
+              <div id="withdraw" className="mt-6 scroll-mt-24 rounded-2xl border border-red-200 bg-red-50/50 p-5">
+                <p className="font-bold text-ink">{canChangeCohort(status) ? "Option 2 · " : ""}Withdraw my entire application</p>
                 <p className="mt-1 text-sm text-ink/70">
                   {hasSeat
                     ? `You can withdraw at any time — even after you're confirmed. Your seat in ${assigned?.name ?? "your cohort"} will be released to the next person on the waitlist.`

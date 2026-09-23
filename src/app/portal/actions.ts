@@ -174,6 +174,23 @@ export async function withdrawApplication(_prev: ActionState, formData: FormData
   return ok("Your application has been withdrawn and your seat has been released.");
 }
 
+export async function changeCohort(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const appId = String(formData.get("application_id") || "");
+  const reason = String(formData.get("reason") || "").trim().slice(0, 500);
+  const supabase = await createClient();
+  const { data: promoted, error } = await supabase.rpc("applicant_change_cohort", { p_app: appId, p_reason: reason || null });
+  if (error) return fail(errorMessage(error));
+  await notifyTemplate(supabase, appId, "status_update", {
+    statusLabel: STATUS_LABEL.cohort_selection,
+    note: "You've left your cohort and your seat has been released. Your application is still active — choose your new top 3 cohorts in the portal.",
+  });
+  const service = createServiceClient();
+  if (service) for (const id of (promoted as string[]) ?? []) await notifyTemplate(service, id, "waitlist_promoted");
+  revalidatePath(`/portal/applications/${appId}`);
+  revalidatePath("/portal");
+  redirect(`/portal/applications/${appId}?tab=cohorts`);
+}
+
 /** Signed download link for one of the applicant's own files (resume, signed PDFs). */
 export async function applicantFileUrl(path: string): Promise<string | null> {
   const supabase = await createClient();

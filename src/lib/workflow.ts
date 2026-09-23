@@ -43,6 +43,8 @@ export const TRANSITIONS: ReadonlyArray<readonly [Status, Status]> = [
   ["agreements_pending", "agreements_submitted"],
   ["agreements_submitted", "agreements_pending"],
   ["agreements_submitted", "confirmed"],
+  ["agreements_submitted", "cohort_selection"],
+  ["confirmed", "cohort_selection"],
 ];
 
 export function canTransition(from: Status, to: Status): boolean {
@@ -140,6 +142,19 @@ export function stageStates(status: Status): Array<"done" | "current" | "blocked
 /** Applicants (and admissions) can withdraw at any stage — even after confirmation — until it's withdrawn. */
 export function canWithdraw(status: Status): boolean {
   return status !== "withdrawn";
+}
+
+/** Statuses where the applicant holds a seat or waitlist spot and may leave it to pick another cohort. */
+export const COHORT_HOLD_STATUSES: readonly Status[] = [
+  "cohort_registered",
+  "waitlisted",
+  "agreements_pending",
+  "agreements_submitted",
+  "confirmed",
+];
+
+export function canChangeCohort(status: Status): boolean {
+  return COHORT_HOLD_STATUSES.includes(status);
 }
 
 export function isTerminal(status: Status): boolean {
