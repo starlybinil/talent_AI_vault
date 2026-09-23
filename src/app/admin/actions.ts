@@ -356,6 +356,7 @@ export async function saveAgreementTemplate(_prev: ActionState, formData: FormDa
   }
   await audit(supabase, "agreement_template.save", "program", programId, { title });
   revalidatePath(`/admin/programs/${programId}`);
+  revalidatePath("/admin/agreements");
   return ok("Agreement saved.");
 }
 

@@ -251,9 +251,29 @@ export default async function ApplicationPage({
               </Alert>
             )}
             {!["agreements_pending", "agreements_submitted", "confirmed"].includes(status) && (
-              <Card>
-                <p className="text-ink/60">Program agreements become available once you&apos;re registered in a cohort.</p>
-              </Card>
+              <>
+                <Alert tone="info" title="Preview — nothing to sign yet">
+                  These are the agreements every participant in this program signs. You can read them now; you&apos;ll be asked to e-sign them
+                  once you&apos;re registered in a cohort.
+                </Alert>
+                {(templates ?? []).length === 0 ? (
+                  <Card>
+                    <p className="text-ink/60">The program agreements will be posted here soon.</p>
+                  </Card>
+                ) : (
+                  (templates ?? []).map((t) => (
+                    <Card key={t.id}>
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h2 className="flex items-center gap-2 text-lg font-black">
+                          <FileSignature className="h-5 w-5 text-maroon" /> {t.title}
+                        </h2>
+                        <Badge tone="neutral">{t.required ? "Required" : "Optional"} · v{t.version}</Badge>
+                      </div>
+                      <div className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl bg-mist p-4 text-sm leading-relaxed text-ink/80">{t.body}</div>
+                    </Card>
+                  ))
+                )}
+              </>
             )}
             {["agreements_pending", "agreements_submitted", "confirmed"].includes(status) &&
               (templates ?? []).map((t) => {
