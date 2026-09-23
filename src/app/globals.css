@@ -1,0 +1,109 @@
+@import "tailwindcss";
+
+/*
+ * Talent-Vault design tokens — ASU brand palette.
+ * Maroon #8C1D40 · Gold #FFC627 · Black #191919 · White
+ */
+@theme {
+  --color-maroon: #8c1d40;
+  --color-maroon-700: #6f1733;
+  --color-maroon-900: #3d0b1c;
+  --color-gold: #ffc627;
+  --color-gold-600: #e8ad00;
+  --color-ink: #191919;
+  --color-ink-950: #0b0b0c;
+  --color-ink-900: #121213;
+  --color-ink-800: #1d1d1f;
+  --color-ink-700: #2a2a2d;
+  --color-mist: #fafafa;
+  --color-smoke: #e8e8e8;
+  --color-slate: #747474;
+  --color-success: #446d12;
+  --color-info: #00a3e0;
+  --color-warn: #ff7f32;
+
+  --font-sans: Arial, "Helvetica Neue", Helvetica, sans-serif;
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-shine: shine 3.5s ease-in-out infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes shine {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+}
+
+:root {
+  --bg: #ffffff;
+  --fg: #191919;
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ASU-style gold highlight behind heading words */
+.highlight-gold {
+  background-image: linear-gradient(transparent 58%, var(--color-gold) 58%, var(--color-gold) 92%, transparent 92%);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.12em;
+}
+.highlight-gold-solid {
+  background: var(--color-gold);
+  color: var(--color-ink);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  padding: 0 0.18em;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(100deg, #ffc627 0%, #fff1c2 45%, #ffc627 60%, #e8ad00 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+}
+
+.grid-lines {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
