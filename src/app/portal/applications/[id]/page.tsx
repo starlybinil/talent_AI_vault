@@ -20,7 +20,7 @@ import {
   STATUS_TONE,
   VISA_LABEL,
   applicantNextAction,
-  isTerminal,
+  canWithdraw,
   type Status,
 } from "@/lib/workflow";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
@@ -74,6 +74,7 @@ export default async function ApplicationPage({
   const cohortById = Object.fromEntries(((cohortsRes.data ?? []) as CohortAvailability[]).map((c) => [c.cohort_id, c]));
   const assigned = app.assigned_cohort_id ? cohortById[app.assigned_cohort_id] : null;
   const next = applicantNextAction(status);
+  const hasSeat = (enrollments ?? []).some((e) => e.status === "registered");
   const signedIds = new Map((signatures ?? []).map((s) => [s.template_id, s]));
 
   return (
@@ -154,6 +155,11 @@ export default async function ApplicationPage({
                     <CohortDetails c={assigned} />
                   </div>
                 </Card>
+              )}
+              {canWithdraw(status) && (
+                <Link href="?tab=details#withdraw" className="text-center text-sm font-bold text-ink/50 hover:text-red-700 hover:underline">
+                  Need to withdraw{hasSeat ? " and release your seat" : ""}?
+                </Link>
               )}
             </div>
           </div>
@@ -343,13 +349,26 @@ export default async function ApplicationPage({
                 <Download className="h-4 w-4" /> View my resume
               </a>
             )}
-            {!isTerminal(status) && (
-              <div className="mt-10 border-t border-ink/10 pt-6">
-                <p className="text-sm font-bold">Withdraw application</p>
-                <p className="text-sm text-ink/60">If you withdraw, any cohort seat you hold is released to the next person on the waitlist.</p>
-                <ActionForm action={withdrawApplication} confirm="Withdraw your application? This can't be undone." className="mt-3">
+            {canWithdraw(status) && (
+              <div id="withdraw" className="mt-10 scroll-mt-24 rounded-2xl border border-red-200 bg-red-50/50 p-5">
+                <p className="font-bold text-ink">Withdraw my application</p>
+                <p className="mt-1 text-sm text-ink/70">
+                  {hasSeat
+                    ? `You can withdraw at any time — even after you're confirmed. Your seat in ${assigned?.name ?? "your cohort"} will be released to the next person on the waitlist.`
+                    : status === "waitlisted"
+                      ? "You can withdraw at any time. You'll be removed from every cohort waitlist you're on."
+                      : "You can withdraw at any time. Admissions will stop processing your application."}{" "}
+                  This can&apos;t be undone — you&apos;d need to contact admissions to reapply.
+                </p>
+                <ActionForm
+                  action={withdrawApplication}
+                  confirm={hasSeat ? "Withdraw your application and give up your cohort seat? This can't be undone." : "Withdraw your application? This can't be undone."}
+                  className="mt-4 grid gap-3"
+                >
                   <input type="hidden" name="application_id" value={app.id} />
-                  <SubmitButton variant="outline" size="sm" pendingText="Withdrawing…">
+                  <Label htmlFor="withdraw-reason">Reason (optional)</Label>
+                  <Textarea id="withdraw-reason" name="reason" maxLength={500} placeholder="e.g. schedule conflict, accepted another opportunity…" className="min-h-16 bg-white text-sm" />
+                  <SubmitButton variant="danger" size="sm" className="justify-self-start" pendingText="Withdrawing…">
                     Withdraw my application
                   </SubmitButton>
                 </ActionForm>

@@ -46,7 +46,7 @@ export const TRANSITIONS: ReadonlyArray<readonly [Status, Status]> = [
 ];
 
 export function canTransition(from: Status, to: Status): boolean {
-  if (to === "withdrawn") return from !== "confirmed" && from !== "withdrawn";
+  if (to === "withdrawn") return canWithdraw(from);
   return TRANSITIONS.some(([f, t]) => f === from && t === to);
 }
 
@@ -135,6 +135,11 @@ export function stageStates(status: Status): Array<"done" | "current" | "blocked
     if (i === current) return blocked ? "blocked" : "current";
     return "upcoming";
   });
+}
+
+/** Applicants (and admissions) can withdraw at any stage — even after confirmation — until it's withdrawn. */
+export function canWithdraw(status: Status): boolean {
+  return status !== "withdrawn";
 }
 
 export function isTerminal(status: Status): boolean {

@@ -9,6 +9,7 @@ import { applicationSchema } from "@/lib/validation";
 import { notifyStatus, notifyTemplate } from "@/lib/notify";
 import { fail, ok, type ActionState } from "@/lib/action-state";
 import { errorMessage } from "@/lib/utils";
+import { STATUS_LABEL } from "@/lib/workflow";
 import { buildSignedAgreementPdf } from "@/lib/pdf";
 import { audit, clientIp } from "@/lib/audit";
 
@@ -157,14 +158,20 @@ export async function sendApplicantMessage(_prev: ActionState, formData: FormDat
 
 export async function withdrawApplication(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const appId = String(formData.get("application_id") || "");
+  const reason = String(formData.get("reason") || "").trim().slice(0, 500);
   const supabase = await createClient();
-  const { data: promoted, error } = await supabase.rpc("applicant_withdraw", { p_app: appId, p_reason: "Withdrawn by applicant" });
+  const { data: promoted, error } = await supabase.rpc("applicant_withdraw", { p_app: appId, p_reason: reason || null });
   if (error) return fail(errorMessage(error));
+  await notifyTemplate(supabase, appId, "status_update", {
+    statusLabel: STATUS_LABEL.withdrawn,
+    note: "Your application has been withdrawn and any cohort seat you held has been released. Contact admissions if this was a mistake.",
+  });
   // Applicants can't read other applications, so promotion emails go out with the service client (if configured).
   const service = createServiceClient();
   if (service) for (const id of (promoted as string[]) ?? []) await notifyTemplate(service, id, "waitlist_promoted");
   revalidatePath(`/portal/applications/${appId}`);
-  return ok("Your application has been withdrawn.");
+  revalidatePath("/portal");
+  return ok("Your application has been withdrawn and your seat has been released.");
 }
 
 /** Signed download link for one of the applicant's own files (resume, signed PDFs). */

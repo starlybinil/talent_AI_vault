@@ -37,15 +37,16 @@ describe("workflow transitions", () => {
     expect(canTransition("exam_invited", "cohort_selection")).toBe(false);
   });
 
-  it("allows withdrawal except from final states", () => {
-    expect(canTransition("exam_invited", "withdrawn")).toBe(true);
-    expect(canTransition("confirmed", "withdrawn")).toBe(false);
+  it("allows withdrawal at every stage, including after confirmation", () => {
+    for (const s of STATUSES.filter((x) => x !== "withdrawn")) expect(canTransition(s, "withdrawn")).toBe(true);
+    expect(canTransition("confirmed", "withdrawn")).toBe(true);
     expect(canTransition("withdrawn", "withdrawn")).toBe(false);
   });
 
   it("lists next statuses including withdraw", () => {
     expect(nextStatuses("agreements_submitted")).toEqual(["agreements_pending", "confirmed", "withdrawn"]);
-    expect(nextStatuses("confirmed")).toEqual([]);
+    expect(nextStatuses("confirmed")).toEqual(["withdrawn"]);
+    expect(nextStatuses("withdrawn")).toEqual([]);
   });
 
   it("gives every status a next action and a stage", () => {

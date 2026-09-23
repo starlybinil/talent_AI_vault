@@ -11,7 +11,7 @@ import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Alert, Badge, Card, Input, Label, Select, Textarea } from "@/components/ui";
 import type { CohortAvailability } from "@/lib/data";
-import { EDUCATION_LABEL, STATUS_LABEL, STATUS_TONE, VISA_LABEL, isTerminal, type Status } from "@/lib/workflow";
+import { EDUCATION_LABEL, STATUS_LABEL, STATUS_TONE, VISA_LABEL, canWithdraw, type Status } from "@/lib/workflow";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { audit } from "@/lib/audit";
 
@@ -58,7 +58,7 @@ function opsFor(status: Status, hasSeat: boolean): Op[] {
       ops.push({ op: "return_agreements", label: "Return for correction", variant: "outline" });
       break;
   }
-  if (!isTerminal(status)) ops.push({ op: "withdraw", label: "Withdraw application", variant: "danger", confirm: "Withdraw this application? Any seat is released to the waitlist." });
+  if (canWithdraw(status)) ops.push({ op: "withdraw", label: "Withdraw application", variant: "danger", confirm: "Withdraw this application? Any seat is released to the waitlist." });
   return ops;
 }
 
