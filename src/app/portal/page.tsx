@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Settings } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/session";
 import { StatusTracker } from "@/components/portal/StatusTracker";
@@ -26,7 +26,13 @@ export default async function PortalHome() {
 
   return (
     <div>
-      <PageHeader eyebrow="Applicant portal" title={firstName ? `Welcome, ${firstName}` : "Welcome"} description="Track every step of your application in real time." />
+      <PageHeader eyebrow="Applicant portal" title={firstName ? `Welcome, ${firstName}` : "Welcome"} description="Track every step of your application in real time."
+        actions={
+          <ButtonLink href="/portal/account" variant="outline" size="sm">
+            <Settings className="h-4 w-4" aria-hidden /> Account settings
+          </ButtonLink>
+        }
+      />
 
       {(apps ?? []).length === 0 ? (
         <Card className="overflow-hidden p-0">

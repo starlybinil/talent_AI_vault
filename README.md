@@ -31,7 +31,7 @@ The rules are enforced in the database (`public.transition_allowed`) and mirrore
 
 | Role | Area | Can |
 |---|---|---|
-| **Applicant** | `/portal` | Apply, track status, open the assessment, rank cohorts, e-sign, message admissions, withdraw |
+| **Applicant** | `/portal` | Apply, track status, open the assessment, rank cohorts, e-sign, message admissions, change cohort or withdraw, permanently delete their account (Account settings) |
 | **Employer partner** (e.g. TSMC Arizona) | `/employer` | See **only the fields the program allows**, and only for applicants who consented, for programs their organization partners on. Pipeline dashboard, shortlist, interview-interest and assessment-result notes to admissions, CSV export. |
 | **Program admin** (admissions manager) | `/admin` | Analytics, queue with filters and bulk actions, CSV export, full workflow, cohorts and waitlists, programs, agreements, employer-visibility policy, messaging and internal notes |
 | **IT admin** | `/admin` | Users and roles, employer orgs, audit log, email log, integrations and settings; read-only admissions |
@@ -185,6 +185,7 @@ The hero clips and section images were generated with Higgsfield and are served 
   - the employer field policy and consent filter
   - that web developers can't read applications
   - that IT admins can't change status
+  - applicant self-deletion: wrong email and staff accounts are refused; a confirmed applicant's seat goes to the waitlist; all their rows and their login are removed
 
 ## Security notes
 

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import type { Session } from "@/lib/session";
 import { ROLE_LABEL, homeFor, isStaff } from "@/lib/rbac";
@@ -31,6 +31,16 @@ export function AppHeader({ session, area }: { session: Session; area: "portal" 
             <p className="text-sm font-bold">{session.fullName || session.email}</p>
             {primaryRole && <p className="text-xs text-white/50">{ROLE_LABEL[primaryRole]}</p>}
           </div>
+          {area === "portal" && (
+            <Link
+              href="/portal/account"
+              className="flex h-10 items-center gap-2 rounded-full border border-white/20 px-3 text-sm font-bold hover:border-gold hover:text-gold"
+              aria-label="Account settings"
+            >
+              <Settings className="h-4 w-4" aria-hidden />
+              <span className="hidden lg:inline">Account</span>
+            </Link>
+          )}
           <form action="/auth/signout" method="post">
             <button
               type="submit"

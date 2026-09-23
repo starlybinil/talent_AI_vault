@@ -197,3 +197,37 @@ export async function applicantFileUrl(path: string): Promise<string | null> {
   const { data } = await supabase.storage.from("applicant-files").createSignedUrl(path, 60);
   return data?.signedUrl ?? null;
 }
+
+const FILE_FOLDERS = ["resumes", "signatures", "agreements"] as const;
+
+/** Permanently deletes the signed-in applicant's account, files and application data. */
+export async function deleteAccount(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const session = await getSession();
+  if (!session) return fail("Please sign in again.");
+  const typed = String(formData.get("confirm_email") || "").trim();
+  // Check up front so a typo never removes files before the database refuses.
+  if (typed.toLowerCase() !== session.email.toLowerCase()) return fail("The email you typed does not match your account.");
+  if (session.roles.some((r) => r !== "applicant")) return fail("Staff and employer accounts are managed by your IT administrator.");
+
+  const supabase = await createClient();
+  const bucket = supabase.storage.from("applicant-files");
+  for (const folder of FILE_FOLDERS) {
+    const { data: files, error } = await bucket.list(`${session.userId}/${folder}`, { limit: 1000 });
+    if (error) return fail(`We couldn't remove your files: ${errorMessage(error)}`);
+    const paths = (files ?? []).filter((f) => f.id).map((f) => `${session.userId}/${folder}/${f.name}`);
+    if (paths.length) {
+      const { error: removeError } = await bucket.remove(paths);
+      if (removeError) return fail(`We couldn't remove your files: ${errorMessage(removeError)}`);
+    }
+  }
+
+  const { data: promoted, error } = await supabase.rpc("delete_my_account", { p_confirm_email: typed });
+  if (error) return fail(errorMessage(error));
+
+  // A released seat may move someone up from the waitlist; tell them.
+  const service = createServiceClient();
+  if (service) for (const id of (promoted as string[]) ?? []) await notifyTemplate(service, id, "waitlist_promoted");
+
+  await supabase.auth.signOut();
+  redirect("/account-deleted");
+}

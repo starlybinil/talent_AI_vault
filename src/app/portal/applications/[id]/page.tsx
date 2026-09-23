@@ -447,6 +447,12 @@ export default async function ApplicationPage({
                 </ActionForm>
               </div>
             )}
+            <p className="mt-6 border-t border-ink/10 pt-4 text-sm text-ink/60">
+              Want to remove everything, including your login?{" "}
+              <Link href="/portal/account#delete" className="font-bold text-maroon hover:underline">
+                Delete my Talent-Vault account
+              </Link>
+            </p>
           </Card>
         )}
       </div>
