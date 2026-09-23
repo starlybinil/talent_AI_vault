@@ -366,7 +366,20 @@ export default async function ApplicationPage({
                 </p>
                 <ActionForm
                   action={changeCohort}
-                  confirm="Leave your current cohort and choose a new one? Your current seat will be released and can't be held for you."
+                  confirm={{
+                    title: "Leave your cohort and choose another?",
+                    body: "Your application stays active — you'll go straight back to choosing your top 3 cohorts.",
+                    points: [
+                      hasSeat
+                        ? `Your seat in ${assigned?.name ?? "your current cohort"} will be released to the next person on the waitlist.`
+                        : "You'll be removed from the waitlists you're currently on.",
+                      "We can't hold your current seat — if you want it back you'll need to re-select it, subject to availability.",
+                      "You'll re-sign your program agreements for the new cohort.",
+                    ],
+                    confirmLabel: "Leave cohort",
+                    cancelLabel: "Keep my seat",
+                    tone: "default",
+                  }}
                   className="mt-4 grid gap-3"
                 >
                   <input type="hidden" name="application_id" value={app.id} />
@@ -391,7 +404,18 @@ export default async function ApplicationPage({
                 </p>
                 <ActionForm
                   action={withdrawApplication}
-                  confirm={hasSeat ? "Withdraw your application and give up your cohort seat? This can't be undone." : "Withdraw your application? This can't be undone."}
+                  confirm={{
+                    title: "Withdraw your entire application?",
+                    body: `This ends your application to the ${program?.short_name ?? "program"}.`,
+                    points: [
+                      ...(hasSeat ? [`Your seat in ${assigned?.name ?? "your cohort"} will be released to the next person on the waitlist.`] : []),
+                      ...(status === "waitlisted" ? ["You'll be removed from every cohort waitlist."] : []),
+                      "Admissions will stop processing your application.",
+                      "This can't be undone — you'd need to contact admissions to reapply.",
+                    ],
+                    confirmLabel: "Withdraw application",
+                    cancelLabel: "Keep my application",
+                  }}
                   className="mt-4 grid gap-3"
                 >
                   <input type="hidden" name="application_id" value={app.id} />
