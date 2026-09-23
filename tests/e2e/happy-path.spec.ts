@@ -79,7 +79,7 @@ test("applicant enrolls: ranks cohorts, then signs every agreement on the same p
   await page.goto(applicationPath.replace("/admin/", "/portal/") + "?tab=enrollment");
   const cards = page.locator("button[aria-pressed]");
   for (let i = 0; i < 3; i++) await cards.nth(i).click();
-  await page.getByRole("button", { name: /Submit choices/ }).click();
+  await page.getByRole("button", { name: "Submit Choices" }).click();
   await expect(page.getByText("Your seat is reserved!")).toBeVisible();
 
   while ((await page.getByRole("button", { name: "Sign document" }).count()) > 0) {
