@@ -27,6 +27,8 @@ const FUNNEL: Array<[Status, string]> = [
   ["cohort_registered", "Registered in cohort"],
   ["agreements_submitted", "Agreements signed"],
   ["confirmed", "Confirmed"],
+  ["completed", "Completed program"],
+  ["hired", "Hired"],
 ];
 
 export default async function AdminDashboard() {
@@ -40,6 +42,8 @@ export default async function AdminDashboard() {
   const awaitingExam = s("exam_invited");
   const toVerify = s("agreements_submitted");
   const confirmed = s("confirmed");
+  const graduates = s("completed") + s("hired");
+  const hired = s("hired");
   const cohortRows = ((cohorts ?? []) as CohortAvailability[]).filter((c) => c.status !== "archived");
   const seats = cohortRows.reduce((acc, c) => acc + c.capacity, 0);
   const filled = cohortRows.reduce((acc, c) => acc + c.registered, 0);
@@ -58,12 +62,15 @@ export default async function AdminDashboard() {
           ) : null
         }
       />
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Stat label="Total applications" value={a.total} />
         <Stat label="Needs review" value={needsReview} hint="Submitted + in screening" />
         <Stat label="Awaiting assessment" value={awaitingExam} />
         <Stat label="Agreements to verify" value={toVerify} />
-        <Stat label="Confirmed" value={confirmed} hint={seats ? `${filled}/${seats} seats filled` : undefined} />
+        <Stat label="In training (confirmed)" value={confirmed} hint={seats ? `${filled}/${seats} seats filled` : undefined} />
+        <Stat label="Program graduates" value={graduates} hint="Completed + hired" />
+        <Stat label="Hired" value={hired} />
+        <Stat label="Placement rate" value={graduates ? `${Math.round((hired / graduates) * 100)}%` : "—"} hint="Hired ÷ graduates" />
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">

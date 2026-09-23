@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
 import { can } from "@/lib/rbac";
 import { audit } from "@/lib/audit";
-import { FIELD_LABEL, displayField, type Candidate } from "@/lib/employer";
+import { FIELD_LABEL, displayField, matchesStage, type Candidate } from "@/lib/employer";
 import { toCsv } from "@/lib/utils";
 
 /** CSV of the policy-limited candidate fields this employer is allowed to see. */
@@ -17,8 +17,7 @@ export async function GET(request: NextRequest) {
 
   let rows = (data ?? []) as Candidate[];
   if (sp.get("shortlisted") === "1") rows = rows.filter((r) => r.shortlisted);
-  if (sp.get("stage") === "passed") rows = rows.filter((r) => r.fields.exam_result === "passed");
-  if (sp.get("stage") === "confirmed") rows = rows.filter((r) => r.fields.status === "confirmed");
+  rows = rows.filter((r) => matchesStage(r, sp.get("stage")));
 
   const keys = Array.from(new Set(rows.flatMap((r) => Object.keys(r.fields)))).filter((k) => k !== "resume");
   const csv = toCsv(

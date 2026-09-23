@@ -22,6 +22,8 @@ describe("workflow transitions", () => {
       "agreements_pending",
       "agreements_submitted",
       "confirmed",
+      "completed",
+      "hired",
     ] as const;
     for (let i = 0; i < path.length - 1; i++) expect(canTransition(path[i], path[i + 1])).toBe(true);
   });
@@ -37,10 +39,23 @@ describe("workflow transitions", () => {
     expect(canTransition("exam_invited", "cohort_selection")).toBe(false);
   });
 
-  it("allows withdrawal at every stage, including after confirmation", () => {
-    for (const s of STATUSES.filter((x) => x !== "withdrawn")) expect(canTransition(s, "withdrawn")).toBe(true);
+  it("allows withdrawal at every stage up to and including confirmation", () => {
+    for (const s of STATUSES.filter((x) => !["withdrawn", "completed", "hired"].includes(x))) expect(canTransition(s, "withdrawn")).toBe(true);
     expect(canTransition("confirmed", "withdrawn")).toBe(true);
     expect(canTransition("withdrawn", "withdrawn")).toBe(false);
+  });
+
+  it("records outcomes in order: confirmed → completed → hired, with one-step undo", () => {
+    expect(canTransition("confirmed", "completed")).toBe(true);
+    expect(canTransition("completed", "hired")).toBe(true);
+    expect(canTransition("confirmed", "hired")).toBe(false);
+    expect(canTransition("agreements_submitted", "completed")).toBe(false);
+    expect(canTransition("hired", "completed")).toBe(true);
+    expect(canTransition("completed", "confirmed")).toBe(true);
+    // Graduates and hires can't withdraw or leave their cohort.
+    expect(canTransition("completed", "withdrawn")).toBe(false);
+    expect(canTransition("hired", "withdrawn")).toBe(false);
+    expect(canTransition("completed", "cohort_selection")).toBe(false);
   });
 
   it("lets applicants leave a cohort to pick another from any seat-holding stage", () => {
@@ -51,7 +66,8 @@ describe("workflow transitions", () => {
 
   it("lists next statuses including withdraw", () => {
     expect(nextStatuses("agreements_submitted")).toEqual(["agreements_pending", "confirmed", "cohort_selection", "withdrawn"]);
-    expect(nextStatuses("confirmed")).toEqual(["cohort_selection", "withdrawn"]);
+    expect(nextStatuses("confirmed")).toEqual(["cohort_selection", "completed", "withdrawn"]);
+    expect(nextStatuses("hired")).toEqual(["completed"]);
     expect(nextStatuses("withdrawn")).toEqual([]);
   });
 
@@ -62,8 +78,12 @@ describe("workflow transitions", () => {
     }
   });
 
-  it("marks confirmed as fully done and rejections as blocked", () => {
-    expect(stageStates("confirmed").every((x) => x === "done")).toBe(true);
+  it("marks hired as fully done, confirmed as working toward completion, and rejections as blocked", () => {
+    expect(stageStates("hired").every((x) => x === "done")).toBe(true);
+    const confirmed = stageStates("confirmed");
+    expect(confirmed[STAGES.findIndex((s) => s.key === "confirmed")]).toBe("done");
+    expect(confirmed[STAGES.findIndex((s) => s.key === "completed")]).toBe("current");
+    expect(stageStates("completed")[STAGES.findIndex((s) => s.key === "hired")]).toBe("current");
     expect(stageStates("exam_failed")).toContain("blocked");
     expect(stageStates("submitted")[0]).toBe("done");
   });
@@ -72,5 +92,7 @@ describe("workflow transitions", () => {
     expect(EMAIL_FOR_STATUS.exam_invited).toBe("exam_invite");
     expect(EMAIL_FOR_STATUS.cohort_selection).toBe("exam_passed");
     expect(EMAIL_FOR_STATUS.confirmed).toBe("confirmed");
+    expect(EMAIL_FOR_STATUS.completed).toBe("program_completed");
+    expect(EMAIL_FOR_STATUS.hired).toBe("hired");
   });
 });

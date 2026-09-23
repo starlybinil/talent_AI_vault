@@ -17,6 +17,8 @@ export const STATUSES = [
   "agreements_pending",
   "agreements_submitted",
   "confirmed",
+  "completed",
+  "hired",
   "withdrawn",
 ] as const;
 
@@ -45,6 +47,11 @@ export const TRANSITIONS: ReadonlyArray<readonly [Status, Status]> = [
   ["agreements_submitted", "confirmed"],
   ["agreements_submitted", "cohort_selection"],
   ["confirmed", "cohort_selection"],
+  // Outcomes, recorded by program admins (undo steps back one stage).
+  ["confirmed", "completed"],
+  ["completed", "hired"],
+  ["completed", "confirmed"],
+  ["hired", "completed"],
 ];
 
 export function canTransition(from: Status, to: Status): boolean {
@@ -72,6 +79,8 @@ export const STATUS_LABEL: Record<Status, string> = {
   agreements_pending: "Agreements to sign",
   agreements_submitted: "Agreements under review",
   confirmed: "Confirmed",
+  completed: "Program completed",
+  hired: "Hired",
   withdrawn: "Withdrawn",
 };
 
@@ -91,10 +100,12 @@ export const STATUS_TONE: Record<Status, Tone> = {
   agreements_pending: "progress",
   agreements_submitted: "info",
   confirmed: "success",
+  completed: "success",
+  hired: "success",
   withdrawn: "neutral",
 };
 
-/** The six milestones the applicant sees in their progress tracker. */
+/** The milestones the applicant sees in their progress tracker. */
 export const STAGES = [
   { key: "apply", label: "Apply", description: "Submit your application" },
   { key: "screening", label: "Screening", description: "Admissions reviews your application" },
@@ -102,6 +113,8 @@ export const STAGES = [
   { key: "cohort", label: "Cohort", description: "Pick your top 3 cohorts" },
   { key: "agreements", label: "Agreements", description: "Sign your program agreements" },
   { key: "confirmed", label: "Confirmed", description: "You're in — see you in the lab" },
+  { key: "completed", label: "Completed", description: "Successfully complete the program" },
+  { key: "hired", label: "Hired", description: "Interview with employer partners and start your career" },
 ] as const;
 
 export type StageKey = (typeof STAGES)[number]["key"];
@@ -119,7 +132,9 @@ const STAGE_OF: Record<Status, StageKey> = {
   waitlisted: "cohort",
   agreements_pending: "agreements",
   agreements_submitted: "confirmed",
-  confirmed: "confirmed",
+  confirmed: "completed",
+  completed: "hired",
+  hired: "hired",
   withdrawn: "apply",
 };
 
@@ -132,16 +147,24 @@ export function stageStates(status: Status): Array<"done" | "current" | "blocked
   const current = stageIndex(status);
   const blocked = status === "not_selected" || status === "exam_failed" || status === "withdrawn";
   return STAGES.map((_, i) => {
-    if (status === "confirmed") return "done";
+    if (status === "hired") return "done";
     if (i < current) return "done";
     if (i === current) return blocked ? "blocked" : "current";
     return "upcoming";
   });
 }
 
-/** Applicants (and admissions) can withdraw at any stage — even after confirmation — until it's withdrawn. */
+/** Statuses reached after the trainee finishes the program. */
+export const OUTCOME_STATUSES: readonly Status[] = ["completed", "hired"];
+
+/** Applicants (and admissions) can withdraw at any stage — even after confirmation — until they finish the program. */
 export function canWithdraw(status: Status): boolean {
-  return status !== "withdrawn";
+  return status !== "withdrawn" && !OUTCOME_STATUSES.includes(status);
+}
+
+/** Confirmed trainees and beyond: they hold (or held) a seat in a running or finished cohort. */
+export function isTrainee(status: Status): boolean {
+  return status === "confirmed" || OUTCOME_STATUSES.includes(status);
 }
 
 /** Statuses where the applicant holds a seat or waitlist spot and may leave it to pick another cohort. */
@@ -158,7 +181,7 @@ export function canChangeCohort(status: Status): boolean {
 }
 
 export function isTerminal(status: Status): boolean {
-  return status === "confirmed" || status === "withdrawn" || status === "not_selected" || status === "exam_failed";
+  return status === "hired" || status === "withdrawn" || status === "not_selected" || status === "exam_failed";
 }
 
 /** What the applicant should do next, if anything. */
@@ -209,7 +232,17 @@ export function applicantNextAction(status: Status): { title: string; body: stri
     case "confirmed":
       return {
         title: "You're confirmed!",
-        body: "Welcome to the program. Your cohort details and calendar invite are in your inbox.",
+        body: "Welcome to the program. Your cohort details and calendar invite are in your inbox. Admissions records your completion when you finish.",
+      };
+    case "completed":
+      return {
+        title: "You completed the program!",
+        body: "Congratulations, graduate. Partner employers can now see that you finished. Admissions will record your hire when you accept a job offer.",
+      };
+    case "hired":
+      return {
+        title: "You're hired!",
+        body: "Congratulations on starting your career. Thank you for being part of the program.",
       };
     case "exam_failed":
       return {
@@ -240,6 +273,8 @@ export type EmailTemplate =
   | "waitlist_promoted"
   | "agreements_submitted"
   | "confirmed"
+  | "program_completed"
+  | "hired"
   | "new_message"
   | "status_update";
 
@@ -254,6 +289,8 @@ export const EMAIL_FOR_STATUS: Partial<Record<Status, EmailTemplate>> = {
   waitlisted: "waitlisted",
   agreements_submitted: "agreements_submitted",
   confirmed: "confirmed",
+  completed: "program_completed",
+  hired: "hired",
 };
 
 export const EDUCATION_LABEL: Record<string, string> = {

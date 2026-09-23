@@ -25,6 +25,13 @@ export type EmailContext = {
   note?: string | null;
   messagePreview?: string | null;
   statusLabel?: string | null;
+  outcome?: {
+    completedOn: string | null;
+    completionNote: string | null;
+    employer: string | null;
+    jobTitle: string | null;
+    startDate: string | null;
+  } | null;
 };
 
 type Rendered = { subject: string; heading: string; paragraphs: string[]; cta?: { label: string; href: string } };
@@ -176,6 +183,33 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           ...note,
         ],
         cta: { label: "Open my portal", href: portal(ctx.applicationId) },
+      };
+    case "program_completed":
+      return {
+        subject: `Congratulations, you completed the ${ctx.programName}!`,
+        heading: "You did it. Congratulations, graduate!",
+        paragraphs: [
+          hi,
+          `You've successfully completed the <strong>${esc(ctx.programName)}</strong>${
+            ctx.outcome?.completedOn ? ` as of ${formatDate(ctx.outcome.completedOn)}` : ""
+          }.`,
+          ...(ctx.outcome?.completionNote ? [`<strong>Credentials earned:</strong> ${esc(ctx.outcome.completionNote)}`] : []),
+          "Our partner employers can now see that you've finished the program. Keep an eye on your inbox for interview invitations.",
+        ],
+        cta: { label: "View my record", href: portal(ctx.applicationId) },
+      };
+    case "hired":
+      return {
+        subject: "Congratulations on your new job!",
+        heading: "You're hired!",
+        paragraphs: [
+          hi,
+          `Congratulations on joining <strong>${esc(ctx.outcome?.employer ?? "your new employer")}</strong>${
+            ctx.outcome?.jobTitle ? ` as <strong>${esc(ctx.outcome.jobTitle)}</strong>` : ""
+          }${ctx.outcome?.startDate ? `, starting ${formatDate(ctx.outcome.startDate)}` : ""}.`,
+          "Everyone at Talent-Vault is proud of you. Thank you for being part of the program, and best of luck in your new career.",
+        ],
+        cta: { label: "View my record", href: portal(ctx.applicationId) },
       };
     case "status_update":
       return {

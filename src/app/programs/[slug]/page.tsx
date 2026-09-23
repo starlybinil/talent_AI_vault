@@ -233,10 +233,10 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-3xl">
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">How admissions works</p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">Six steps. Full visibility at every one.</h2>
+            <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">From application to hired. Full visibility at every step.</h2>
             <p className="mt-4 text-lg text-white/60">Track your status live in your Talent-Vault portal, with an email at every milestone.</p>
           </Reveal>
-          <Stagger className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
+          <Stagger className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {STAGES.map((s, i) => (
               <StaggerItem key={s.key}>
                 <div className="relative h-full rounded-3xl border border-white/10 bg-white/[0.03] p-6">

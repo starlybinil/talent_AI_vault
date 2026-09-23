@@ -23,17 +23,19 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 9. They are registered in the highest-ranked cohort with a free seat, or **waitlisted** and auto-promoted when a seat opens
 10. They **e-sign the program agreements** (typed name + drawn signature → signed PDF with timestamp/IP/document fingerprint)
 11. Admissions verifies the documents and sends the **final confirmation** (with a calendar invite)
+12. When the trainee finishes, admissions records **successful program completion** (date + credentials earned)
+13. Once they accept an offer, admissions records the **hire** (employer, job title, start date). The trainee and partner employers both see these outcomes, and each one sends a congratulations email
 
-**Status flow:** `submitted → screening → screening_passed → exam_invited → exam_passed → cohort_selection → cohort_registered | waitlisted → agreements_pending → agreements_submitted → confirmed` (plus `not_selected`, `exam_failed`, `withdrawn`).
+**Status flow:** `submitted → screening → screening_passed → exam_invited → exam_passed → cohort_selection → cohort_registered | waitlisted → agreements_pending → agreements_submitted → confirmed → completed → hired` (plus `not_selected`, `exam_failed`, `withdrawn`). Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.
 
 ### User types
 
 | Role | Area | Can |
 |---|---|---|
-| **Applicant** | `/portal` | Apply, track status, open the assessment, rank cohorts, e-sign, message admissions, change cohort or withdraw, permanently delete their account (Account settings) |
-| **Employer partner** (e.g. TSMC Arizona) | `/employer` | Cohort calendar for partnered programs (where and when trainees learn, how many are admitted/confirmed, graduation dates). See **only the fields the program allows**, and only for applicants who consented, for programs their organization partners on. Pipeline dashboard, shortlist, interview-interest and assessment-result notes to admissions, CSV export. |
-| **Program admin** (admissions manager) | `/admin` | Analytics, queue with filters and bulk actions, CSV export, full workflow, cohorts and waitlists, programs, agreements, employer-visibility policy, messaging and internal notes |
+| **Applicant** | `/portal` | Apply, track status (through completion and hire), open the assessment, rank cohorts, e-sign, message admissions, change cohort or withdraw, permanently delete their account (Account settings) |
+| **Employer partner** (e.g. TSMC Arizona) | `/employer` | Cohort calendar for partnered programs (where and when trainees learn, how many are admitted/confirmed, graduation dates). Program outcomes (completed, hired by whom) for consenting candidates. See **only the fields the program allows**, and only for applicants who consented, for programs their organization partners on. Pipeline dashboard, shortlist, interview-interest and assessment-result notes to admissions, CSV export. |
+| **Program admin** (admissions manager) | `/admin` | Analytics (incl. graduates, hires, placement rate), queue with filters and bulk actions, CSV export, full workflow including recording program completion and hires, cohorts and waitlists, programs, agreements, employer-visibility policy, messaging and internal notes |
 | **IT admin** | `/admin` | Read-only cohort calendar; users and roles, employer orgs, audit log, email log, integrations and settings; read-only admissions |
 | **Web developer** | `/admin` | Site content CMS (landing copy, FAQs, stats, banners), feature flags, system health. **No access to applicant data.** |
 
@@ -189,6 +191,7 @@ The hero clips and section images were generated with Higgsfield and are served 
   - applicant self-deletion: wrong email and staff accounts are refused; a confirmed applicant's seat goes to the waitlist; all their rows and their login are removed
   - training locations: cohorts copy the chosen location, edits sync to every cohort there, and a location in use can't be deleted
   - cohort calendar: program and IT admins see every cohort with waitlist numbers, employers see only their partnered programs without waitlist details, and web developers and applicants are refused
+  - program outcomes: only program admins record completion/hire, completion must come before hire, graduates can't withdraw, the applicant and consenting candidates' partner employers see the outcome, and undo steps back one stage
   - cohort deletion: program admins only; registered applicants and anyone waitlisted only there go back to cohort selection, and people still on another waitlist stay there
 
 ## Security notes

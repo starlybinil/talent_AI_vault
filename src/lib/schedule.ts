@@ -15,7 +15,11 @@ export type ScheduleCohort = {
   capacity: number;
   status: string;
   registered: number;
+  /** Confirmed trainees, including those who have since completed or been hired. */
   confirmed: number;
+  /** Completed the program (including those hired). */
+  completed: number;
+  hired: number;
   /** Staff only (null for employers). */
   waitlisted: number | null;
   seats_left: number | null;

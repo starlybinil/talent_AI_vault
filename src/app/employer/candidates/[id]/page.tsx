@@ -6,7 +6,8 @@ import { requirePermission } from "@/lib/session";
 import { addEmployerNote, toggleShortlist } from "@/app/employer/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Card, Label, PageHeader, Select, Textarea } from "@/components/ui";
-import { FIELD_LABEL, candidateName, displayField, type Candidate } from "@/lib/employer";
+import { FIELD_LABEL, candidateName, displayField, isOutcomeKey, outcomeOf, type Candidate } from "@/lib/employer";
+import { OutcomeCard } from "@/components/portal/OutcomeCard";
 import { audit } from "@/lib/audit";
 import { formatDateTime } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const { data } = await supabase.rpc("employer_list_candidates");
   const c = ((data ?? []) as Candidate[]).find((x) => x.application_id === id);
   if (!c) notFound();
+  const outcome = outcomeOf(c);
   const { data: notes } = await supabase.from("employer_notes").select("id, kind, body, created_at").eq("application_id", id).order("created_at", { ascending: false });
 
   // Employers can't read applications; this RPC returns the path only if the program policy shares resumes.
@@ -43,11 +45,19 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
           }
         />
       </div>
+      {outcome && (
+        <div className="mb-6">
+          <OutcomeCard audience="employer" outcome={outcome} name={candidateName(c)} />
+          {c.fields.hired_by_you === true && <p className="mt-2 text-sm font-bold text-success">Hired by your organization.</p>}
+        </div>
+      )}
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
         <Card>
           <h2 className="font-black">Shared details</h2>
           <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-            {Object.entries(c.fields).map(([k, v]) => (
+            {Object.entries(c.fields)
+              .filter(([k]) => !isOutcomeKey(k))
+              .map(([k, v]) => (
               <div key={k}>
                 <dt className="text-xs font-bold uppercase tracking-wider text-ink/50">{FIELD_LABEL[k] ?? k}</dt>
                 <dd className="mt-1 font-medium">{displayField(k, v)}</dd>

@@ -796,7 +796,7 @@ function HoverCard({ c, x, y, colors, staff, today }: { c: ScheduleCohort; x: nu
         </p>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center">
           <Mini label="Admitted" value={`${c.registered}/${c.capacity}`} />
-          <Mini label="Confirmed" value={c.confirmed} />
+          {c.completed > 0 ? <Mini label="Graduates" value={c.completed} /> : <Mini label="Confirmed" value={c.confirmed} />}
           {staff ? <Mini label="Waitlist" value={c.waitlisted ?? 0} /> : <Mini label="Weeks" value={durationWeeks(c)} />}
         </div>
         <p className="mt-3 text-[11px] font-bold text-white/50">{cohortPhase(c, today).label} · click for details</p>
@@ -914,6 +914,19 @@ function DetailPanel({
             )}
           </section>
 
+          {c.completed > 0 && (
+            <section className="rounded-2xl border border-success/30 bg-emerald-50/60 p-5">
+              <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-success">
+                <GraduationCap className="h-4 w-4" aria-hidden /> Outcomes
+              </p>
+              <div className="mt-3 grid grid-cols-3 gap-3">
+                <Fact label="Graduates" value={c.completed} />
+                <Fact label="Hired" value={c.hired} />
+                <Fact label="Placement" value={`${Math.round((c.hired / c.completed) * 100)}%`} />
+              </div>
+            </section>
+          )}
+
           {/* When */}
           <section className="grid gap-3">
             <Detail icon={CalendarDays} label="Dates">
@@ -937,7 +950,9 @@ function DetailPanel({
                 <GraduationCap className="h-4 w-4" aria-hidden /> Talent available
               </p>
               <p className="mt-2 text-lg font-black">
-                {c.confirmed} confirmed trainee{c.confirmed === 1 ? "" : "s"} graduate {shortDate(c.end_date)}
+                {c.completed > 0
+                  ? `${c.completed - c.hired} graduate${c.completed - c.hired === 1 ? "" : "s"} available to hire · ${c.hired} hired`
+                  : `${c.confirmed} confirmed trainee${c.confirmed === 1 ? "" : "s"} graduate ${shortDate(c.end_date)}`}
               </p>
               <p className="mt-1 text-sm text-white/70">
                 Graduates earn a guaranteed TSMC Arizona interview upon successful completion of ASU &amp; TSMC program milestones.

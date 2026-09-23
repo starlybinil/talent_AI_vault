@@ -11,6 +11,11 @@ type AppRow = {
   status: Status;
   exam_url: string | null;
   assigned_cohort_id: string | null;
+  completed_on: string | null;
+  completion_note: string | null;
+  hired_employer_name: string | null;
+  hired_job_title: string | null;
+  hired_start_date: string | null;
   programs: { short_name: string } | { short_name: string }[] | null;
 };
 
@@ -18,7 +23,9 @@ type AppRow = {
 export async function emailContext(supabase: SupabaseClient, applicationId: string): Promise<EmailContext | null> {
   const { data } = await supabase
     .from("applications")
-    .select("id, email, first_name, status, exam_url, assigned_cohort_id, programs(short_name)")
+    .select(
+      "id, email, first_name, status, exam_url, assigned_cohort_id, completed_on, completion_note, hired_employer_name, hired_job_title, hired_start_date, programs(short_name)",
+    )
     .eq("id", applicationId)
     .maybeSingle<AppRow>();
   if (!data) return null;
@@ -39,6 +46,13 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
     programName: program?.short_name ?? "Talent-Vault program",
     examUrl: data.exam_url,
     cohort,
+    outcome: {
+      completedOn: data.completed_on,
+      completionNote: data.completion_note,
+      employer: data.hired_employer_name,
+      jobTitle: data.hired_job_title,
+      startDate: data.hired_start_date,
+    },
   };
 }
 

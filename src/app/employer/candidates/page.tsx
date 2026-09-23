@@ -3,7 +3,7 @@ import { Download, Star } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
 import { Badge, Card, EmptyState, PageHeader, Select, buttonClass } from "@/components/ui";
-import { FIELD_LABEL, candidateName, displayField, type Candidate } from "@/lib/employer";
+import { FIELD_LABEL, candidateName, displayField, isOutcomeKey, matchesStage, outcomeOf, type Candidate } from "@/lib/employer";
 import { STATUS_TONE, type Status } from "@/lib/workflow";
 import { audit } from "@/lib/audit";
 
@@ -19,9 +19,8 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
   ]);
   let rows = (data ?? []) as Candidate[];
   if (sp.shortlisted === "1") rows = rows.filter((r) => r.shortlisted);
-  if (sp.stage === "passed") rows = rows.filter((r) => r.fields.exam_result === "passed");
-  if (sp.stage === "confirmed") rows = rows.filter((r) => r.fields.status === "confirmed");
-  const columns = Array.from(new Set(rows.flatMap((r) => Object.keys(r.fields)))).filter((k) => !["first_name", "last_name"].includes(k));
+  rows = rows.filter((r) => matchesStage(r, sp.stage));
+  const columns = Array.from(new Set(rows.flatMap((r) => Object.keys(r.fields)))).filter((k) => !["first_name", "last_name"].includes(k) && !isOutcomeKey(k));
   await audit(supabase, "employer.candidates.list", "employer_portal", null, { count: rows.length });
   const qs = new URLSearchParams(Object.entries(sp).filter(([, v]) => v) as [string, string][]).toString();
 
@@ -54,6 +53,8 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
             <option value="">Any stage</option>
             <option value="passed">Passed assessment</option>
             <option value="confirmed">Confirmed trainees</option>
+            <option value="completed">Completed program (available)</option>
+            <option value="hired">Hired</option>
           </Select>
           <label className="mb-3 flex items-center gap-2 text-sm font-bold">
             <input type="checkbox" name="shortlisted" value="1" defaultChecked={sp.shortlisted === "1"} className="h-4 w-4 accent-maroon" /> Shortlisted only
@@ -74,6 +75,7 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                     {FIELD_LABEL[c] ?? c}
                   </th>
                 ))}
+                <th className="px-4 py-3">Outcome</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ink/5">
@@ -95,6 +97,9 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
                       )}
                     </td>
                   ))}
+                  <td className="px-4 py-3">
+                    <OutcomeBadge c={r} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -103,4 +108,18 @@ export default async function CandidatesPage({ searchParams }: { searchParams: P
       )}
     </div>
   );
+}
+
+function OutcomeBadge({ c }: { c: Candidate }) {
+  const o = outcomeOf(c);
+  if (!o) return <span className="text-ink/40">—</span>;
+  if (o.employer) {
+    return (
+      <Badge tone="success">
+        Hired · {o.employer}
+        {c.fields.hired_by_you ? " (you)" : ""}
+      </Badge>
+    );
+  }
+  return <Badge tone="progress">Completed {o.completedOn ? displayField("completed_on", o.completedOn) : ""}</Badge>;
 }

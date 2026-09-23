@@ -29,7 +29,7 @@ type Row = {
   cohorts: { name: string } | null;
 };
 
-const BOARD: Status[] = ["submitted", "screening", "screening_passed", "exam_invited", "cohort_selection", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed"];
+const BOARD: Status[] = ["submitted", "screening", "screening_passed", "exam_invited", "cohort_selection", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed", "completed", "hired"];
 
 export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<QueueFilters & { view?: string }> }) {
   const sp = await searchParams;

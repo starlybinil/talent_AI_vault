@@ -48,11 +48,16 @@ export default async function EmployerHome() {
         <EmptyState title="Your organization isn't linked to a program yet">Ask your Talent-Vault contact to add you as a program partner.</EmptyState>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
             <Stat label="Applicants" value={total} />
             <Stat label="In assessment" value={count(["exam_invited"])} />
-            <Stat label="Passed assessment" value={count(["exam_passed", "cohort_selection", "cohort_registered", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed"])} />
-            <Stat label="Confirmed trainees" value={count(["confirmed"])} />
+            <Stat
+              label="Passed assessment"
+              value={count(["exam_passed", "cohort_selection", "cohort_registered", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed", "completed", "hired"])}
+            />
+            <Stat label="In training (confirmed)" value={count(["confirmed"])} />
+            <Stat label="Program graduates" value={count(["completed", "hired"])} hint="available + hired" />
+            <Stat label="Hired" value={count(["hired"])} />
           </div>
           <div className="mt-6 grid gap-6 lg:grid-cols-2">
             {programs.map(([pid, name]) => (

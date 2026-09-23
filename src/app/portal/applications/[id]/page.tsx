@@ -10,6 +10,7 @@ import { MarkExamComplete } from "@/components/portal/ExamActions";
 import { SignaturePad } from "@/components/portal/SignaturePad";
 import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { CohortDetails } from "@/components/program/CohortCard";
+import { OutcomeCard } from "@/components/portal/OutcomeCard";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Alert, Badge, ButtonLink, Card, Input, Label, Textarea } from "@/components/ui";
 import { changeCohort, sendApplicantMessage, signAgreement, withdrawApplication } from "@/app/portal/actions";
@@ -22,6 +23,7 @@ import {
   applicantNextAction,
   canWithdraw,
   canChangeCohort,
+  isTrainee,
   type Status,
 } from "@/lib/workflow";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
@@ -138,6 +140,18 @@ export default async function ApplicationPage({
               </div>
             </Card>
             <div className="grid content-start gap-6">
+              {(status === "completed" || status === "hired") && (
+                <OutcomeCard
+                  audience="applicant"
+                  outcome={{
+                    completedOn: app.completed_on,
+                    completionNote: app.completion_note,
+                    employer: status === "hired" ? app.hired_employer_name : null,
+                    jobTitle: app.hired_job_title,
+                    startDate: app.hired_start_date,
+                  }}
+                />
+              )}
               <Card className={cn(next.tab && "border-gold bg-gold/10")}>
                 <p className="text-xs font-bold uppercase tracking-widest text-maroon">Next step</p>
                 <p className="mt-2 text-lg font-black">{next.title}</p>
@@ -243,14 +257,14 @@ export default async function ApplicationPage({
 
         {tab === "agreements" && (
           <div className="grid gap-6">
-            {status === "confirmed" && (
+            {isTrainee(status) && (
               <Alert tone="success" title="You're confirmed!">
                 <span className="inline-flex items-center gap-2">
                   <PartyPopper className="h-4 w-4" /> Your documents were verified on {formatDate(app.confirmed_at)}.
                 </span>
               </Alert>
             )}
-            {!["agreements_pending", "agreements_submitted", "confirmed"].includes(status) && (
+            {!(["agreements_pending", "agreements_submitted"].includes(status) || isTrainee(status)) && (
               <>
                 <Alert tone="info" title="Preview — nothing to sign yet">
                   These are the agreements every participant in this program signs. You can read them now; you&apos;ll be asked to e-sign them
@@ -275,7 +289,7 @@ export default async function ApplicationPage({
                 )}
               </>
             )}
-            {["agreements_pending", "agreements_submitted", "confirmed"].includes(status) &&
+            {(["agreements_pending", "agreements_submitted"].includes(status) || isTrainee(status)) &&
               (templates ?? []).map((t) => {
                 const sig = signedIds.get(t.id);
                 const signedCurrent = sig && sig.template_version === t.version;

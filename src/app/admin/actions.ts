@@ -154,6 +154,85 @@ export async function adminAct(_prev: ActionState, formData: FormData): Promise<
   return ok("Done — the applicant has been notified where applicable.");
 }
 
+// ---------------------------------------------------------------------------
+// Program outcomes: completion and hire (visible to the applicant and partner employers)
+// ---------------------------------------------------------------------------
+
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+function outcomeDone(appId: string, message: string): ActionState {
+  revalidatePath(`/admin/applications/${appId}`);
+  revalidatePath("/admin/applications");
+  revalidatePath("/admin/cohorts");
+  return ok(message);
+}
+
+export async function recordCompletion(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("admissions.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const appId = String(formData.get("application_id") || "");
+  const completedOn = String(formData.get("completed_on") || "");
+  const note = String(formData.get("completion_note") || "").trim().slice(0, 500);
+  if (!DATE_RE.test(completedOn)) return fail("Enter the completion date.");
+  const supabase = await createClient();
+  const { data: before } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
+  const { error } = await supabase.rpc("admin_record_completion", { p_app: appId, p_completed_on: completedOn, p_note: note || null });
+  if (error) return fail(errorMessage(error));
+  const firstTime = before?.status === "confirmed";
+  if (firstTime) await notifyStatus(supabase, appId);
+  await audit(supabase, firstTime ? "outcome.completed" : "outcome.completion_updated", "application", appId, { completed_on: completedOn });
+  return outcomeDone(appId, firstTime ? "Program completion recorded. The trainee has been emailed and employers can now see it." : "Completion details updated.");
+}
+
+export async function recordHire(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("admissions.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const appId = String(formData.get("application_id") || "");
+  const orgId = String(formData.get("employer_org_id") || "");
+  const employerName = String(formData.get("employer_name") || "").trim().slice(0, 120);
+  const jobTitle = String(formData.get("job_title") || "").trim().slice(0, 120);
+  const startDate = String(formData.get("start_date") || "");
+  const note = String(formData.get("note") || "").trim().slice(0, 500);
+  if (!orgId && !employerName) return fail("Choose the hiring employer, or type its name.");
+  if (startDate && !DATE_RE.test(startDate)) return fail("Enter a valid start date.");
+  const supabase = await createClient();
+  const { data: before } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
+  const { error } = await supabase.rpc("admin_record_hire", {
+    p_app: appId,
+    p_org: orgId || null,
+    p_employer_name: orgId ? null : employerName,
+    p_job_title: jobTitle || null,
+    p_start_date: startDate || null,
+    p_note: note || null,
+  });
+  if (error) return fail(errorMessage(error));
+  const firstTime = before?.status === "completed";
+  if (firstTime) await notifyStatus(supabase, appId);
+  await audit(supabase, firstTime ? "outcome.hired" : "outcome.hire_updated", "application", appId, { employer_org_id: orgId || null, employer_name: employerName || null });
+  return outcomeDone(appId, firstTime ? "Hire recorded. The graduate has been emailed and partner employers can see it." : "Hire details updated.");
+}
+
+export async function undoOutcome(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("admissions.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const appId = String(formData.get("application_id") || "");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_undo_outcome", { p_app: appId, p_note: null });
+  if (error) return fail(errorMessage(error));
+  const status = (data as { status: Status } | null)?.status;
+  await audit(supabase, "outcome.undo", "application", appId, { now: status });
+  return outcomeDone(appId, status === "completed" ? "Hire record removed." : "Completion record removed.");
+}
+
 export async function bulkAct(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertPermission("admissions.manage");

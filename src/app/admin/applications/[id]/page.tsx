@@ -11,7 +11,9 @@ import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Alert, Badge, Card, Input, Label, Select, Textarea } from "@/components/ui";
 import type { CohortAvailability } from "@/lib/data";
-import { EDUCATION_LABEL, STATUS_LABEL, STATUS_TONE, VISA_LABEL, canWithdraw, type Status } from "@/lib/workflow";
+import { EDUCATION_LABEL, STATUS_LABEL, STATUS_TONE, VISA_LABEL, canWithdraw, isTrainee, type Status } from "@/lib/workflow";
+import { OutcomePanel } from "@/components/admin/OutcomePanel";
+import { todayInArizona } from "@/lib/schedule";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { audit } from "@/lib/audit";
 
@@ -73,8 +75,18 @@ export default async function AdminApplicationPage({ params }: { params: Promise
   const program = Array.isArray(app.programs) ? app.programs[0] : app.programs;
   const status = app.status as Status;
 
-  const [{ data: events }, { data: messages }, { data: prefs }, { data: enrollments }, { data: sigs }, { data: templates }, { data: emails }, { data: employerNotes }, cohortsRes] =
-    await Promise.all([
+  const [
+    { data: events },
+    { data: messages },
+    { data: prefs },
+    { data: enrollments },
+    { data: sigs },
+    { data: templates },
+    { data: emails },
+    { data: employerNotes },
+    cohortsRes,
+    { data: employers },
+  ] = await Promise.all([
       supabase.from("application_events").select("id, to_status, note, created_at, actor_id").eq("application_id", id).order("created_at"),
       supabase.from("messages").select("id, body, internal, created_at, sender_id").eq("application_id", id).order("created_at"),
       supabase.from("cohort_preferences").select("cohort_id, rank").eq("application_id", id).order("rank"),
@@ -84,6 +96,7 @@ export default async function AdminApplicationPage({ params }: { params: Promise
       supabase.from("email_log").select("id, template, subject, status, created_at").eq("application_id", id).order("created_at", { ascending: false }).limit(20),
       supabase.from("employer_notes").select("id, kind, body, created_at, employer_orgs(name)").eq("application_id", id).order("created_at", { ascending: false }),
       supabase.rpc("cohort_availability", { p_program: program!.id }),
+      isTrainee(status) ? supabase.from("employer_orgs").select("id, name").order("name") : Promise.resolve({ data: [] }),
     ]);
 
   // Resolve staff names for timeline/messages (staff can read profiles).
@@ -194,7 +207,7 @@ export default async function AdminApplicationPage({ params }: { params: Promise
             </Card>
           )}
 
-          {["agreements_pending", "agreements_submitted", "confirmed"].includes(status) && (
+          {(["agreements_pending", "agreements_submitted"].includes(status) || isTrainee(status)) && (
             <Card>
               <h2 className="font-black">Program agreements</h2>
               <ul className="mt-4 divide-y divide-ink/5">
@@ -272,6 +285,20 @@ export default async function AdminApplicationPage({ params }: { params: Promise
         </div>
 
         <div className="grid content-start gap-6">
+          {isTrainee(status) && (
+            <OutcomePanel
+              appId={app.id}
+              status={status}
+              outcome={app}
+              canManage={canManage}
+              employers={(employers ?? []) as Array<{ id: string; name: string }>}
+              defaultCompletionDate={
+                app.assigned_cohort_id && cohortById[app.assigned_cohort_id]?.end_date
+                  ? [cohortById[app.assigned_cohort_id].end_date, todayInArizona()].sort()[0]
+                  : todayInArizona()
+              }
+            />
+          )}
           {canManage && ops.length > 0 && (
             <Card className="border-maroon/30">
               <h2 className="font-black">Move through the workflow</h2>
