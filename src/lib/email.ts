@@ -24,6 +24,7 @@ export type EmailContext = {
   } | null;
   note?: string | null;
   messagePreview?: string | null;
+  statusLabel?: string | null;
 };
 
 type Rendered = { subject: string; heading: string; paragraphs: string[]; cta?: { label: string; href: string } };
@@ -175,6 +176,13 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           ...note,
         ],
         cta: { label: "Open my portal", href: portal(ctx.applicationId) },
+      };
+    case "status_update":
+      return {
+        subject: "Your application status was updated",
+        heading: ctx.statusLabel ? `Status: ${ctx.statusLabel}` : "Application update",
+        paragraphs: [hi, "There's an update on your application. Log in to your portal to see the details and any next steps.", ...note],
+        cta: { label: "View my application", href: portal(ctx.applicationId) },
       };
     case "new_message":
       return {

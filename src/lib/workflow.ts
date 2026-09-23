@@ -220,7 +220,8 @@ export type EmailTemplate =
   | "waitlist_promoted"
   | "agreements_submitted"
   | "confirmed"
-  | "new_message";
+  | "new_message"
+  | "status_update";
 
 export const EMAIL_FOR_STATUS: Partial<Record<Status, EmailTemplate>> = {
   submitted: "application_received",

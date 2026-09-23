@@ -3,10 +3,10 @@
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
 import { applicationSchema } from "@/lib/validation";
-import { notifyStatus } from "@/lib/notify";
+import { notifyStatus, notifyTemplate } from "@/lib/notify";
 import { fail, ok, type ActionState } from "@/lib/action-state";
 import { errorMessage } from "@/lib/utils";
 import { buildSignedAgreementPdf } from "@/lib/pdf";
@@ -158,8 +158,11 @@ export async function sendApplicantMessage(_prev: ActionState, formData: FormDat
 export async function withdrawApplication(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const appId = String(formData.get("application_id") || "");
   const supabase = await createClient();
-  const { error } = await supabase.rpc("applicant_withdraw", { p_app: appId, p_reason: "Withdrawn by applicant" });
+  const { data: promoted, error } = await supabase.rpc("applicant_withdraw", { p_app: appId, p_reason: "Withdrawn by applicant" });
   if (error) return fail(errorMessage(error));
+  // Applicants can't read other applications, so promotion emails go out with the service client (if configured).
+  const service = createServiceClient();
+  if (service) for (const id of (promoted as string[]) ?? []) await notifyTemplate(service, id, "waitlist_promoted");
   revalidatePath(`/portal/applications/${appId}`);
   return ok("Your application has been withdrawn.");
 }
