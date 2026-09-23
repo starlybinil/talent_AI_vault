@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<body style="margin:0;background:#f3f3f3;font-family:Arial,Helvetica,sans-serif;color:#191919">
+<span style="display:none;max-height:0;overflow:hidden;opacity:0">Confirm your new email address for Talent-Vault.</span>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;overflow:hidden">
+<tr><td style="background:#191919;padding:22px 28px">
+  <span style="color:#ffffff;font-weight:800;font-size:22px;letter-spacing:-0.5px">Talent<span style="color:#FFC627">-</span>Vault</span>
+  <span style="display:block;margin-top:4px;color:#FFC627;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase">Advanced Manufacturing Training Programs</span>
+</td></tr>
+<tr><td style="height:6px;background:#8C1D40;background-image:linear-gradient(90deg,#8C1D40,#FFC627)"></td></tr>
+<tr><td style="padding:34px 28px 8px">
+  <h1 style="margin:0 0 18px;font-size:26px;line-height:1.2;color:#191919">Confirm your new email address</h1>
+  <p style="margin:0 0 16px;line-height:1.6;font-size:15px;color:#191919">You asked to change the email address on your <strong>Talent-Vault</strong> account to <strong>{{ .NewEmail }}</strong>.</p><p style="margin:0 0 16px;line-height:1.6;font-size:15px;color:#191919">Confirm the change so we can keep sending your application updates to the right place.</p>
+  <p style="margin:28px 0"><a href="{{ .ConfirmationURL }}" style="background:#FFC627;color:#191919;padding:14px 26px;border-radius:999px;font-weight:700;font-size:15px;text-decoration:none;display:inline-block">Confirm new email &rarr;</a></p>
+  
+  <p style="margin:0 0 24px;line-height:1.5;font-size:12px;color:#8a8a8a">Button not working? Copy and paste this link into your browser:<br><a href="{{ .ConfirmationURL }}" style="color:#8C1D40;word-break:break-all">{{ .ConfirmationURL }}</a></p>
+</td></tr>
+<tr><td style="padding:20px 28px;background:#fafafa;color:#747474;font-size:12px;line-height:1.6">
+  You're receiving this email because <strong>{{ .Email }}</strong> was used on Talent-Vault. If this wasn't you, you can safely ignore it.<br>
+  Talent-Vault &middot; Phoenix, Arizona &middot; Programs offered in partnership with Arizona State University and TSMC Arizona
+</td></tr>
+</table></td></tr></table>
+</body>
+</html>

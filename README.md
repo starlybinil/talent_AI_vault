@@ -91,6 +91,17 @@ For a fresh project, run these in order in the SQL editor (or use `supabase db p
 - **Email confirmation** is on by default. Keep it on in production. For automated E2E runs, turn it off or confirm test users with SQL.
 - For production email volume, configure custom SMTP under Auth → SMTP. Resend works well here.
 
+**Branded authentication emails** (Dashboard → Authentication → Emails → Templates). Supabase sends these, not the app. Paste each file's HTML into the matching template and set the subject:
+
+| Template | File | Subject |
+|---|---|---|
+| Confirm signup | `supabase/templates/confirm-signup.html` | Confirm your email to finish joining Talent-Vault |
+| Magic link | `supabase/templates/magic-link.html` | Your Talent-Vault sign-in link |
+| Reset password | `supabase/templates/reset-password.html` | Reset your Talent-Vault password |
+| Change email address | `supabase/templates/change-email.html` | Confirm your new Talent-Vault email address |
+
+To change the sender from "Supabase Auth" to "Talent-Vault Admissions", and to remove the "powered by Supabase" footer, set up **custom SMTP** under Authentication → Emails → SMTP Settings. Resend works: host `smtp.resend.com`, port 465, user `resend`, password = your Resend API key, sender `admissions@<your verified domain>`, sender name `Talent-Vault Admissions`. Custom SMTP also lifts Supabase's low default sending limit.
+
 ### 2. Environment
 
 Copy `.env.example` to `.env.local` and fill it in:
