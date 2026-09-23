@@ -112,7 +112,7 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
             }
           >
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-            Submit choices &amp; continue to agreements
+            Submit Choices
           </Button>
         </div>
         {result?.error && <Alert tone="danger" className="mt-3">{result.error}</Alert>}
