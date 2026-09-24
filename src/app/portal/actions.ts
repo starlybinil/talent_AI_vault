@@ -2,6 +2,7 @@
 
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
@@ -238,4 +239,40 @@ export async function deleteAccount(_prev: ActionState, formData: FormData): Pro
 
   await supabase.auth.signOut();
   redirect("/account-deleted");
+}
+
+const practiceSchema = z.object({
+  activity: z.enum(["typing", "attention"]),
+  score: z.number().min(0).max(300),
+  accuracy: z.number().min(0).max(100),
+  durationSeconds: z.number().int().min(1).max(3600),
+  details: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).default({}),
+});
+
+/** Save a Practice Lab attempt to the applicant's private history. */
+export async function savePracticeAttempt(input: unknown): Promise<{ ok: boolean; best?: number; previousBest?: number | null }> {
+  const session = await getSession();
+  if (!session) return { ok: false };
+  const parsed = practiceSchema.safeParse(input);
+  if (!parsed.success) return { ok: false };
+  const v = parsed.data;
+  const supabase = await createClient();
+  const { data: prev } = await supabase
+    .from("practice_attempts")
+    .select("score")
+    .eq("activity", v.activity)
+    .order("score", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const { error } = await supabase.from("practice_attempts").insert({
+    activity: v.activity,
+    score: v.score,
+    accuracy: v.accuracy,
+    duration_seconds: v.durationSeconds,
+    details: v.details,
+  });
+  if (error) return { ok: false };
+  revalidatePath("/portal/practice");
+  const previousBest = prev ? Number(prev.score) : null;
+  return { ok: true, previousBest, best: Math.max(previousBest ?? 0, v.score) };
 }

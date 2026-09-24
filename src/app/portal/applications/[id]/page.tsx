@@ -12,6 +12,7 @@ import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { CohortDetails } from "@/components/program/CohortCard";
 import { OutcomeCard } from "@/components/portal/OutcomeCard";
 import { StepCompleteDialog } from "@/components/portal/StepCompleteDialog";
+import { PracticePromo } from "@/components/practice/PracticePromo";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Alert, Badge, ButtonLink, Card, Input, Label, Textarea } from "@/components/ui";
 import { changeCohort, sendApplicantMessage, signAgreement, withdrawApplication } from "@/app/portal/actions";
@@ -25,6 +26,7 @@ import {
   canWithdraw,
   canChangeCohort,
   isTrainee,
+  PRE_ASSESSMENT_STATUSES,
   type Status,
 } from "@/lib/workflow";
 import { cn, formatDate, formatDateTime } from "@/lib/utils";
@@ -170,6 +172,7 @@ export default async function ApplicationPage({
                   </ButtonLink>
                 )}
               </Card>
+              {PRE_ASSESSMENT_STATUSES.includes(status) && <PracticePromo compact />}
               {assigned && (
                 <Card>
                   <div className="flex items-center justify-between gap-2">
@@ -211,13 +214,23 @@ export default async function ApplicationPage({
                   </ButtonLink>
                 )}
                 <MarkExamComplete applicationId={app.id} done={!!app.exam_self_reported_at} />
+                <p className="text-sm text-ink/60">
+                  Want to warm up first?{" "}
+                  <Link href="/portal/practice" className="font-bold text-maroon hover:underline">
+                    Try the Practice Lab
+                  </Link>{" "}
+                  (typing speed and attention to detail).
+                </p>
               </div>
             ) : app.exam_result ? (
               <Alert tone={app.exam_result === "passed" ? "success" : "danger"} title={app.exam_result === "passed" ? "Passed" : "Not passed"} className="mt-4">
                 Result recorded {formatDateTime(app.exam_result_at)}.
               </Alert>
             ) : (
-              <p className="mt-4 text-ink/60">Your assessment link will appear here after you pass initial screening.</p>
+              <div className="mt-4 space-y-4">
+                <p className="text-ink/60">Your assessment link will appear here after you pass initial screening.</p>
+                {PRE_ASSESSMENT_STATUSES.includes(status) && <PracticePromo />}
+              </div>
             )}
           </Card>
         )}

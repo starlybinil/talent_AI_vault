@@ -4,7 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/session";
 import { StatusTracker } from "@/components/portal/StatusTracker";
 import { Badge, ButtonLink, Card, PageHeader } from "@/components/ui";
-import { STATUS_LABEL, STATUS_TONE, applicantNextAction, type Status } from "@/lib/workflow";
+import { PRE_ASSESSMENT_STATUSES, STATUS_LABEL, STATUS_TONE, applicantNextAction, type Status } from "@/lib/workflow";
+import { PracticePromo } from "@/components/practice/PracticePromo";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "My applications" };
@@ -87,6 +88,7 @@ export default async function PortalHome() {
               </Card>
             );
           })}
+          {(apps ?? []).some((a) => PRE_ASSESSMENT_STATUSES.includes(a.status as Status)) && <PracticePromo />}
           {available.length > 0 && (
             <p className="text-sm text-ink/60">
               Interested in more?{" "}

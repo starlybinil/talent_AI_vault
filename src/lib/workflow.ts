@@ -153,6 +153,9 @@ export function stageStates(status: Status): Array<"done" | "current" | "blocked
   });
 }
 
+/** Waiting for screening or the assessment: the best time to use the Practice Lab. */
+export const PRE_ASSESSMENT_STATUSES: readonly Status[] = ["submitted", "screening", "screening_passed", "exam_invited"];
+
 /** Statuses reached after the trainee finishes the program. */
 export const OUTCOME_STATUSES: readonly Status[] = ["completed", "hired"];
 
