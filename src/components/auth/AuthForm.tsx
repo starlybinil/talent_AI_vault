@@ -161,7 +161,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next: string }) {
       <p className="mt-8 text-center text-sm text-ink/60">
         {mode === "login" ? (
           <>
-            New to Talent-Vault?{" "}
+            New to FoundryReady?{" "}
             <Link href={`/register?next=${encodeURIComponent(next)}`} className="font-bold text-maroon hover:underline">
               Create an account
             </Link>

@@ -6,6 +6,7 @@ import { SITE_URL } from "@/lib/env";
 import type { EmailTemplate } from "@/lib/workflow";
 import { formatDate } from "@/lib/utils";
 import { buildIcs } from "@/lib/ics";
+import { BRAND } from "@/lib/brand";
 
 export type EmailContext = {
   applicationId: string | null;
@@ -58,7 +59,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         paragraphs: [
           hi,
           `Thanks for applying to the <strong>${esc(ctx.programName)}</strong>. Our admissions team will review your application and you'll hear from us at every step.`,
-          "You can track your status any time in your Talent-Vault portal.",
+          "You can track your status any time in your FoundryReady portal.",
         ],
         cta: { label: "Track my application", href: portal(ctx.applicationId) },
       };
@@ -208,7 +209,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           `Congratulations on joining <strong>${esc(ctx.outcome?.employer ?? "your new employer")}</strong>${
             ctx.outcome?.jobTitle ? ` as <strong>${esc(ctx.outcome.jobTitle)}</strong>` : ""
           }${ctx.outcome?.startDate ? `, starting ${formatDate(ctx.outcome.startDate)}` : ""}.`,
-          "Everyone at Talent-Vault is proud of you. Thank you for being part of the program, and best of luck in your new career.",
+          "Everyone at FoundryReady is proud of you. Thank you for being part of the program, and best of luck in your new career.",
         ],
         cta: { label: "View my record", href: portal(ctx.applicationId) },
       };
@@ -221,7 +222,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
       };
     case "new_message":
       return {
-        subject: "New message from Talent-Vault admissions",
+        subject: "New message from FoundryReady admissions",
         heading: "You have a new message",
         paragraphs: [hi, ctx.messagePreview ? `“${esc(ctx.messagePreview.slice(0, 280))}”` : "Admissions sent you a message."],
         cta: { label: "Read and reply", href: `${portal(ctx.applicationId)}?tab=messages` },
@@ -239,13 +240,13 @@ export function renderHtml(r: Rendered): string {
   return `<!doctype html><html><body style="margin:0;background:#f3f3f3;font-family:Arial,Helvetica,sans-serif;color:#191919">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:16px;overflow:hidden">
-<tr><td style="background:#191919;padding:20px 28px"><span style="color:#fff;font-weight:800;font-size:20px;letter-spacing:-0.5px">Talent<span style="color:#FFC627">·</span>Vault</span></td></tr>
+<tr><td style="background:#191919;padding:20px 28px"><span style="display:inline-block;background:#8C1D40;color:#FFC627;font-weight:900;font-size:14px;line-height:28px;width:28px;text-align:center;border-radius:7px;vertical-align:middle;margin-right:8px">FR</span><span style="color:#fff;font-weight:800;font-size:20px;letter-spacing:-0.5px;vertical-align:middle">Foundry<span style="color:#FFC627">Ready</span></span></td></tr>
 <tr><td style="height:6px;background:linear-gradient(90deg,#8C1D40,#FFC627)"></td></tr>
 <tr><td style="padding:32px 28px">
 <h1 style="margin:0 0 20px;font-size:26px;line-height:1.2">${esc(r.heading)}</h1>${body}${cta}
 </td></tr>
 <tr><td style="padding:20px 28px;background:#fafafa;color:#747474;font-size:12px;line-height:1.5">
-You're receiving this because you applied to a Talent-Vault training program.<br/>Talent-Vault · Phoenix, Arizona</td></tr>
+You're receiving this because you applied to a FoundryReady training program.<br/>FoundryReady · ${esc(BRAND.tagline)} · ${esc(BRAND.location)}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 
@@ -280,7 +281,7 @@ export async function sendEmail(
           ? [{ filename: "cohort.ics", content: Buffer.from(buildIcs(ctx.programName, ctx.cohort)).toString("base64") }]
           : undefined;
       const res = await resend.emails.send({
-        from: process.env.EMAIL_FROM || "Talent-Vault Admissions <admissions@talent-vault.org>",
+        from: process.env.EMAIL_FROM || BRAND.emailFrom,
         to: ctx.to,
         subject: rendered.subject,
         html,

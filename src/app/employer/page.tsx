@@ -45,7 +45,7 @@ export default async function EmployerHome() {
         }
       />
       {programs.length === 0 ? (
-        <EmptyState title="Your organization isn't linked to a program yet">Ask your Talent-Vault contact to add you as a program partner.</EmptyState>
+        <EmptyState title="Your organization isn't linked to a program yet">Ask your FoundryReady contact to add you as a program partner.</EmptyState>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">

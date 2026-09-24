@@ -18,12 +18,12 @@ export default function AccountDeletedPage() {
             </span>
             <h1 className="mt-5 text-3xl font-black tracking-tight text-ink">Your account has been deleted</h1>
             <p className="mt-3 text-ink/70">
-              We&apos;ve erased your Talent-Vault account, applications, messages and uploaded files. Thanks for your interest in our
+              We&apos;ve erased your FoundryReady account, applications, messages and uploaded files. Thanks for your interest in our
               programs. You&apos;re welcome back any time.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <ButtonLink href="/">
-                Back to Talent-Vault <ArrowRight className="h-4 w-4" aria-hidden />
+                Back to FoundryReady <ArrowRight className="h-4 w-4" aria-hidden />
               </ButtonLink>
               <ButtonLink href="/register" variant="outline">
                 Create a new account

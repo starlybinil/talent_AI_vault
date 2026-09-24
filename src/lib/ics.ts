@@ -13,9 +13,9 @@ export function buildIcs(
   return [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Talent-Vault//Training Programs//EN",
+    "PRODID:-//FoundryReady//Training Programs//EN",
     "BEGIN:VEVENT",
-    `UID:${start}-${Math.random().toString(36).slice(2)}@talent-vault.org`,
+    `UID:${start}-${Math.random().toString(36).slice(2)}@foundryready.org`,
     `DTSTAMP:${stamp}`,
     `DTSTART;VALUE=DATE:${start}`,
     `DTEND;VALUE=DATE:${end}`,

@@ -1,4 +1,4 @@
--- Talent-Vault Training Programs: seed data
+-- FoundryReady Training Programs: seed data
 -- Cohort dates, locations, capacities and agreement text are PLACEHOLDERS — confirm with ASU / TSMC Arizona before launch.
 
 insert into public.programs (
@@ -58,9 +58,9 @@ values (
   'advanced-manufacturing-foundations',
   'Advanced Manufacturing Foundations',
   'Advanced Manufacturing',
-  'Talent-Vault Partners',
+  'FoundryReady Partners',
   'Coming soon: core skills for modern advanced manufacturing.',
-  'A future Talent-Vault pathway covering automation, robotics and quality systems.',
+  'A future FoundryReady pathway covering automation, robotics and quality systems.',
   'TBA', 'TBA', 'TBA', 'High school diploma or GED.',
   false, 2
 );
@@ -97,7 +97,7 @@ from public.programs p,
 (values
   ('Participant Agreement', E'PLACEHOLDER — replace with the official agreement text.\n\nBy signing, I agree to attend all scheduled sessions of my registered cohort, complete required coursework and assessments, and follow the instructions of program staff.\n\nI understand the program is offered at no cost to me and that my seat may be released to another applicant if I do not meet attendance requirements.\n\nI understand that completing the program provides a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones, and that hiring decisions are made solely by the employer.', 1),
   ('Safety & Cleanroom Conduct Acknowledgement', E'PLACEHOLDER — replace with the official safety acknowledgement.\n\nI will follow all safety, gowning and cleanroom protocols, wear required personal protective equipment, and immediately report unsafe conditions.\n\nI understand that failure to follow safety rules may result in removal from lab activities or the program.', 2),
-  ('Information Release & Media Consent', E'PLACEHOLDER — replace with the official release.\n\nI authorize Talent-Vault and its program partners (Arizona State University and TSMC Arizona) to share my program status, attendance, assessment results and credentials with each other for the purposes of program administration and employment consideration.\n\nI understand I may revoke this consent in writing at any time.', 3)
+  ('Information Release & Media Consent', E'PLACEHOLDER — replace with the official release.\n\nI authorize FoundryReady and its program partners (Arizona State University and TSMC Arizona) to share my program status, attendance, assessment results and credentials with each other for the purposes of program administration and employment consideration.\n\nI understand I may revoke this consent in writing at any time.', 3)
 ) as t(title, body, sort)
 where p.slug = 'asu-tsmc';
 
@@ -109,9 +109,9 @@ insert into public.feature_flags (key, enabled, description) values
 
 insert into public.site_content (key, value) values
   ('announcement', '{"text": "Now accepting applications for Fall 2026 cohorts.", "href": "/programs/asu-tsmc"}'::jsonb),
-  ('home_hero', '{"eyebrow": "Advanced manufacturing careers", "title": "Unlock the career that builds the future.", "subtitle": "Talent-Vault connects ambitious people with no-cost, industry-built training programs and the employers who need them."}'::jsonb);
+  ('home_hero', '{"eyebrow": "FoundryReady · Advanced manufacturing careers", "title": "Trained today. Ready on day one.", "subtitle": "No-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry and built with the employers who are hiring."}'::jsonb);
 
 insert into public.system_settings (key, value) values
-  ('email_from', '"Talent-Vault Admissions <admissions@talent-vault.org>"'::jsonb),
-  ('support_email', '"support@talent-vault.org"'::jsonb),
+  ('email_from', '"FoundryReady Admissions <admissions@foundryready.org>"'::jsonb),
+  ('support_email', '"support@foundryready.org"'::jsonb),
   ('exam_reminder_days', '[3, 7]'::jsonb);

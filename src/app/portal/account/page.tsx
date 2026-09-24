@@ -63,7 +63,7 @@ export default async function AccountPage() {
           </span>
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-700">Danger zone</p>
-            <h2 className="mt-1 text-lg font-black text-ink">Delete my Talent-Vault account</h2>
+            <h2 className="mt-1 text-lg font-black text-ink">Delete my FoundryReady account</h2>
             <p className="mt-1 text-sm text-ink/70">
               Permanently erase your account and everything tied to it. This can&apos;t be undone.
             </p>

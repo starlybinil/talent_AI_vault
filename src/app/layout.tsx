@@ -5,13 +5,13 @@ import { SITE_URL } from "@/lib/env";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "Talent-Vault — Advanced Manufacturing Training Programs",
-    template: "%s · Talent-Vault",
+    default: "FoundryReady · Trained today. Ready on day one.",
+    template: "%s · FoundryReady",
   },
   description:
-    "No-cost, hands-on training for semiconductor and advanced manufacturing careers. Apply to the ASU-TSMC Foundations for Equipment Technician Program.",
+    "FoundryReady: no-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry. Apply to the ASU-TSMC Foundations for Equipment Technician Program.",
   openGraph: {
-    title: "Talent-Vault — ASU-TSMC Equipment Technician Program",
+    title: "FoundryReady — ASU-TSMC Equipment Technician Program",
     description: "$0 · 192+ hands-on hours · a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones.",
     type: "website",
   },

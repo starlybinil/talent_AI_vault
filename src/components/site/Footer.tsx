@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
+import { BRAND } from "@/lib/brand";
 
 export function SiteFooter() {
   return (
@@ -8,10 +9,8 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-12 px-4 py-16 sm:px-6 md:grid-cols-4 lg:px-8">
         <div className="md:col-span-2">
           <Logo dark />
-          <p className="mt-4 max-w-sm text-sm leading-relaxed text-white/60">
-            Talent-Vault connects ambitious people with no-cost, industry-built training for advanced manufacturing careers
-            — and with the employers who are hiring.
-          </p>
+          <p className="mt-4 text-lg font-black text-gold">{BRAND.tagline}</p>
+          <p className="mt-2 max-w-sm text-sm leading-relaxed text-white/60">{BRAND.mission}</p>
         </div>
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Programs</p>
@@ -31,7 +30,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-white/40 sm:flex-row sm:justify-between sm:px-6 lg:px-8">
-          <p>© {new Date().getFullYear()} Talent-Vault. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} FoundryReady. All rights reserved.</p>
           <p>Program offered in partnership with Arizona State University and TSMC Arizona.</p>
         </div>
       </div>

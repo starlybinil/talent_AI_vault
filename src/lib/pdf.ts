@@ -54,7 +54,7 @@ export async function buildSignedAgreementPdf(input: {
 }): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   doc.setTitle(`${input.title} - signed`);
-  doc.setAuthor("Talent-Vault");
+  doc.setAuthor("FoundryReady");
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const [W, H] = [612, 792];
@@ -65,7 +65,7 @@ export async function buildSignedAgreementPdf(input: {
   const header = () => {
     page.drawRectangle({ x: 0, y: H - 36, width: W, height: 36, color: INK });
     page.drawRectangle({ x: 0, y: H - 40, width: W, height: 4, color: GOLD });
-    page.drawText("Talent-Vault", { x: margin, y: H - 24, size: 13, font: bold, color: rgb(1, 1, 1) });
+    page.drawText("FoundryReady", { x: margin, y: H - 24, size: 13, font: bold, color: rgb(1, 1, 1) });
     page.drawText(clean(input.programName), { x: margin + 110, y: H - 24, size: 9, font, color: GOLD });
     y = H - 80;
   };

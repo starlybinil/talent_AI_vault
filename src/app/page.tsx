@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { ArrowRight, Briefcase, Layers, LineChart, ShieldCheck } from "lucide-react";
+import { ArrowRight, Briefcase, Factory, GraduationCap, Landmark, Layers, LineChart, ShieldCheck } from "lucide-react";
+import { LogoMark } from "@/components/brand/Logo";
+import { BRAND } from "@/lib/brand";
 import { SiteHeader } from "@/components/site/Header";
 import { SiteFooter } from "@/components/site/Footer";
 import { Announcement } from "@/components/site/Announcement";
@@ -25,13 +27,16 @@ export default async function Home() {
           <HeroVideo clips={[...HERO_CLIPS].reverse()} poster={IMAGES.fabExterior} />
           <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             <Reveal>
-              <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">{hero?.eyebrow ?? "Advanced manufacturing careers"}</p>
-              <h1 className="mt-5 max-w-4xl text-5xl font-black leading-[0.95] tracking-[-0.03em] sm:text-7xl lg:text-8xl">
-                {hero?.title ?? "Unlock the career that builds the future."}
+              <p className="flex items-center gap-3 text-xs font-bold uppercase tracking-[0.25em] text-gold">
+                <LogoMark className="h-7 w-7" />
+                {hero?.eyebrow ?? `${BRAND.name} · Advanced manufacturing careers`}
+              </p>
+              <h1 className="mt-5 max-w-5xl text-5xl font-black leading-[0.95] tracking-[-0.03em] sm:text-7xl lg:text-8xl">
+                <HeroTitle text={hero?.title ?? BRAND.tagline} />
               </h1>
               <p className="mt-6 max-w-2xl text-lg text-white/75 sm:text-xl">
                 {hero?.subtitle ??
-                  "Talent-Vault connects ambitious people with no-cost, industry-built training programs and the employers who need them."}
+                  "No-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry and built with the employers who are hiring."}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <ButtonLink href="/programs/asu-tsmc" size="lg">
@@ -78,15 +83,15 @@ export default async function Home() {
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-2xl">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">Why Talent-Vault</p>
-            <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">From application to offer — in one place.</h2>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">Why {BRAND.name}</p>
+            <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">From first class to first paycheck.</h2>
           </Reveal>
           <Stagger className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              [ShieldCheck, "No-cost training", "Programs funded by industry and university partners."],
-              [LineChart, "Live status tracking", "See exactly where your application stands, every step."],
-              [Layers, "Hands-on credentials", "Industry-recognized skills on real equipment."],
-              [Briefcase, "Employer pathways", "Direct connections to hiring partners like TSMC Arizona."],
+              [ShieldCheck, "No-cost training", "Funded by government and industry partners, so learners pay nothing."],
+              [Layers, "Hands-on credentials", "Industry-recognized, non-degree credentials earned on real equipment."],
+              [LineChart, "Live status tracking", "See exactly where your application stands, every step of the way."],
+              [Briefcase, "Employer pathways", "Built with hiring partners like TSMC Arizona, with interviews at the finish line."],
             ].map(([Icon, t, d]) => {
               const I = Icon as typeof ShieldCheck;
               return (
@@ -99,6 +104,56 @@ export default async function Home() {
                 </StaggerItem>
               );
             })}
+          </Stagger>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 bg-ink py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <Reveal className="max-w-3xl">
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">One foundry. Three partners.</p>
+            <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">
+              Where talent is <span className="text-gradient-gold">forged</span> for the jobs of tomorrow.
+            </h2>
+          </Reveal>
+          <Stagger className="mt-12 grid gap-4 lg:grid-cols-3">
+            {[
+              {
+                icon: GraduationCap,
+                who: "For learners",
+                title: "No degree. No cost. A real career.",
+                body: "Short, hands-on programs that take you from beginner to job-ready, with an employer interview waiting at the end.",
+                cta: { href: "#programs", label: "Find your program" },
+              },
+              {
+                icon: Factory,
+                who: "For employers",
+                title: "Hire people who are ready on day one.",
+                body: "Shape the curriculum, meet pre-screened graduates, and fill technician roles faster with talent trained on your equipment.",
+                cta: { href: `mailto:${BRAND.supportEmail}?subject=Employer%20partnership`, label: "Become a hiring partner" },
+              },
+              {
+                icon: Landmark,
+                who: "For funders",
+                title: "Every dollar tied to outcomes.",
+                body: "Government and industry funding backed by transparent enrollment, completion and placement data from application to hire.",
+                cta: { href: `mailto:${BRAND.supportEmail}?subject=Funding%20partnership`, label: "Partner with us" },
+              },
+            ].map((a) => (
+              <StaggerItem key={a.who}>
+                <div className="flex h-full flex-col rounded-3xl bg-gradient-to-br from-white/[0.07] to-white/[0.02] p-7 ring-1 ring-white/10">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gold text-ink">
+                    <a.icon className="h-6 w-6" aria-hidden />
+                  </span>
+                  <p className="mt-5 text-xs font-bold uppercase tracking-[0.2em] text-gold">{a.who}</p>
+                  <h3 className="mt-2 text-2xl font-black leading-tight">{a.title}</h3>
+                  <p className="mt-3 flex-1 text-white/65">{a.body}</p>
+                  <a href={a.cta.href} className="mt-6 inline-flex items-center gap-2 font-black text-gold hover:underline">
+                    {a.cta.label} <ArrowRight className="h-4 w-4" aria-hidden />
+                  </a>
+                </div>
+              </StaggerItem>
+            ))}
           </Stagger>
         </div>
       </section>
@@ -141,5 +196,18 @@ export default async function Home() {
 
       <SiteFooter />
     </div>
+  );
+}
+
+/** "Trained today. Ready on day one." → second sentence in gold, on its own line. */
+function HeroTitle({ text }: { text: string }) {
+  const parts = text.split(/(?<=[.!?])\s+/);
+  if (parts.length < 2) return <>{text}</>;
+  return (
+    <>
+      {parts[0]}
+      <br />
+      <span className="text-gradient-gold">{parts.slice(1).join(" ")}</span>
+    </>
   );
 }

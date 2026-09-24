@@ -13,7 +13,7 @@ export function DeleteAccountForm({ email, hasSeat }: { email: string; hasSeat: 
     <ActionForm
       action={deleteAccount}
       confirm={{
-        title: "Permanently delete your Talent-Vault account?",
+        title: "Permanently delete your FoundryReady account?",
         body: "This can't be undone. If you want to join a program later, you'll need to create a new account and apply again.",
         points: [
           ...(hasSeat ? ["Your cohort seat is released and offered to the next person on the waitlist."] : []),

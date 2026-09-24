@@ -1,6 +1,8 @@
-# Talent-Vault — Advanced Manufacturing Training Programs
+# FoundryReady (FR) — Advanced Manufacturing Training Programs
 
-Application and admissions platform for Talent-Vault training programs, starting with the
+> **Trained today. Ready on day one.**
+
+Application and admissions platform for FoundryReady training programs: no-cost, hands-on, non-degree training funded by government and industry, starting with the
 **ASU-TSMC Foundations for Equipment Technician Program** ($0 · 192+ hands-on hours · a guaranteed
 TSMC Arizona interview upon successful completion of ASU & TSMC program milestones).
 
@@ -54,7 +56,7 @@ Access is enforced twice: route guards (`src/middleware.ts` + `src/lib/rbac.ts`)
 
 ```
 src/app/
-  page.tsx                       Talent-Vault home
+  page.tsx                       FoundryReady home
   programs/[slug]/               Program landing (hero video, curriculum, formats, cohorts, FAQ)
   apply/[slug]/route.ts          Partner entry link → register/apply (keeps UTM)
   (auth)/login|register|…        Auth pages
@@ -102,12 +104,12 @@ For a fresh project, run these in order in the SQL editor (or use `supabase db p
 
 | Template | File | Subject |
 |---|---|---|
-| Confirm signup | `supabase/templates/confirm-signup.html` | Confirm your email to finish joining Talent-Vault |
-| Magic link | `supabase/templates/magic-link.html` | Your Talent-Vault sign-in link |
-| Reset password | `supabase/templates/reset-password.html` | Reset your Talent-Vault password |
-| Change email address | `supabase/templates/change-email.html` | Confirm your new Talent-Vault email address |
+| Confirm signup | `supabase/templates/confirm-signup.html` | Confirm your email to finish joining FoundryReady |
+| Magic link | `supabase/templates/magic-link.html` | Your FoundryReady sign-in link |
+| Reset password | `supabase/templates/reset-password.html` | Reset your FoundryReady password |
+| Change email address | `supabase/templates/change-email.html` | Confirm your new FoundryReady email address |
 
-To change the sender from "Supabase Auth" to "Talent-Vault Admissions", and to remove the "powered by Supabase" footer, set up **custom SMTP** under Authentication → Emails → SMTP Settings. Resend works: host `smtp.resend.com`, port 465, user `resend`, password = your Resend API key, sender `admissions@<your verified domain>`, sender name `Talent-Vault Admissions`. Custom SMTP also lifts Supabase's low default sending limit.
+To change the sender from "Supabase Auth" to "FoundryReady Admissions", and to remove the "powered by Supabase" footer, set up **custom SMTP** under Authentication → Emails → SMTP Settings. Resend works: host `smtp.resend.com`, port 465, user `resend`, password = your Resend API key, sender `admissions@<your verified domain>`, sender name `FoundryReady Admissions`. Custom SMTP also lifts Supabase's low default sending limit.
 
 ### 2. Environment
 
@@ -118,7 +120,7 @@ Copy `.env.example` to `.env.local` and fill it in:
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project URL and publishable key |
 | `SUPABASE_SERVICE_ROLE_KEY` | **Server only.** Used by the reminder cron, and to email waitlist promotions triggered by an applicant withdrawing |
 | `NEXT_PUBLIC_SITE_URL` | Public URL, used in email links |
-| `RESEND_API_KEY`, `EMAIL_FROM` | Transactional email. Without a key, emails are logged as `simulated` in **Admin → Email log** |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Transactional email. The default sender is `FoundryReady Admissions <admissions@foundryready.org>`: register `foundryready.org` and verify it in Resend, or set `EMAIL_FROM` to another verified address. Without a key, emails are logged as `simulated` in **Admin → Email log** |
 | `CRON_SECRET` | Protects `/api/cron/reminders` |
 | `NEXT_PUBLIC_HERO_CLIPS` | Optional comma-separated hero video URLs |
 
@@ -152,7 +154,7 @@ New visitors land on account creation and go straight into the application after
 
 ## Demo accounts
 
-These accounts exist in the Supabase project. **The password is not stored in the repo.** Your Claude session shared it with you; rotate it, or delete these users, before launch.
+These accounts exist in the Supabase project. They kept their original `@talent-vault.org` login emails after the FoundryReady rebrand. **The password is not stored in the repo.** Your Claude session shared it with you; rotate it, or delete these users, before launch.
 
 | Email | Role |
 |---|---|

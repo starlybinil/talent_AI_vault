@@ -107,7 +107,7 @@ export async function signAgreement(_prev: ActionState, formData: FormData): Pro
   const stamp = signedAt.getTime();
   const sigPath = `${session.userId}/signatures/${appId}-${templateId}-${stamp}.png`;
   const pdfPath = `${session.userId}/agreements/${appId}-${templateId}-${stamp}.pdf`;
-  const programName = (Array.isArray(app.programs) ? app.programs[0] : app.programs)?.name ?? "Talent-Vault program";
+  const programName = (Array.isArray(app.programs) ? app.programs[0] : app.programs)?.name ?? "FoundryReady program";
 
   const pdf = await buildSignedAgreementPdf({
     title: tpl.title,

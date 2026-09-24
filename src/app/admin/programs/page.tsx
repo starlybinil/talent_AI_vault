@@ -15,7 +15,7 @@ export default async function ProgramsPage() {
       <PageHeader
         eyebrow="Catalog"
         title="Programs"
-        description="Every Talent-Vault training program, its landing content, agreements and employer partners."
+        description="Every FoundryReady training program, its landing content, agreements and employer partners."
         actions={
           <ButtonLink href="/admin/programs/new" variant="dark">
             <Plus className="h-4 w-4" /> New program

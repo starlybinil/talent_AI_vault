@@ -43,7 +43,7 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
     applicationId: data.id,
     to: data.email,
     firstName: data.first_name,
-    programName: program?.short_name ?? "Talent-Vault program",
+    programName: program?.short_name ?? "FoundryReady program",
     examUrl: data.exam_url,
     cohort,
     outcome: {

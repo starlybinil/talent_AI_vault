@@ -9,7 +9,7 @@ export default async function Forbidden() {
       <div>
         <p className="text-7xl font-black text-gold">403</p>
         <h1 className="mt-4 text-3xl font-black">You don&apos;t have access to that page</h1>
-        <p className="mt-2 text-white/60">If you think this is a mistake, contact your Talent-Vault administrator.</p>
+        <p className="mt-2 text-white/60">If you think this is a mistake, contact your FoundryReady administrator.</p>
         <ButtonLink href={session ? homeFor(session.roles) : "/"} className="mt-8">
           Take me home
         </ButtonLink>
