@@ -30,7 +30,6 @@ export type AdminOp =
   | "assign_cohort"
   | "release_seat"
   | "confirm"
-  | "return_agreements"
   | "withdraw";
 
 async function defaultExamUrl(supabase: SupabaseClient, appId: string): Promise<string | null> {
@@ -115,10 +114,6 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
     case "confirm":
       error = await transition("confirmed");
       if (!error) await notifyStatus(supabase, appId, { note });
-      break;
-    case "return_agreements":
-      error = await transition("agreements_pending");
-      if (!error) await notifyTemplate(supabase, appId, "status_update", { note, statusLabel: STATUS_LABEL.agreements_pending });
       break;
     case "withdraw": {
       const { data, error: e } = await supabase.rpc("admin_withdraw", { p_app: appId, p_note: note });
