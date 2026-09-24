@@ -201,9 +201,14 @@ export default async function Home() {
                         ))}
                     </div>
                     {p.active ? (
-                      <ButtonLink href={`/programs/${p.slug}`} variant="dark" className="mt-6 self-start">
-                        Learn more <ArrowRight className="h-4 w-4" aria-hidden />
-                      </ButtonLink>
+                      <div className="mt-6 flex flex-wrap gap-2">
+                        <ButtonLink href={`/apply/${p.slug}`}>
+                          Apply to this program <ArrowRight className="h-4 w-4" aria-hidden />
+                        </ButtonLink>
+                        <ButtonLink href={`/programs/${p.slug}`} variant="outline">
+                          Learn more
+                        </ButtonLink>
+                      </div>
                     ) : (
                       <p className="mt-6 text-sm font-bold text-ink/40">Details announced soon</p>
                     )}
