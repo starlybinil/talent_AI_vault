@@ -93,9 +93,14 @@ test("applicant enrolls: ranks cohorts, then signs every agreement on the same p
     await page.mouse.move(box.x + 220, box.y + 80, { steps: 8 });
     await page.mouse.up();
     await form.getByRole("button", { name: "Sign document" }).click();
-    await expect(form.getByText(/Signed\.|All agreements signed/)).toBeVisible();
+    // Every signature but the last shows "Signed."; the last one completes enrollment.
+    await expect(page.getByText(/Signed\. \d+ left to sign|Step complete/).first()).toBeVisible();
+    if (await page.getByRole("alertdialog").count()) break;
     await page.reload();
   }
+  await expect(page.getByRole("alertdialog")).toContainText("Awaiting registration confirmation");
+  await page.getByRole("button", { name: "Got it" }).click();
+  await expect(page.getByText("Awaiting confirmation").first()).toBeVisible();
   await signOut(page);
 });
 

@@ -11,6 +11,7 @@ import { SignaturePad } from "@/components/portal/SignaturePad";
 import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { CohortDetails } from "@/components/program/CohortCard";
 import { OutcomeCard } from "@/components/portal/OutcomeCard";
+import { StepCompleteDialog } from "@/components/portal/StepCompleteDialog";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Alert, Badge, ButtonLink, Card, Input, Label, Textarea } from "@/components/ui";
 import { changeCohort, sendApplicantMessage, signAgreement, withdrawApplication } from "@/app/portal/actions";
@@ -43,7 +44,7 @@ export default async function ApplicationPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; submitted?: string; chosen?: string }>;
+  searchParams: Promise<{ tab?: string; submitted?: string; chosen?: string; done?: string }>;
 }) {
   const { id } = await params;
   const sp = await searchParams;
@@ -171,7 +172,10 @@ export default async function ApplicationPage({
               </Card>
               {assigned && (
                 <Card>
-                  <p className="text-xs font-bold uppercase tracking-widest text-maroon">Your cohort</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-maroon">Your cohort</p>
+                    <Badge tone={isTrainee(status) ? "success" : "progress"}>{isTrainee(status) ? "Confirmed" : "Awaiting confirmation"}</Badge>
+                  </div>
                   <p className="mt-2 text-lg font-black">{assigned.name}</p>
                   <div className="mt-3">
                     <CohortDetails c={assigned} />
@@ -220,7 +224,22 @@ export default async function ApplicationPage({
 
         {tab === "enrollment" && (
           <div className="grid gap-6">
-            {sp.chosen === "registered" && (
+            {sp.done === "1" && status === "agreements_submitted" && (
+              <StepCompleteDialog title="Awaiting registration confirmation" message="You will be notified soon of cohort admission." />
+            )}
+            {status === "agreements_submitted" && (
+              <div className="flex items-start gap-4 rounded-2xl border border-emerald-300 bg-emerald-50 p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-success text-white">
+                  <Check className="h-5 w-5" aria-hidden />
+                </span>
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-success">Step complete</p>
+                  <p className="mt-0.5 text-lg font-black text-ink">Awaiting registration confirmation</p>
+                  <p className="text-sm text-ink/70">You will be notified soon of cohort admission.</p>
+                </div>
+              </div>
+            )}
+            {sp.chosen === "registered" && status !== "agreements_submitted" && (
               <Alert tone="success" title="Your seat is reserved!">
                 Last step: sign your program agreements below. Once they&apos;re signed, admissions sends your final confirmation.
               </Alert>
@@ -250,12 +269,18 @@ export default async function ApplicationPage({
                       const e = (enrollments ?? []).find((x) => x.cohort_id === p.cohort_id);
                       if (!c) return null;
                       return (
-                        <li key={p.cohort_id} className={cn("rounded-2xl border p-5", e?.status === "registered" ? "border-emerald-400 bg-emerald-50" : "border-ink/10")}>
-                          <div className="flex items-center justify-between">
+                        <li
+                          key={p.cohort_id}
+                          className={cn(
+                            "rounded-2xl border p-5",
+                            e?.status === "registered" ? (isTrainee(status) ? "border-emerald-400 bg-emerald-50" : "border-gold bg-gold/10") : "border-ink/10",
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-2">
                             <span className="text-sm font-black text-maroon">Choice #{p.rank}</span>
-                            {e && (
-                              <Badge tone={e.status === "registered" ? "success" : e.status === "waitlisted" ? "warn" : "neutral"}>
-                                {e.status === "waitlisted" ? `Waitlist #${e.waitlist_position}` : e.status}
+                            {e && e.status !== "released" && (
+                              <Badge tone={e.status === "waitlisted" ? "warn" : isTrainee(status) ? "success" : "progress"}>
+                                {e.status === "waitlisted" ? `Waitlist #${e.waitlist_position}` : isTrainee(status) ? "Confirmed" : "Awaiting confirmation"}
                               </Badge>
                             )}
                           </div>
@@ -296,11 +321,6 @@ export default async function ApplicationPage({
                     <span className="inline-flex items-center gap-2">
                       <PartyPopper className="h-4 w-4" /> Admissions confirmed your enrollment on {formatDate(app.confirmed_at)}.
                     </span>
-                  </Alert>
-                )}
-                {status === "agreements_submitted" && (
-                  <Alert tone="success" title="All signed: awaiting final confirmation">
-                    Admissions will review your enrollment and send your final confirmation by email.
                   </Alert>
                 )}
                 {!chosen && (

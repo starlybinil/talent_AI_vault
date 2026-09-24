@@ -71,6 +71,9 @@ export async function submitCohortPreferences(appId: string, cohortIds: string[]
   revalidatePath("/portal");
   // Enrollment continues on the same page: the agreements are presented right away.
   const result = (data as { result: string }) ?? { result: "waitlisted" };
+  const { data: now } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
+  // Agreements already signed (e.g. carried over from an earlier cohort): the step is complete.
+  if (now?.status === "agreements_submitted") redirect(`/portal/applications/${appId}?tab=enrollment&done=1`);
   redirect(`/portal/applications/${appId}?tab=enrollment&chosen=${result.result === "registered" ? "registered" : "waitlisted"}#agreements`);
 }
 
@@ -137,9 +140,14 @@ export async function signAgreement(_prev: ActionState, formData: FormData): Pro
   await audit(supabase, "agreement.sign", "application", appId, { template: templateId, version: tpl.version });
 
   const remaining = (data as { remaining: number }).remaining;
-  if (remaining === 0) await notifyStatus(supabase, appId);
   revalidatePath(`/portal/applications/${appId}`);
-  return ok(remaining === 0 ? "All agreements signed! Admissions will verify and send your final confirmation." : `Signed. ${remaining} left to sign.`);
+  revalidatePath("/portal");
+  if (remaining > 0) return ok(`Signed. ${remaining} left to sign.`);
+  const { data: now } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
+  // Waitlisted applicants stay on the waitlist; they move to confirmation when a seat opens.
+  if (now?.status !== "agreements_submitted") return ok("All agreements signed! When a seat opens you'll go straight to final confirmation.");
+  await notifyStatus(supabase, appId);
+  redirect(`/portal/applications/${appId}?tab=enrollment&done=1`);
 }
 
 export async function sendApplicantMessage(_prev: ActionState, formData: FormData): Promise<ActionState> {

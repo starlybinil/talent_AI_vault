@@ -77,7 +77,7 @@ export const STATUS_LABEL: Record<Status, string> = {
   cohort_registered: "Cohort registered",
   waitlisted: "Waitlisted",
   agreements_pending: "Agreements to sign",
-  agreements_submitted: "Awaiting final confirmation",
+  agreements_submitted: "Awaiting confirmation",
   confirmed: "Confirmed",
   completed: "Program completed",
   hired: "Hired",
@@ -225,8 +225,8 @@ export function applicantNextAction(status: Status): { title: string; body: stri
       };
     case "agreements_submitted":
       return {
-        title: "Awaiting final confirmation",
-        body: "You're enrolled and your agreements are signed. Admissions will review everything and send your final confirmation by email.",
+        title: "Awaiting registration confirmation",
+        body: "Step complete: your cohort choices are in and your agreements are signed. You will be notified soon of cohort admission.",
       };
     case "confirmed":
       return {
