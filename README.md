@@ -135,6 +135,7 @@ npm run build
 
 1. Import the repo and add the env vars above.
 2. `vercel.json` schedules `/api/cron/reminders` daily at 16:00 UTC (9 AM Arizona). Vercel sends `CRON_SECRET` as a Bearer token.
+3. Every push to the production branch deploys automatically. If a push ever doesn't show up under **Deployments**, Vercel missed the GitHub notification: use **Create Deployment** with the branch or commit SHA. Don't use **Redeploy** on an older deployment, which rebuilds that older commit.
 
 ### 5. Connect ASU's "Get Started Today" button
 
