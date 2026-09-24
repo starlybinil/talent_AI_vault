@@ -389,6 +389,30 @@ function parseJson(formData: FormData, key: string): unknown {
   return JSON.parse(raw);
 }
 
+/** Free-text program columns edited in the program form. */
+const PROGRAM_TEXT_FIELDS = [
+  "academic_partner",
+  "employer_partner",
+  "industry",
+  "career_role",
+  "hero_headline",
+  "hero_highlight",
+  "why_headline",
+  "outcome_badge",
+  "outcome_title",
+  "outcome_detail",
+  "hero_poster",
+  "hero_video",
+] as const;
+
+function lines(formData: FormData, key: string): string[] {
+  return String(formData.get(key) || "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 30);
+}
+
 export async function saveProgram(_prev: ActionState, formData: FormData): Promise<ActionState> {
   let session;
   try {
@@ -415,11 +439,17 @@ export async function saveProgram(_prev: ActionState, formData: FormData): Promi
       formats: parseJson(formData, "formats"),
       faqs: parseJson(formData, "faqs"),
       stats: parseJson(formData, "stats"),
+      ...Object.fromEntries(PROGRAM_TEXT_FIELDS.map((k) => [k, String(formData.get(k) || "").trim() || null])),
+      audiences: lines(formData, "audiences"),
+      keywords: lines(formData, "keywords"),
     };
   } catch {
     return fail("One of the JSON fields (topics, formats, FAQs, stats) is not valid JSON.");
   }
   if (!content.name || !content.short_name) return fail("Name and short name are required.");
+  for (const k of ["hero_poster", "hero_video"] as const) {
+    if (content[k] && !/^https:\/\//.test(String(content[k]))) return fail("Hero image and video links must start with https://");
+  }
 
   if (isAdmin) {
     const fields = formData.getAll("employer_visible_fields").map(String);
@@ -427,6 +457,7 @@ export async function saveProgram(_prev: ActionState, formData: FormData): Promi
     content.employer_visible_fields = fields.filter((f) => valid.has(f));
     content.default_exam_url = String(formData.get("default_exam_url") || "").trim() || null;
     content.active = formData.get("active") === "on";
+    content.featured = formData.get("featured") === "on";
     if (content.default_exam_url && !/^https:\/\//.test(String(content.default_exam_url))) return fail("Exam link must start with https://");
   }
 

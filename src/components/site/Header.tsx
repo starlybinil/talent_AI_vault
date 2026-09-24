@@ -6,16 +6,25 @@ import { getSession } from "@/lib/session";
 import { homeFor } from "@/lib/rbac";
 import { cn } from "@/lib/utils";
 
-const links = [
-  { href: "/programs/asu-tsmc", label: "ASU-TSMC Program" },
-  { href: "/programs/asu-tsmc#curriculum", label: "Curriculum" },
-  { href: "/programs/asu-tsmc#cohorts", label: "Cohorts" },
-  { href: "/programs/asu-tsmc#faq", label: "FAQ" },
+const SITE_LINKS = [
+  { href: "/#programs", label: "Programs" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#partners", label: "Employers & funders" },
 ];
 
-export async function SiteHeader({ overlay = false }: { overlay?: boolean }) {
+/** Site navigation. On a program page, pass `program` to show that program's sections and apply link. */
+export async function SiteHeader({ overlay = false, program }: { overlay?: boolean; program?: { slug: string; short_name: string } }) {
   const session = await getSession();
   const dark = overlay;
+  const links = program
+    ? [
+        { href: "/#programs", label: "All programs" },
+        { href: `/programs/${program.slug}#curriculum`, label: "Curriculum" },
+        { href: `/programs/${program.slug}#cohorts`, label: "Cohorts" },
+        { href: `/programs/${program.slug}#faq`, label: "FAQ" },
+      ]
+    : SITE_LINKS;
+  const applyHref = program ? `/apply/${program.slug}` : "/#programs";
   return (
     <header
       className={cn(
@@ -49,7 +58,7 @@ export async function SiteHeader({ overlay = false }: { overlay?: boolean }) {
               Sign in
             </Link>
           )}
-          <ButtonLink href="/apply/asu-tsmc" size="sm">
+          <ButtonLink href={applyHref} size="sm">
             Apply now
           </ButtonLink>
         </div>
@@ -79,7 +88,7 @@ export async function SiteHeader({ overlay = false }: { overlay?: boolean }) {
                 Sign in
               </Link>
             )}
-            <ButtonLink href="/apply/asu-tsmc" className="mt-2 w-full">
+            <ButtonLink href={applyHref} className="mt-2 w-full">
               Apply now
             </ButtonLink>
           </div>

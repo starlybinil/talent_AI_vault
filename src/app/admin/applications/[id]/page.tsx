@@ -21,7 +21,7 @@ export const metadata = { title: "Application review" };
 
 type Op = { op: string; label: string; variant?: "gold" | "dark" | "outline" | "danger"; confirm?: string; needsUrl?: boolean; needsCohort?: boolean };
 
-function opsFor(status: Status, hasSeat: boolean): Op[] {
+function opsFor(status: Status, hasSeat: boolean, employer: string | null): Op[] {
   const ops: Op[] = [];
   switch (status) {
     case "submitted":
@@ -38,7 +38,7 @@ function opsFor(status: Status, hasSeat: boolean): Op[] {
       ops.push({ op: "send_invite", label: "Send assessment invite", needsUrl: true });
       break;
     case "exam_invited":
-      ops.push({ op: "exam_passed", label: "Record: passed (TSMC verified)" });
+      ops.push({ op: "exam_passed", label: `Record: passed (${employer ?? "partner"} verified)` });
       ops.push({ op: "exam_failed", label: "Record: not passed", variant: "outline", confirm: "Record a failing assessment result? The applicant will be emailed." });
       ops.push({ op: "send_reminder", label: "Send reminder email", variant: "dark" });
       break;
@@ -69,7 +69,7 @@ export default async function AdminApplicationPage({ params }: { params: Promise
   const canManage = can(session.roles, "admissions.manage");
   const supabase = await createClient();
 
-  const { data: app } = await supabase.from("applications").select("*, programs(id, name, short_name, default_exam_url)").eq("id", id).maybeSingle();
+  const { data: app } = await supabase.from("applications").select("*, programs(id, name, short_name, default_exam_url, employer_partner)").eq("id", id).maybeSingle();
   if (!app) notFound();
   const program = Array.isArray(app.programs) ? app.programs[0] : app.programs;
   const status = app.status as Status;
@@ -111,7 +111,7 @@ export default async function AdminApplicationPage({ params }: { params: Promise
   const cohorts = (cohortsRes.data ?? []) as CohortAvailability[];
   const cohortById = Object.fromEntries(cohorts.map((c) => [c.cohort_id, c]));
   const hasSeat = (enrollments ?? []).some((e) => e.status === "registered");
-  const ops = canManage ? opsFor(status, hasSeat) : [];
+  const ops = canManage ? opsFor(status, hasSeat, program?.employer_partner ?? null) : [];
   const sigByTpl = new Map((sigs ?? []).map((s) => [s.template_id, s]));
 
   await audit(supabase, "application.view", "application", id);

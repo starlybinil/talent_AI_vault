@@ -65,6 +65,29 @@ values (
   false, 2
 );
 
+-- Partner names and landing-page copy (columns from migration 0016).
+update public.programs set
+  academic_partner = 'Arizona State University',
+  employer_partner = 'TSMC Arizona',
+  industry = 'Semiconductor',
+  career_role = 'semiconductor equipment technician',
+  hero_headline = 'Build the chips that',
+  hero_highlight = 'build the future.',
+  why_headline = 'Arizona is building the world''s most advanced chips. You can keep the fab running.',
+  outcome_badge = 'TSMC',
+  outcome_title = 'A guaranteed TSMC Arizona interview',
+  outcome_detail = 'Upon successful completion of ASU & TSMC program milestones.',
+  audiences = '["Recent high school graduates","Community college students","Career changers and working adults","Veterans and anyone curious about semiconductors"]'::jsonb,
+  keywords = '["Electronics","Sensors","Pneumatics","Vacuum systems","Cleanroom safety","Multimeters","Oscilloscopes","Fab equipment"]'::jsonb,
+  featured = true
+where slug = 'asu-tsmc';
+
+update public.programs set
+  industry = 'Advanced manufacturing',
+  career_role = 'advanced manufacturing technician',
+  keywords = '["Automation","Robotics","Quality systems","PLCs","Metrology"]'::jsonb
+where slug = 'advanced-manufacturing-foundations';
+
 insert into public.employer_orgs (name, domain) values ('TSMC Arizona', 'tsmc.com');
 
 insert into public.program_partners (program_id, employer_org_id)

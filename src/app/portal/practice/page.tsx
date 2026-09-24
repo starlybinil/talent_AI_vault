@@ -149,7 +149,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
               <Lock className="h-4 w-4" aria-hidden /> Private practice
             </p>
             <p className="mt-1">
-              Practice results are only visible to you. They aren&apos;t shared with admissions, employers or TSMC Arizona, and they don&apos;t
+              Practice results are only visible to you. They aren&apos;t shared with admissions or employers, and they don&apos;t
               affect your application. This isn&apos;t the official TestGorilla assessment.
             </p>
           </div>

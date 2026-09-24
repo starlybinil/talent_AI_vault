@@ -55,7 +55,7 @@ export default async function ApplicationPage({
 
   const { data: app } = await supabase
     .from("applications")
-    .select("*, programs(id, slug, name, short_name)")
+    .select("*, programs(id, slug, name, short_name, employer_partner)")
     .eq("id", id)
     .eq("user_id", session.userId)
     .maybeSingle();
@@ -206,7 +206,7 @@ export default async function ApplicationPage({
               <div className="mt-4 space-y-5">
                 <p className="text-ink/70">
                   Invitation sent {formatDateTime(app.exam_invited_at)}. Complete the assessment in one sitting in a quiet place. Results are
-                  reviewed by TSMC Arizona and posted here by admissions.
+                  reviewed by {program?.employer_partner ?? "the program\u2019s employer partner"} and posted here by admissions.
                 </p>
                 {app.exam_url && (
                   <ButtonLink href={app.exam_url} target="_blank" rel="noopener noreferrer" size="lg">

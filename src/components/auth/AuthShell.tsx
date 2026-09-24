@@ -1,5 +1,6 @@
 import { Logo } from "@/components/brand/Logo";
 import { IMAGES } from "@/lib/media";
+import { BRAND } from "@/lib/brand";
 
 export function AuthShell({ children, title, subtitle }: { children: React.ReactNode; title: string; subtitle?: React.ReactNode }) {
   return (
@@ -11,11 +12,11 @@ export function AuthShell({ children, title, subtitle }: { children: React.React
         <div className="relative flex h-full flex-col justify-between p-12">
           <Logo dark />
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">ASU × TSMC Arizona</p>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">{BRAND.tagline}</p>
             <p className="mt-4 max-w-md text-4xl font-black leading-[1.05] tracking-tight text-white">
-              Your fab career <span className="whitespace-nowrap">starts <span className="accent-gold">here.</span></span>
+              Your manufacturing career <span className="whitespace-nowrap">starts <span className="accent-gold">here.</span></span>
             </p>
-            <p className="mt-4 max-w-md text-white/70">$0 tuition · 192+ hands-on hours · a guaranteed TSMC Arizona interview upon successful completion of ASU &amp; TSMC program milestones.</p>
+            <p className="mt-4 max-w-md text-white/70">No-cost, hands-on training built by universities and the employers who are hiring. One account for every program.</p>
           </div>
         </div>
       </aside>

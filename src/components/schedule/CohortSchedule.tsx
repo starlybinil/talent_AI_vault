@@ -955,7 +955,7 @@ function DetailPanel({
                   : `${c.confirmed} confirmed trainee${c.confirmed === 1 ? "" : "s"} graduate ${shortDate(c.end_date)}`}
               </p>
               <p className="mt-1 text-sm text-white/70">
-                Graduates earn a guaranteed TSMC Arizona interview upon successful completion of ASU &amp; TSMC program milestones.
+                Graduates are interview-ready upon successful completion of the program&apos;s milestones.
               </p>
             </section>
           )}

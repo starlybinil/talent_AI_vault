@@ -26,6 +26,22 @@ export type Program = {
   default_exam_url: string | null;
   employer_visible_fields: string[];
   active: boolean;
+  sort?: number;
+  hero_video?: string | null;
+  hero_poster?: string | null;
+  academic_partner?: string | null;
+  employer_partner?: string | null;
+  industry?: string | null;
+  career_role?: string | null;
+  hero_headline?: string | null;
+  hero_highlight?: string | null;
+  why_headline?: string | null;
+  outcome_badge?: string | null;
+  outcome_title?: string | null;
+  outcome_detail?: string | null;
+  audiences?: string[];
+  keywords?: string[];
+  featured?: boolean;
 };
 
 export type CohortAvailability = {

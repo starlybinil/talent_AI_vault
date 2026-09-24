@@ -11,7 +11,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ slug: st
   const { slug } = await params;
   const session = await requireSession(`/portal/apply/${slug}`);
   const supabase = await createClient();
-  const { data: program } = await supabase.from("programs").select("id, slug, name, active").eq("slug", slug).maybeSingle();
+  const { data: program } = await supabase.from("programs").select("id, slug, name, active, employer_partner").eq("slug", slug).maybeSingle();
   if (!program) notFound();
 
   const { data: existing } = await supabase
@@ -35,6 +35,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ slug: st
       <ApplicationForm
         programSlug={program.slug}
         programName={program.name}
+        employerPartner={program.employer_partner}
         userId={session.userId}
         email={session.email}
         defaults={{ first_name: first ?? "", last_name: rest.join(" "), phone: profile?.phone ?? "" }}

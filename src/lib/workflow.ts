@@ -207,7 +207,7 @@ export function applicantNextAction(status: Status): { title: string; body: stri
     case "exam_invited":
       return {
         title: "Complete your assessment",
-        body: "Open your TestGorilla assessment and complete it. When you're done, let us know so we can follow up with TSMC Arizona.",
+        body: "Open your TestGorilla assessment and complete it. When you're done, let us know so we can follow up on your result.",
         tab: "exam",
       };
     case "exam_passed":

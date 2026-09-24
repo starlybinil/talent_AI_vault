@@ -14,6 +14,14 @@ import { ButtonLink } from "@/components/ui";
 import { getCohortAvailability, getFlags, getProgram } from "@/lib/data";
 import { HERO_CLIPS, IMAGES } from "@/lib/media";
 import { STAGES } from "@/lib/workflow";
+import { programCopy } from "@/lib/program";
+
+const COUNT_WORDS = ["", "One", "Two", "Three", "Four", "Five", "Six"];
+
+/** The leading figure of a label like "$0 to participants" or "192+ hours". */
+function lead(label: string | null | undefined) {
+  return label?.trim().split(/\s+/)[0] || null;
+}
 
 export const revalidate = 60;
 
@@ -21,7 +29,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params;
   const program = await getProgram(slug);
   if (!program) return {};
-  return { title: program.short_name, description: program.summary ?? undefined };
+  return { title: program.short_name, description: program.summary ?? programCopy(program).pitch };
 }
 
 export default async function ProgramPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -32,32 +40,41 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
   const open = cohorts.filter((c) => c.status === "open");
   const applyHref = `/apply/${program.slug}`;
   const accepting = program.active && flags.applications_open !== false;
+  const copy = programCopy(program);
+  const heroClips = program.hero_video ? [program.hero_video] : HERO_CLIPS;
+  const heroPoster = program.hero_poster || IMAGES.wafer;
+  const heroStats = [
+    lead(program.cost_label) && [lead(program.cost_label), "Tuition"],
+    lead(program.hours_label) && [lead(program.hours_label), "Hands-on hours"],
+    copy.outcomeBadge ? [copy.outcomeBadge, "Hiring partner*"] : program.duration_label && [program.duration_label, "Duration"],
+  ].filter(Boolean) as string[][];
+  const marquee = copy.keywords.length ? copy.keywords : program.topics.map((t) => t.title);
+  const tools = copy.keywords.slice(0, 4).join(", ");
 
   return (
     <div className="bg-ink-950 text-white">
       <Announcement />
       <div className="relative">
-        <SiteHeader overlay />
+        <SiteHeader overlay program={program} />
 
         {/* HERO */}
         <section className="relative flex min-h-[100svh] items-end overflow-hidden pb-16 pt-32 sm:items-center sm:pb-24">
-          <HeroVideo clips={HERO_CLIPS} poster={IMAGES.wafer} />
+          <HeroVideo clips={heroClips} poster={heroPoster} />
           <div className="grain absolute inset-0" aria-hidden />
           <div className="relative mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
             <Reveal>
               <p className="inline-flex items-center gap-2 rounded-full border border-gold/40 bg-ink-950/50 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.22em] text-gold backdrop-blur">
-                <Sparkles className="h-3.5 w-3.5" aria-hidden /> {program.partner_name}
+                <Sparkles className="h-3.5 w-3.5" aria-hidden /> {copy.partners ?? program.short_name}
               </p>
             </Reveal>
             <Reveal delay={0.08}>
               <h1 className="mt-6 max-w-4xl text-[2.7rem] font-black leading-[0.95] tracking-[-0.03em] sm:text-7xl lg:text-8xl">
-                Build the chips that <span className="highlight-gold-solid">build the future.</span>
+                {copy.heroHeadline} <span className="highlight-gold-solid">{copy.heroHighlight}</span>
               </h1>
             </Reveal>
             <Reveal delay={0.16}>
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-white/80 sm:text-xl">
-                The <strong className="text-white">{program.name}</strong> trains you for semiconductor equipment technician
-                roles in weeks — not years. Hands-on. No cost. Built with TSMC Arizona.
+                The <strong className="text-white">{program.name}</strong> {copy.pitch.charAt(0).toLowerCase() + copy.pitch.slice(1)}
               </p>
             </Reveal>
             <Reveal delay={0.24}>
@@ -76,21 +93,23 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
               </div>
             </Reveal>
             <Reveal delay={0.32}>
-              <dl className="mt-12 grid max-w-3xl grid-cols-3 gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md">
-                {[
-                  ["$0", "Tuition"],
-                  ["192+", "Hands-on hours"],
-                  ["TSMC", "Interview guaranteed*"],
-                ].map(([v, l]) => (
+              <dl
+                className="mt-12 grid max-w-3xl gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/10 backdrop-blur-md"
+                style={{ gridTemplateColumns: `repeat(${Math.max(heroStats.length, 1)}, minmax(0, 1fr))` }}
+              >
+                {heroStats.map(([v, l]) => (
                   <div key={l} className="bg-ink-950/60 px-4 py-4 sm:px-6">
                     <dt className="text-[11px] font-bold uppercase tracking-widest text-white/60 sm:text-xs">{l}</dt>
                     <dd className="mt-1 text-2xl font-black text-gold sm:text-4xl">{v}</dd>
                   </div>
                 ))}
               </dl>
-              <p className="mt-3 text-xs text-white/50">
-                *Guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones.
-              </p>
+              {copy.outcomeBadge && (
+                <p className="mt-3 text-xs text-white/50">
+                  *{copy.outcomeTitle}
+                  {copy.outcomeDetail ? ` ${copy.outcomeDetail.charAt(0).toLowerCase()}${copy.outcomeDetail.slice(1)}` : "."}
+                </p>
+              )}
             </Reveal>
           </div>
           <a
@@ -103,7 +122,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         </section>
       </div>
 
-      <Marquee items={["Electronics", "Sensors", "Pneumatics", "Vacuum systems", "Cleanroom safety", "Multimeters", "Oscilloscopes", "Fab equipment"]} />
+      {marquee.length > 0 && <Marquee items={marquee} />}
 
       {/* STATS */}
       <section id="stats" className="relative bg-ink-950 py-20 sm:py-28">
@@ -113,7 +132,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
             <Reveal>
               <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">Why this program</p>
               <h2 className="mt-4 text-4xl font-black leading-[1.02] tracking-tight sm:text-6xl">
-                Arizona is building the world&apos;s most advanced chips. <span className="text-gradient-gold animate-shine">You can keep the fab running.</span>
+                <SplitAccent text={copy.whyHeadline} />
               </h2>
               <p className="mt-6 text-lg text-white/70">{program.summary}</p>
             </Reveal>
@@ -153,9 +172,9 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
             </h2>
             <ul className="mt-8 space-y-5">
               {[
-                [BadgeCheck, "Industry-recognized credentials", "Recognized across the semiconductor sector — not just at one company."],
-                [Handshake, "A guaranteed TSMC Arizona interview", "Upon successful completion of ASU & TSMC program milestones."],
-                [GraduationCap, "Real tools, real labs", "Multimeters, oscilloscopes, vacuum and pneumatic systems — hands-on from day one."],
+                [BadgeCheck, "Industry-recognized credentials", `Recognized across the ${copy.industry.toLowerCase()} sector — not just at one company.`],
+                [Handshake, copy.outcomeTitle, copy.outcomeDetail ?? "Meet the employers who are hiring as you finish the program."],
+                [GraduationCap, "Real tools, real labs", `${tools || "Industry-standard equipment"} — hands-on from day one.`],
               ].map(([Icon, title, body]) => {
                 const I = Icon as typeof BadgeCheck;
                 return (
@@ -175,7 +194,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
 
-      {/* CURRICULUM */}
+      {program.topics.length > 0 && (
       <section id="curriculum" className="scroll-mt-20 bg-mist py-20 text-ink sm:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-3xl">
@@ -183,7 +202,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
             <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">
               {program.hours_label} across <span className="highlight-gold">{program.topics.length} topic areas.</span>
             </h2>
-            <p className="mt-4 text-lg text-ink/60">Directly aligned to what semiconductor equipment technicians do every day.</p>
+            <p className="mt-4 text-lg text-ink/60">Directly aligned to what a {copy.role} does every day.</p>
           </Reveal>
           <Stagger className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {program.topics.map((t, i) => (
@@ -203,13 +222,16 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
           </Stagger>
         </div>
       </section>
+      )}
 
-      {/* FORMATS */}
+      {program.formats.length > 0 && (
       <section className="relative overflow-hidden bg-maroon py-20 sm:py-28">
         <div className="absolute -right-40 -top-40 h-[32rem] w-[32rem] rounded-full bg-gold/20 blur-3xl" aria-hidden />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-3xl">
-            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">Three ways to train</p>
+            <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">
+              {program.formats.length === 1 ? "One way to train" : `${COUNT_WORDS[program.formats.length] ?? program.formats.length} ways to train`}
+            </p>
             <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">A format that fits your life.</h2>
           </Reveal>
           <Stagger className="mt-12 grid gap-5 md:grid-cols-3">
@@ -227,6 +249,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
           </Stagger>
         </div>
       </section>
+      )}
 
       {/* HOW ADMISSIONS WORKS */}
       <section className="bg-ink-950 py-20 sm:py-28">
@@ -260,7 +283,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
                 Seats are <span className="highlight-gold">limited.</span>
               </h2>
               <p className="mt-4 text-lg text-ink/60">
-                Training locations are spread across the Phoenix metro. After you pass the assessment you&apos;ll rank your top 3.
+                Each cohort lists its training location and schedule. After you pass the assessment you&apos;ll rank your top 3.
               </p>
             </div>
             {accepting && (
@@ -304,12 +327,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
             <p className="text-xs font-bold uppercase tracking-[0.25em] text-gold">Who should apply</p>
             <h2 className="mt-4 text-4xl font-black tracking-tight sm:text-5xl">No experience required. Just drive.</h2>
             <ul className="mt-8 space-y-4 text-lg">
-              {[
-                "Recent high school graduates",
-                "Community college students",
-                "Career changers and working adults",
-                "Veterans and anyone curious about semiconductors",
-              ].map((x) => (
+              {copy.audiences.map((x) => (
                 <li key={x} className="flex items-center gap-3">
                   <CheckCircle2 className="h-6 w-6 shrink-0 text-gold" aria-hidden /> {x}
                 </li>
@@ -322,7 +340,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         </div>
       </section>
 
-      {/* FAQ */}
+      {program.faqs.length > 0 && (
       <section id="faq" className="scroll-mt-20 bg-mist py-20 text-ink sm:py-28">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <Reveal>
@@ -342,6 +360,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       </section>
+      )}
 
       {/* FINAL CTA */}
       <section className="relative overflow-hidden py-24 sm:py-32">
@@ -351,7 +370,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <Reveal>
             <h2 className="text-4xl font-black leading-[1] tracking-tight sm:text-7xl">
-              Your seat in the fab is <span className="highlight-gold-solid">waiting.</span>
+              Your seat is <span className="highlight-gold-solid">waiting.</span>
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-lg text-white/80">
               The application takes about 5 minutes. Have your resume ready.
@@ -376,5 +395,16 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
         </div>
       )}
     </div>
+  );
+}
+
+/** Splits "First sentence. Second sentence." and puts the second in gold. */
+function SplitAccent({ text }: { text: string }) {
+  const m = text.match(/^(.+?[.!?])\s+(.+)$/);
+  if (!m) return <>{text}</>;
+  return (
+    <>
+      {m[1]} <span className="text-gradient-gold animate-shine">{m[2]}</span>
+    </>
   );
 }

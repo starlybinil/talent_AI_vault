@@ -9,10 +9,10 @@ export const metadata: Metadata = {
     template: "%s · FoundryReady",
   },
   description:
-    "FoundryReady: no-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry. Apply to the ASU-TSMC Foundations for Equipment Technician Program.",
+    "FoundryReady: no-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry and built with university and employer partners.",
   openGraph: {
-    title: "FoundryReady — ASU-TSMC Equipment Technician Program",
-    description: "$0 · 192+ hands-on hours · a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones.",
+    title: "FoundryReady · Trained today. Ready on day one.",
+    description: "No-cost, hands-on training programs for advanced manufacturing careers, built with universities and the employers who are hiring.",
     type: "website",
   },
 };

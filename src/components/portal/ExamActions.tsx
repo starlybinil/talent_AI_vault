@@ -12,7 +12,7 @@ export function MarkExamComplete({ applicationId, done }: { applicationId: strin
   if (done || res?.ok)
     return (
       <Alert tone="success" title="Marked as complete">
-        {res?.message ?? "Thanks! Admissions will update your result once TSMC Arizona shares it."}
+        {res?.message ?? "Thanks! Admissions will update your result as soon as it has been reviewed."}
       </Alert>
     );
   return (

@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/Logo";
 import { BRAND } from "@/lib/brand";
+import { listPrograms } from "@/lib/data";
 
-export function SiteFooter() {
+export async function SiteFooter() {
+  const programs = (await listPrograms()).filter((p) => p.active);
   return (
     <footer className="relative overflow-hidden bg-ink-950 text-white">
       <div className="h-1.5 bg-gradient-to-r from-maroon via-gold to-maroon" />
@@ -15,7 +17,13 @@ export function SiteFooter() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Programs</p>
           <ul className="mt-4 space-y-2 text-sm text-white/70">
-            <li><Link className="hover:text-white" href="/programs/asu-tsmc">ASU-TSMC Equipment Technician</Link></li>
+            {programs.map((p) => (
+              <li key={p.id}>
+                <Link className="hover:text-white" href={`/programs/${p.slug}`}>
+                  {p.short_name}
+                </Link>
+              </li>
+            ))}
             <li><Link className="hover:text-white" href="/#programs">All programs</Link></li>
           </ul>
         </div>
@@ -31,7 +39,7 @@ export function SiteFooter() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-6 text-xs text-white/40 sm:flex-row sm:justify-between sm:px-6 lg:px-8">
           <p>© {new Date().getFullYear()} FoundryReady. All rights reserved.</p>
-          <p>Program offered in partnership with Arizona State University and TSMC Arizona.</p>
+          <p>Each program is offered with the university and employer partners named on its page.</p>
         </div>
       </div>
     </footer>

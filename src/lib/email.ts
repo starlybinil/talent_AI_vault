@@ -13,6 +13,8 @@ export type EmailContext = {
   to: string;
   firstName: string;
   programName: string;
+  /** The program's hiring partner, e.g. "TSMC Arizona". */
+  employerPartner?: string | null;
   examUrl?: string | null;
   cohort?: {
     name: string;
@@ -101,7 +103,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         heading: "Assessment passed — next steps",
         paragraphs: [
           hi,
-          "TSMC Arizona has confirmed a successful assessment result. 🎉",
+          `${ctx.employerPartner ? esc(ctx.employerPartner) : "Our employer partner"} has confirmed a successful assessment result. 🎉`,
           "Next, log in to <strong>enroll</strong>: choose your top 3 cohorts (you can see dates, times, locations and seats left), then sign your program agreements on the same page. We'll register you in the highest-ranked cohort with an open seat.",
           ...note,
         ],

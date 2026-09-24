@@ -152,6 +152,24 @@ New visitors land on account creation and go straight into the application after
 
 ---
 
+## Adding a program (e.g. ASU-Amkor, ASU-Intel)
+
+Every partnership is its own row in `programs`, with its own landing page at `/programs/<slug>`, apply link at
+`/apply/<slug>`, cohorts, agreements, assessment link and employer-visibility policy. No code changes are needed:
+
+1. **Admin → Programs → New program.** Set the slug (e.g. `asu-amkor`), names, the **academic partner** and
+   **employer partner**, industry and career role. Leave landing-page copy blank to get generic wording built from
+   those names, or fill in the hero headline, outcome line (e.g. "A guaranteed Amkor interview"), who-should-apply
+   list and skills keywords.
+2. Add topics, formats, FAQs and stats under **Advanced content (JSON)**, using the ASU-TSMC program as a template.
+3. Add agreement templates and cohorts for the program, and link the employer org under partner employers.
+4. Tick **Accepting applications** to list it, and **Feature on the home page** to make it the featured program.
+   Unticked programs still appear in the catalog as "Coming soon".
+5. Give the partner their entry link: `https://<site>/apply/<slug>?utm_source=<partner>`.
+
+Emails, the application form (visa and consent questions) and the applicant portal name the program's own employer
+partner automatically.
+
 ## Demo accounts
 
 These accounts exist in the Supabase project. They kept their original `@talent-vault.org` login emails after the FoundryReady rebrand. **The password is not stored in the repo.** Your Claude session shared it with you; rotate it, or delete these users, before launch.

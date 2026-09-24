@@ -4,6 +4,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, type EmailContext } from "@/lib/email";
 import { EMAIL_FOR_STATUS, type EmailTemplate, type Status } from "@/lib/workflow";
 
+type Prog = { short_name: string; employer_partner: string | null };
+
 type AppRow = {
   id: string;
   email: string;
@@ -16,7 +18,7 @@ type AppRow = {
   hired_employer_name: string | null;
   hired_job_title: string | null;
   hired_start_date: string | null;
-  programs: { short_name: string } | { short_name: string }[] | null;
+  programs: Prog | Prog[] | null;
 };
 
 /** Load what the email templates need for one application (as the current user). */
@@ -24,7 +26,7 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
   const { data } = await supabase
     .from("applications")
     .select(
-      "id, email, first_name, status, exam_url, assigned_cohort_id, completed_on, completion_note, hired_employer_name, hired_job_title, hired_start_date, programs(short_name)",
+      "id, email, first_name, status, exam_url, assigned_cohort_id, completed_on, completion_note, hired_employer_name, hired_job_title, hired_start_date, programs(short_name, employer_partner)",
     )
     .eq("id", applicationId)
     .maybeSingle<AppRow>();
@@ -44,6 +46,7 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
     to: data.email,
     firstName: data.first_name,
     programName: program?.short_name ?? "FoundryReady program",
+    employerPartner: program?.employer_partner ?? null,
     examUrl: data.exam_url,
     cohort,
     outcome: {

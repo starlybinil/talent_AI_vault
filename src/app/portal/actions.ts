@@ -59,7 +59,7 @@ export async function markExamComplete(appId: string): Promise<ActionState> {
   const { error } = await supabase.rpc("applicant_mark_exam_completed", { p_app: appId });
   if (error) return fail(errorMessage(error));
   revalidatePath(`/portal/applications/${appId}`);
-  return ok("Thanks! We'll let you know as soon as TSMC Arizona shares your result.");
+  return ok("Thanks! We'll let you know as soon as your result has been reviewed.");
 }
 
 export async function submitCohortPreferences(appId: string, cohortIds: string[]): Promise<ActionState> {

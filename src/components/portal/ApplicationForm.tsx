@@ -33,12 +33,14 @@ const STEPS = [
 export function ApplicationForm({
   programSlug,
   programName,
+  employerPartner,
   userId,
   email,
   defaults,
 }: {
   programSlug: string;
   programName: string;
+  employerPartner?: string | null;
   userId: string;
   email: string;
   defaults: Partial<Values>;
@@ -257,7 +259,7 @@ export function ApplicationForm({
               <div className="grid gap-8">
                 <fieldset>
                   <legend className="text-sm font-bold text-ink">
-                    Do you require visa sponsorship now or in the future to be employed at TSMC Arizona?
+                    Do you require visa sponsorship now or in the future to be employed {employerPartner ? `at ${employerPartner}` : "by this program\u2019s employer partner"}?
                   </legend>
                   <div className="mt-3 grid gap-2 sm:grid-cols-3">
                     {VISA_OPTIONS.map((o) => (
@@ -282,7 +284,7 @@ export function ApplicationForm({
                     onChange={(e) => set("share_with_employers", e.target.checked)}
                   />
                   <span>
-                    <strong>Share my application with partner employers.</strong> I agree that program partners (such as TSMC Arizona)
+                    <strong>Share my application with partner employers.</strong> I agree that this program&apos;s partners{employerPartner ? ` (such as ${employerPartner})` : ""}
                     may view selected details of my application — like my name, education, admissions progress and resume — to consider me
                     for employment. You can ask admissions to withdraw this consent at any time.
                   </span>
