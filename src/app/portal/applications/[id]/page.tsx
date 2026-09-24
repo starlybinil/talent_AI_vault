@@ -162,13 +162,13 @@ export default async function ApplicationPage({
                   }}
                 />
               )}
-              <Card className={cn(next.tab && "border-gold bg-gold/10")}>
+              <Card className={cn((next.tab || next.href) && "border-gold bg-gold/10")}>
                 <p className="text-xs font-bold uppercase tracking-widest text-maroon">Next step</p>
                 <p className="mt-2 text-lg font-black">{next.title}</p>
                 <p className="mt-1 text-sm text-ink/70">{next.body}</p>
-                {next.tab && (
-                  <ButtonLink href={`?tab=${next.tab}`} className="mt-4">
-                    Continue
+                {(next.tab || next.href) && (
+                  <ButtonLink href={next.href ?? `?tab=${next.tab}`} className="mt-4">
+                    {next.cta ?? "Continue"}
                   </ButtonLink>
                 )}
               </Card>

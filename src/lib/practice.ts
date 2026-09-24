@@ -17,10 +17,10 @@ export function seededRng(seed: number): Rng {
   };
 }
 
-const pick = <T,>(rng: Rng, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
-const int = (rng: Rng, min: number, max: number) => min + Math.floor(rng() * (max - min + 1));
+export const pick = <T,>(rng: Rng, items: readonly T[]): T => items[Math.floor(rng() * items.length)];
+export const int = (rng: Rng, min: number, max: number) => min + Math.floor(rng() * (max - min + 1));
 
-function shuffle<T>(rng: Rng, items: T[]): T[] {
+export function shuffle<T>(rng: Rng, items: T[]): T[] {
   const a = [...items];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(rng() * (i + 1));
@@ -140,6 +140,12 @@ const GENERATORS: Array<{ kind: string; make: (rng: Rng) => string }> = [
   { kind: "Gas line", make: (r) => `${pick(r, ["N2", "O2", "Ar", "He", "CF4", "SF6"])}-${code(r, "L##")} @ ${int(r, 10, 95)} psi` },
   { kind: "Torque spec", make: (r) => `${int(r, 5, 45)}.${int(r, 0, 9)} N·m ±${int(r, 1, 5)}%` },
 ];
+
+/** A random realistic fab identifier (part number, lot ID, reading…) and what kind it is. */
+export function fabCode(rng: Rng): { kind: string; value: string } {
+  const g = pick(rng, GENERATORS);
+  return { kind: g.kind, value: g.make(rng) };
+}
 
 /** A copy of `s` with one subtle, realistic change (never identical to the input). */
 export function mutate(rng: Rng, s: string): string {

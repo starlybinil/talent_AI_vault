@@ -80,8 +80,12 @@ export default async function PortalHome() {
                       <p className="font-black text-ink">{next.title}</p>
                       <p className="text-sm text-ink/60">{next.body}</p>
                     </div>
-                    <ButtonLink href={`/portal/applications/${a.id}${next.tab ? `?tab=${next.tab}` : ""}`} variant={next.tab ? "gold" : "dark"} className="shrink-0">
-                      {next.tab ? "Take action" : "View details"} <ArrowRight className="h-4 w-4" />
+                    <ButtonLink
+                      href={next.href ?? `/portal/applications/${a.id}${next.tab ? `?tab=${next.tab}` : ""}`}
+                      variant={next.tab || next.href ? "gold" : "dark"}
+                      className="shrink-0"
+                    >
+                      {next.cta ?? (next.tab ? "Take action" : "View details")} <ArrowRight className="h-4 w-4" />
                     </ButtonLink>
                   </div>
                 </div>

@@ -187,18 +187,22 @@ export function isTerminal(status: Status): boolean {
 }
 
 /** What the applicant should do next, if anything. */
-export function applicantNextAction(status: Status): { title: string; body: string; tab?: string } {
+export function applicantNextAction(status: Status): { title: string; body: string; tab?: string; href?: string; cta?: string } {
   switch (status) {
     case "submitted":
     case "screening":
       return {
-        title: "We're reviewing your application",
-        body: "Admissions is reviewing your application. You'll get an email as soon as there's an update — usually within a few business days.",
+        title: "Practise while we review your application",
+        body: "Admissions is reviewing your application (usually a few business days) and will email you with any update. Meanwhile, use the Practice Lab to get ready for the assessment: cognitive ability, situational judgement, hand tools and typing.",
+        href: "/portal/practice",
+        cta: "Open the Practice Lab",
       };
     case "screening_passed":
       return {
         title: "You passed initial screening",
-        body: "Your assessment invitation is being prepared. Watch your inbox for the TestGorilla link.",
+        body: "Your assessment invitation is being prepared. Watch your inbox for the TestGorilla link, and warm up in the Practice Lab in the meantime.",
+        href: "/portal/practice",
+        cta: "Keep practising",
       };
     case "exam_invited":
       return {

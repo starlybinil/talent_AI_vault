@@ -242,11 +242,14 @@ export async function deleteAccount(_prev: ActionState, formData: FormData): Pro
 }
 
 const practiceSchema = z.object({
-  activity: z.enum(["typing", "attention"]),
+  activity: z.enum(["typing", "cognitive", "tools", "judgement"]),
   score: z.number().min(0).max(300),
   accuracy: z.number().min(0).max(100),
   durationSeconds: z.number().int().min(1).max(3600),
-  details: z.record(z.string(), z.union([z.number(), z.string(), z.boolean()])).default({}),
+  details: z
+    .record(z.string().max(60), z.union([z.number(), z.string().max(200), z.boolean(), z.array(z.string().max(60)).max(60)]))
+    .refine((d) => Object.keys(d).length <= 20)
+    .default({}),
 });
 
 /** Save a Practice Lab attempt to the applicant's private history. */
