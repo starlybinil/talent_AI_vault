@@ -131,6 +131,21 @@ export function isAllowed(roles: readonly Role[], pathname: string): boolean {
   return can(roles, req);
 }
 
+/**
+ * Where to send someone right after sign-in. A `next` link is honored only when it belongs to the user's own
+ * area: staff and employers are never dropped into the applicant portal by a leftover `?next=/portal/...`
+ * (an expired applicant session, the home page's Apply button, an old sign-in tab); they go to their console.
+ */
+export function postLoginDestination(roles: readonly Role[], next: string | null | undefined): string {
+  const home = homeFor(roles);
+  if (!next || !next.startsWith("/") || next.startsWith("//")) return home;
+  const path = next.split(/[?#]/)[0];
+  if (!isAllowed(roles, path)) return home;
+  const inPortal = path === "/portal" || path.startsWith("/portal/");
+  if (home !== "/portal" && inPortal) return home;
+  return next;
+}
+
 /** First admin page this user may open (web developers have no dashboard). */
 export function firstAdminPage(roles: readonly Role[]): string {
   const perms = permissionsFor(roles);

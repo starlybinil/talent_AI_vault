@@ -21,10 +21,13 @@ export const getSession = cache(async (): Promise<Session | null> => {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const [{ data: roles }, { data: profile }] = await Promise.all([
+  const [rolesRes, { data: profile }] = await Promise.all([
     supabase.rpc("my_roles"),
     supabase.from("profiles").select("full_name, email, active").eq("id", user.id).maybeSingle(),
   ]);
+  // A failed lookup would make staff look like applicants (and route them to the portal), so retry once.
+  let roles = rolesRes.data;
+  if (rolesRes.error) roles = (await supabase.rpc("my_roles")).data;
 
   const rows = (roles ?? []) as Array<{ role: Role; employer_org_id: string | null }>;
   return {
