@@ -82,18 +82,22 @@ export default async function Home() {
           <Reveal className="mx-auto max-w-7xl">
             <Link
               href={featured.learn_more_url || `/programs/${featured.slug}`}
-              {...(featured.learn_more_url ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-              className="group grid overflow-hidden rounded-[2rem] bg-gold text-ink shadow-2xl md:grid-cols-[1.2fr_1fr]"
+              {...(featured.learn_more_url
+                ? { target: "_blank", rel: "noopener noreferrer" }
+                : {})}
+              className="group relative grid overflow-hidden rounded-[2rem] bg-gradient-to-br from-gold/25 via-ink-950/70 to-ink-950/80 text-white shadow-2xl ring-1 ring-gold/35 backdrop-blur-xl transition hover:ring-gold/60 md:grid-cols-[1.2fr_1fr]"
             >
               <div className="p-8 sm:p-12">
-                <p className="text-xs font-black uppercase tracking-[0.25em] text-maroon">
+                <p className="text-xs font-black uppercase tracking-[0.25em] text-gold">
                   Now enrolling ·{" "}
                   {programCopy(featured).partners ?? "Featured program"}
                 </p>
                 <h2 className="mt-3 text-3xl font-black leading-tight tracking-tight sm:text-5xl">
                   {featured.name}
                 </h2>
-                <p className="mt-4 max-w-xl text-ink/75">{featured.tagline}</p>
+                <p className="mt-4 max-w-xl text-white/75">
+                  {featured.tagline}
+                </p>
                 <div className="mt-6 flex flex-wrap gap-2 text-sm font-bold">
                   {[
                     featured.cost_label,
@@ -104,13 +108,13 @@ export default async function Home() {
                     .map((x) => (
                       <span
                         key={x}
-                        className="rounded-full bg-ink px-4 py-1.5 text-gold"
+                        className="rounded-full bg-gold/15 px-4 py-1.5 text-gold ring-1 ring-gold/30"
                       >
                         {x}
                       </span>
                     ))}
                 </div>
-                <span className="mt-8 inline-flex items-center gap-2 text-lg font-black">
+                <span className="mt-8 inline-flex items-center gap-2 text-lg font-black text-gold">
                   View program{" "}
                   <ArrowRight
                     className="h-5 w-5 transition group-hover:translate-x-1"
@@ -118,12 +122,19 @@ export default async function Home() {
                   />
                 </span>
               </div>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={featured.hero_poster || IMAGES.wafer}
-                alt={`${featured.short_name} trainee at work`}
-                className="h-64 w-full object-cover md:h-full"
-              />
+              <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={featured.hero_poster || IMAGES.wafer}
+                  alt={`${featured.short_name} trainee at work`}
+                  className="h-64 w-full object-cover md:h-full"
+                />
+                {/* Blend the photo into the tinted panel */}
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-ink-950/60 to-transparent md:bg-gradient-to-r md:from-ink-950/70 md:via-transparent"
+                  aria-hidden
+                />
+              </div>
             </Link>
           </Reveal>
         </section>
