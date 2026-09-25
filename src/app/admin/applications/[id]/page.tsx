@@ -59,7 +59,7 @@ function opsFor(status: Status, hasSeat: boolean, employer: string | null): Op[]
       ops.push({ op: "confirm", label: "Confirm Enrollment" });
       break;
   }
-  if (canWithdraw(status)) ops.push({ op: "withdraw", label: "Withdraw application", variant: "danger", confirm: "Withdraw this application? Any seat is released to the waitlist." });
+  if (canWithdraw(status)) ops.push({ op: "withdraw", label: "Remove application", variant: "danger", confirm: "Remove this application from the program? Any seat is released to the waitlist, and the applicant sees it as withdrawn." });
   return ops;
 }
 
@@ -328,8 +328,14 @@ export default async function AdminApplicationPage({ params }: { params: Promise
                         </Select>
                       </div>
                     )}
-                    {o.op !== "send_reminder" && (
-                      <Textarea name="note" placeholder="Optional note to the applicant (included in the email)" className="mb-3 min-h-16 text-sm" aria-label="Note" />
+                    {/* Only removal carries a note: the applicant deserves a reason. Other steps send their standard email. */}
+                    {o.op === "withdraw" && (
+                      <Textarea
+                        name="note"
+                        placeholder="Reason for removal (optional, included in the email to the applicant)"
+                        className="mb-3 min-h-16 text-sm"
+                        aria-label="Reason for removal"
+                      />
                     )}
                     <SubmitButton variant={o.variant ?? "gold"} size="sm" className="w-full" pendingText="Updating…">
                       {o.label}
