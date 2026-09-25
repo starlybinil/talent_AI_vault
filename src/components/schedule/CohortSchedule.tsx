@@ -442,7 +442,7 @@ function Timeline({
                               {...hoverProps(c)}
                               aria-label={`${c.name}, ${c.location}, ${dateRange(c)}, ${c.registered} of ${c.capacity} admitted`}
                               className={cn(
-                                "group absolute top-1.5 z-20 flex h-9 cursor-pointer overflow-hidden shadow-sm ring-offset-2 transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg focus-visible:z-30",
+                                "group absolute top-1.5 z-20 flex h-9 cursor-pointer items-center justify-center overflow-hidden px-1 shadow-sm ring-offset-2 transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg focus-visible:z-30",
                                 span.clippedStart ? "rounded-l-sm" : "rounded-l-xl",
                                 span.clippedEnd ? "rounded-r-sm" : "rounded-r-xl",
                                 c.status === "closed" && "opacity-60",
@@ -451,6 +451,10 @@ function Timeline({
                               )}
                               style={{ left: `${span.left * 100}%`, width: `max(${span.width * 100}%, 1.75rem)`, background: col.bg, color: col.fg }}
                             >
+                              {/* Enrollment only (admitted / seats); everything else is in the hover card. */}
+                              <span className="whitespace-nowrap pb-0.5 text-xs font-black tabular-nums leading-none" aria-hidden>
+                                {c.registered}/{c.capacity}
+                              </span>
                               <span className="absolute inset-x-0 bottom-0 h-1 bg-black/15" aria-hidden>
                                 <span className="block h-full bg-white/80" style={{ width: `${pct}%` }} />
                               </span>
