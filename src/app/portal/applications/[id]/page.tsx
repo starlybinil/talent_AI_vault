@@ -266,7 +266,7 @@ export default async function ApplicationPage({
 
             {/* Step 1: cohorts */}
             <section aria-labelledby="step-cohorts">
-              <StepHeading id="step-cohorts" n={1} title="Choose your cohorts" done={chosen} current={status === "cohort_selection" || status === "exam_passed"} />
+              <StepHeading id="step-cohorts" n={1} title="Choose your cohorts" done={chosen} current={status === "cohort_selection"} />
               {status === "cohort_selection" ? (
                 <CohortPicker applicationId={app.id} cohorts={cohorts} />
               ) : (enrollments ?? []).length > 0 || (prefs ?? []).length > 0 ? (
@@ -313,7 +313,11 @@ export default async function ApplicationPage({
                 </Card>
               ) : (
                 <Card>
-                  <p className="text-ink/60">Cohort selection opens after a successful assessment result.</p>
+                  <p className="text-ink/60">
+                    {status === "exam_passed"
+                      ? "You passed the assessment! Cohort selection opens as soon as admissions accepts you into the program. We'll email you."
+                      : "Cohort selection opens once admissions accepts you into the program after a successful assessment."}
+                  </p>
                 </Card>
               )}
             </section>

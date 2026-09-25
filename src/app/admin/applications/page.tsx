@@ -29,7 +29,7 @@ type Row = {
   cohorts: { name: string } | null;
 };
 
-const BOARD: Status[] = ["submitted", "screening", "screening_passed", "exam_invited", "cohort_selection", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed", "completed", "hired"];
+const BOARD: Status[] = ["screening", "exam_invited", "exam_passed", "cohort_selection", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed", "completed", "hired"];
 
 export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<QueueFilters & { view?: string }> }) {
   const sp = await searchParams;
@@ -156,13 +156,12 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Select name="op" defaultValue="" className="mt-0 h-10 w-auto" aria-label="Bulk action">
                 <option value="">Bulk action…</option>
-                <option value="start_screening">Move to screening</option>
-                <option value="pass_screening">Pass screening</option>
                 <option value="pass_and_invite">Pass screening & send assessment invite</option>
                 <option value="send_invite">Send assessment invite</option>
                 <option value="send_reminder">Send assessment reminder</option>
                 <option value="not_selected">Mark not selected</option>
-                <option value="confirm">Confirm enrollment (enrolled &amp; signed)</option>
+                <option value="accept">Accept into program & open enrollment (assessment passed)</option>
+                <option value="confirm">Accept into held cohort & confirm (agreements signed)</option>
               </Select>
               <SubmitButton variant="dark" size="sm" pendingText="Applying…">
                 Apply to selected

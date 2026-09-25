@@ -7,6 +7,8 @@ import {
   canTransition,
   nextStatuses,
   stageStates,
+  canReset,
+  PLACEMENT_STATUSES,
 } from "@/lib/workflow";
 
 describe("workflow transitions", () => {
@@ -101,9 +103,33 @@ describe("workflow transitions", () => {
 
   it("emails at the key milestones", () => {
     expect(EMAIL_FOR_STATUS.exam_invited).toBe("exam_invite");
-    expect(EMAIL_FOR_STATUS.cohort_selection).toBe("exam_passed");
+    expect(EMAIL_FOR_STATUS.exam_passed).toBe("exam_passed");
+    expect(EMAIL_FOR_STATUS.cohort_selection).toBe("accepted");
     expect(EMAIL_FOR_STATUS.confirmed).toBe("confirmed");
     expect(EMAIL_FOR_STATUS.completed).toBe("program_completed");
     expect(EMAIL_FOR_STATUS.hired).toBe("hired");
+  });
+});
+
+describe("admissions flow refinements", () => {
+  it("acceptance is its own step: passing the assessment doesn't open enrollment", () => {
+    expect(EMAIL_FOR_STATUS.exam_passed).toBe("exam_passed");
+    expect(EMAIL_FOR_STATUS.cohort_selection).toBe("accepted");
+    expect(canTransition("exam_passed", "cohort_selection")).toBe(true);
+    expect(applicantNextAction("exam_passed").tab).toBeUndefined();
+    expect(applicantNextAction("cohort_selection").tab).toBe("enrollment");
+  });
+
+  it("allows a reset from anywhere past screening, except once the program is finished", () => {
+    expect(canReset("screening")).toBe(false);
+    expect(canReset("submitted")).toBe(false);
+    for (const s of ["not_selected", "exam_invited", "exam_failed", "exam_passed", "agreements_submitted", "confirmed", "withdrawn"] as const)
+      expect(canReset(s)).toBe(true);
+    expect(canReset("completed")).toBe(false);
+    expect(canReset("hired")).toBe(false);
+  });
+
+  it("admissions places applicants while they hold or wait for a seat", () => {
+    expect(PLACEMENT_STATUSES).toEqual(["cohort_registered", "waitlisted", "agreements_pending", "agreements_submitted"]);
   });
 });

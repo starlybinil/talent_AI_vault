@@ -182,6 +182,14 @@ export function canChangeCohort(status: Status): boolean {
   return COHORT_HOLD_STATUSES.includes(status);
 }
 
+/** Admissions can send an application back to the start (screening) until the trainee finishes the program. */
+export function canReset(status: Status): boolean {
+  return !["submitted", "screening", "completed", "hired"].includes(status);
+}
+
+/** Statuses where admissions decides the applicant's final cohort (from their own choices) and confirms. */
+export const PLACEMENT_STATUSES: readonly Status[] = ["cohort_registered", "waitlisted", "agreements_pending", "agreements_submitted"];
+
 export function isTerminal(status: Status): boolean {
   return status === "hired" || status === "withdrawn" || status === "not_selected" || status === "exam_failed";
 }
@@ -211,10 +219,14 @@ export function applicantNextAction(status: Status): { title: string; body: stri
         tab: "exam",
       };
     case "exam_passed":
+      return {
+        title: "You passed the assessment!",
+        body: "Congratulations! Admissions is finalising your acceptance into the program. We'll email you as soon as enrollment opens for you.",
+      };
     case "cohort_selection":
       return {
-        title: "Enroll: choose your cohorts and sign",
-        body: "Congratulations on passing the assessment! Rank up to three cohorts, then sign your program agreements on the same page.",
+        title: "You're accepted: enroll now",
+        body: "Welcome to the program! Rank up to three cohorts, then sign your program agreements on the same page. Admissions confirms your final placement.",
         tab: "enrollment",
       };
     case "waitlisted":
@@ -272,6 +284,7 @@ export type EmailTemplate =
   | "exam_invite"
   | "exam_reminder"
   | "exam_passed"
+  | "accepted"
   | "exam_failed"
   | "not_selected"
   | "cohort_registered"
@@ -288,7 +301,8 @@ export const EMAIL_FOR_STATUS: Partial<Record<Status, EmailTemplate>> = {
   submitted: "application_received",
   screening_passed: "screening_passed",
   exam_invited: "exam_invite",
-  cohort_selection: "exam_passed",
+  exam_passed: "exam_passed",
+  cohort_selection: "accepted",
   exam_failed: "exam_failed",
   not_selected: "not_selected",
   agreements_pending: "cohort_registered",

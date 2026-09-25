@@ -19,17 +19,17 @@ import { ROLES, type Role } from "@/lib/rbac";
 
 export type AdminOp =
   | "start_screening"
-  | "pass_screening"
   | "pass_and_invite"
   | "send_invite"
   | "send_reminder"
   | "exam_passed"
   | "exam_failed"
   | "not_selected"
-  | "reconsider"
+  | "accept"
   | "assign_cohort"
   | "release_seat"
   | "confirm"
+  | "reset"
   | "withdraw";
 
 async function defaultExamUrl(supabase: SupabaseClient, appId: string): Promise<string | null> {
@@ -53,10 +53,6 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
   switch (op) {
     case "start_screening":
       error = await transition("screening");
-      break;
-    case "pass_screening":
-      error = await transition("screening_passed");
-      if (!error) await notifyStatus(supabase, appId, { note });
       break;
     case "pass_and_invite":
     case "send_invite": {
@@ -88,16 +84,26 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
       error = await transition("not_selected");
       if (!error) await notifyStatus(supabase, appId, { note });
       break;
-    case "reconsider":
-      error = await transition("screening");
-      if (!error) await notifyTemplate(supabase, appId, "status_update", { note, statusLabel: STATUS_LABEL.screening });
+    case "accept":
+      // Assessment passed -> accepted into the program; enrollment (cohort choice + agreements) opens.
+      error = await transition("cohort_selection");
+      if (!error) await notifyStatus(supabase, appId, { note });
       break;
     case "assign_cohort": {
       if (!extra.cohortId) return "Choose a cohort.";
       const { data, error: e } = await supabase.rpc("admin_assign_cohort", { p_app: appId, p_cohort: extra.cohortId, p_note: note });
       error = e;
       if (!error) {
-        await notifyTemplate(supabase, appId, "cohort_registered", { note });
+        const { data: now } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
+        if (now?.status === "agreements_submitted") {
+          // Already signed: just tell them where they're placed; confirmation follows.
+          await notifyTemplate(supabase, appId, "status_update", {
+            note: note ?? "Admissions has placed you in a different cohort from your choices. Your cohort details are in your portal.",
+            statusLabel: STATUS_LABEL.agreements_submitted,
+          });
+        } else {
+          await notifyTemplate(supabase, appId, "cohort_registered", { note });
+        }
         await emailPromoted(supabase, (data as { promoted: string[] })?.promoted);
       }
       break;
@@ -115,6 +121,18 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
       error = await transition("confirmed");
       if (!error) await notifyStatus(supabase, appId, { note });
       break;
+    case "reset": {
+      const { data, error: e } = await supabase.rpc("admin_reset_application", { p_app: appId, p_note: note });
+      error = e;
+      if (!error) {
+        await notifyTemplate(supabase, appId, "status_update", {
+          note: "Admissions has reset your application to the start of the admissions process. It's back in screening, and we'll email you with next steps.",
+          statusLabel: STATUS_LABEL.screening,
+        });
+        await emailPromoted(supabase, data as string[]);
+      }
+      break;
+    }
     case "withdraw": {
       const { data, error: e } = await supabase.rpc("admin_withdraw", { p_app: appId, p_note: note });
       error = e;
@@ -236,7 +254,7 @@ export async function bulkAct(_prev: ActionState, formData: FormData): Promise<A
   }
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   const op = String(formData.get("op") || "") as AdminOp;
-  const allowed: AdminOp[] = ["start_screening", "pass_screening", "pass_and_invite", "send_invite", "send_reminder", "not_selected", "confirm"];
+  const allowed: AdminOp[] = ["pass_and_invite", "send_invite", "send_reminder", "not_selected", "accept", "confirm"];
   if (!allowed.includes(op)) return fail("Choose a bulk action.");
   if (!ids.length) return fail("Select at least one application.");
   const supabase = await createClient();

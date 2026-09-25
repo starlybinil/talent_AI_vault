@@ -49,7 +49,8 @@ export async function submitApplication(input: unknown): Promise<SubmitApplicati
   });
   if (error) return { error: errorMessage(error) };
 
-  await notifyStatus(supabase, appId as string);
+  // New applications go straight into screening; the applicant still gets the "received" email.
+  await notifyStatus(supabase, appId as string, { override: "application_received" });
   (await cookies()).delete("tv_utm");
   redirect(`/portal/applications/${appId}?submitted=1`);
 }

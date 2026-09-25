@@ -3,8 +3,9 @@ import path from "path";
 
 /**
  * Full admissions happy path across roles:
- * register → apply → admin screens + invites → admin records pass → applicant ranks cohorts →
- * signs agreements → admin confirms → employer sees the candidate (policy-limited).
+ * register → apply (lands in screening) → admin passes screening + invites → admin records pass →
+ * admin accepts into the program → applicant ranks cohorts and signs → admin accepts into the held
+ * cohort and confirms → employer sees the candidate (policy-limited).
  */
 const PASSWORD = process.env.E2E_DEMO_PASSWORD ?? "";
 const ADMIN = "admissions.demo@talent-vault.org";
@@ -66,10 +67,14 @@ test("applicant registers from the ASU entry link and applies", async ({ page })
   applicationPath = new URL(page.url()).pathname.replace("/portal/", "/admin/");
 });
 
-test("admissions screens, invites and records a passing assessment", async ({ page }) => {
+test("admissions screens, invites, records a passing assessment and accepts", async ({ page }) => {
   await signIn(page, ADMIN, PASSWORD);
+  await page.goto(applicationPath);
+  await expect(page.getByText("In screening").first()).toBeVisible();
   await adminOp(page, applicationPath, "Pass screening & send assessment");
-  await adminOp(page, applicationPath, "Record: passed (TSMC verified)");
+  await adminOp(page, applicationPath, "Record: passed (TSMC Arizona verified)");
+  await expect(page.getByText("Assessment passed").first()).toBeVisible();
+  await adminOp(page, applicationPath, "Accept into program & open enrollment");
   await expect(page.getByText("Enrollment open").first()).toBeVisible();
   await signOut(page);
 });
@@ -104,9 +109,12 @@ test("applicant enrolls: ranks cohorts, then signs every agreement on the same p
   await signOut(page);
 });
 
-test("admissions verifies and confirms; applicant sees Confirmed", async ({ page }) => {
+test("admissions accepts into the held cohort; applicant sees Confirmed", async ({ page }) => {
   await signIn(page, ADMIN, PASSWORD);
-  await adminOp(page, applicationPath, "Confirm Enrollment");
+  await page.goto(applicationPath);
+  await expect(page.getByText("Enrollment decision")).toBeVisible();
+  await expect(page.getByText("Holding seat")).toBeVisible();
+  await adminOp(page, applicationPath, "& confirm");
   await expect(page.getByText("Confirmed").first()).toBeVisible();
   await expect(page.getByText("You're confirmed — welcome")).toBeVisible(); // email log entry
   await signOut(page);

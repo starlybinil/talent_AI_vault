@@ -99,12 +99,24 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
       };
     case "exam_passed":
       return {
-        subject: "You passed! Time to enroll",
-        heading: "Assessment passed — next steps",
+        subject: "You passed the assessment!",
+        heading: "Assessment passed",
         paragraphs: [
           hi,
           `${ctx.employerPartner ? esc(ctx.employerPartner) : "Our employer partner"} has confirmed a successful assessment result. 🎉`,
-          "Next, log in to <strong>enroll</strong>: choose your top 3 cohorts (you can see dates, times, locations and seats left), then sign your program agreements on the same page. We'll register you in the highest-ranked cohort with an open seat.",
+          `Admissions is now finalising your acceptance into the <strong>${esc(ctx.programName)}</strong>. You'll get another email as soon as enrollment opens for you.`,
+          ...note,
+        ],
+        cta: { label: "View my application", href: portal(ctx.applicationId) },
+      };
+    case "accepted":
+      return {
+        subject: `You're accepted into the ${ctx.programName}: time to enroll`,
+        heading: "Welcome to the program",
+        paragraphs: [
+          hi,
+          `Congratulations: admissions has accepted you into the <strong>${esc(ctx.programName)}</strong>.`,
+          "Next, log in to <strong>enroll</strong>: rank your top 3 cohorts (you can see dates, times, locations and seats left), then sign your program agreements on the same page. Admissions then confirms your placement.",
           ...note,
         ],
         cta: { label: "Enroll now", href: `${portal(ctx.applicationId)}?tab=enrollment` },

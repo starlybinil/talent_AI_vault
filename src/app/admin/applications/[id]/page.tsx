@@ -9,29 +9,31 @@ import { Timeline, type TimelineEvent } from "@/components/portal/Timeline";
 import { StatusTracker } from "@/components/portal/StatusTracker";
 import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
-import { Alert, Badge, Card, Input, Label, Select, Textarea } from "@/components/ui";
+import { Alert, Badge, Card, Input, Label, Textarea } from "@/components/ui";
 import type { CohortAvailability } from "@/lib/data";
-import { EDUCATION_LABEL, STATUS_LABEL, STATUS_TONE, VISA_LABEL, canWithdraw, isTrainee, type Status } from "@/lib/workflow";
+import { EDUCATION_LABEL, PLACEMENT_STATUSES, STATUS_LABEL, STATUS_TONE, VISA_LABEL, canReset, canWithdraw, isTrainee, type Status } from "@/lib/workflow";
 import { OutcomePanel } from "@/components/admin/OutcomePanel";
+import { EnrollmentDecision } from "@/components/admin/EnrollmentDecision";
 import { todayInArizona } from "@/lib/schedule";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { audit } from "@/lib/audit";
 
 export const metadata = { title: "Application review" };
 
-type Op = { op: string; label: string; variant?: "gold" | "dark" | "outline" | "danger"; confirm?: string; needsUrl?: boolean; needsCohort?: boolean };
+type Op = { op: string; label: string; variant?: "gold" | "dark" | "outline" | "danger"; confirm?: string; needsUrl?: boolean };
 
-function opsFor(status: Status, hasSeat: boolean, employer: string | null): Op[] {
+/**
+ * Workflow actions, in order: screening -> assessment -> acceptance -> enrollment (placement is handled by the
+ * Enrollment decision block) -> confirmation. Only removal carries a note.
+ */
+function opsFor(status: Status, employer: string | null, applicantName: string): Op[] {
   const ops: Op[] = [];
   switch (status) {
-    case "submitted":
+    case "submitted": // legacy: new applications start in screening
       ops.push({ op: "start_screening", label: "Start screening", variant: "dark" });
-      ops.push({ op: "pass_and_invite", label: "Pass screening & send assessment", needsUrl: true });
-      ops.push({ op: "not_selected", label: "Not selected", variant: "outline", confirm: "Mark this applicant as not selected? They'll be emailed." });
       break;
     case "screening":
       ops.push({ op: "pass_and_invite", label: "Pass screening & send assessment", needsUrl: true });
-      ops.push({ op: "pass_screening", label: "Pass screening only", variant: "dark" });
       ops.push({ op: "not_selected", label: "Not selected", variant: "outline", confirm: "Mark this applicant as not selected? They'll be emailed." });
       break;
     case "screening_passed":
@@ -42,26 +44,33 @@ function opsFor(status: Status, hasSeat: boolean, employer: string | null): Op[]
       ops.push({ op: "exam_failed", label: "Record: not passed", variant: "outline", confirm: "Record a failing assessment result? The applicant will be emailed." });
       ops.push({ op: "send_reminder", label: "Send reminder email", variant: "dark" });
       break;
+    case "exam_passed":
+      ops.push({
+        op: "accept",
+        label: "Accept into program & open enrollment",
+        confirm: `Accept ${applicantName} into the program? They'll be emailed to choose cohorts and sign agreements.`,
+      });
+      break;
     case "exam_failed":
       ops.push({ op: "send_invite", label: "Re-invite to assessment", needsUrl: true, variant: "dark" });
       break;
-    case "not_selected":
-      ops.push({ op: "reconsider", label: "Reconsider (back to screening)", variant: "dark" });
-      break;
-    case "cohort_selection":
-    case "waitlisted":
-    case "cohort_registered":
-    case "agreements_pending":
-      ops.push({ op: "assign_cohort", label: hasSeat ? "Move to cohort" : "Assign cohort", needsCohort: true, variant: "dark" });
-      if (hasSeat || status === "waitlisted") ops.push({ op: "release_seat", label: "Release seat & reopen selection", variant: "outline", confirm: "Release this applicant's seat? The next person on the waitlist will be promoted." });
-      break;
-    case "agreements_submitted":
-      ops.push({ op: "confirm", label: "Confirm Enrollment" });
-      break;
   }
-  if (canWithdraw(status)) ops.push({ op: "withdraw", label: "Remove application", variant: "danger", confirm: "Remove this application from the program? Any seat is released to the waitlist, and the applicant sees it as withdrawn." });
+  if (canReset(status))
+    ops.push({
+      op: "reset",
+      label: "Reset to start of application process",
+      variant: "outline",
+      confirm: `Reset ${applicantName}'s application to the start? The assessment result, cohort choices and any seat are cleared and the application goes back to screening. Signed agreements stay on file.`,
+    });
+  if (canWithdraw(status))
+    ops.push({ op: "withdraw", label: "Remove application", variant: "danger", confirm: "Remove this application from the program? Any seat is released to the waitlist, and the applicant sees it as withdrawn." });
   return ops;
 }
+
+/** What admissions is waiting on, when there's no decision to make yet. */
+const WAITING: Partial<Record<Status, string>> = {
+  cohort_selection: "Accepted. Waiting for the applicant to rank their cohorts and sign agreements.",
+};
 
 export default async function AdminApplicationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -110,8 +119,10 @@ export default async function AdminApplicationPage({ params }: { params: Promise
 
   const cohorts = (cohortsRes.data ?? []) as CohortAvailability[];
   const cohortById = Object.fromEntries(cohorts.map((c) => [c.cohort_id, c]));
-  const hasSeat = (enrollments ?? []).some((e) => e.status === "registered");
-  const ops = canManage ? opsFor(status, hasSeat, program?.employer_partner ?? null) : [];
+  const showDecision = canManage && PLACEMENT_STATUSES.includes(status);
+  const requiredTemplates = (templates ?? []).filter((t) => t.required);
+  const signedRequired = requiredTemplates.filter((t) => (sigs ?? []).some((x) => x.template_id === t.id && x.template_version === t.version)).length;
+  const ops = canManage ? opsFor(status, program?.employer_partner ?? null, `${app.first_name} ${app.last_name}`) : [];
   const sigByTpl = new Map((sigs ?? []).map((s) => [s.template_id, s]));
 
   await audit(supabase, "application.view", "application", id);
@@ -298,11 +309,23 @@ export default async function AdminApplicationPage({ params }: { params: Promise
               }
             />
           )}
-          {canManage && ops.length > 0 && (
+          {canManage && (ops.length > 0 || showDecision || WAITING[status]) && (
             <Card className="border-maroon/30">
               <h2 className="font-black">Move through the workflow</h2>
               <p className="mt-1 text-sm text-ink/60">The applicant sees each change in their portal and gets an email.</p>
               <div className="mt-5 space-y-4">
+                {WAITING[status] && <p className="rounded-2xl bg-mist p-4 text-sm font-bold text-ink/70">{WAITING[status]}</p>}
+                {showDecision && (
+                  <EnrollmentDecision
+                    appId={app.id}
+                    applicantName={`${app.first_name} ${app.last_name}`}
+                    status={status}
+                    prefs={prefs ?? []}
+                    enrollments={enrollments ?? []}
+                    cohortById={cohortById}
+                    signed={{ done: signedRequired, total: requiredTemplates.length }}
+                  />
+                )}
                 {ops.map((o) => (
                   <ActionForm key={o.op} action={adminAct} confirm={o.confirm} className="rounded-2xl border border-ink/10 p-4">
                     <input type="hidden" name="application_id" value={app.id} />
@@ -311,21 +334,6 @@ export default async function AdminApplicationPage({ params }: { params: Promise
                       <div className="mb-3">
                         <Label htmlFor={`url-${o.op}`}>TestGorilla link</Label>
                         <Input id={`url-${o.op}`} name="exam_url" type="url" defaultValue={app.exam_url ?? program?.default_exam_url ?? ""} placeholder="https://app.testgorilla.com/…" />
-                      </div>
-                    )}
-                    {o.needsCohort && (
-                      <div className="mb-3">
-                        <Label htmlFor={`cohort-${o.op}`}>Cohort</Label>
-                        <Select id={`cohort-${o.op}`} name="cohort_id" defaultValue={app.assigned_cohort_id ?? ""} required>
-                          <option value="">Choose…</option>
-                          {cohorts
-                            .filter((c) => c.status === "open")
-                            .map((c) => (
-                              <option key={c.cohort_id} value={c.cohort_id} disabled={c.seats_left === 0 && c.cohort_id !== app.assigned_cohort_id}>
-                                {c.name} — {c.seats_left} left
-                              </option>
-                            ))}
-                        </Select>
                       </div>
                     )}
                     {/* Only removal carries a note: the applicant deserves a reason. Other steps send their standard email. */}
