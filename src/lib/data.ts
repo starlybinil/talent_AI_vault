@@ -42,6 +42,7 @@ export type Program = {
   audiences?: string[];
   keywords?: string[];
   featured?: boolean;
+  learn_more_url?: string | null;
 };
 
 export type CohortAvailability = {

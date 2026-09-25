@@ -107,6 +107,10 @@ export function ProgramForm({ program, adminFields }: { program?: Partial<Progra
             <Label>Skills &amp; equipment keywords (one per line, scrolls across the page)</Label>
             <Textarea name="keywords" defaultValue={(p.keywords ?? []).join("\n")} className="min-h-32" />
           </div>
+          <div className="sm:col-span-2">
+            <Label>External &ldquo;Learn more&rdquo; page (optional; otherwise the program page on this site)</Label>
+            <Input name="learn_more_url" type="url" defaultValue={p.learn_more_url ?? ""} placeholder="https://asuengineeringonline.com/…" />
+          </div>
           <div>
             <Label>Hero image URL (optional)</Label>
             <Input name="hero_poster" type="url" defaultValue={p.hero_poster ?? ""} placeholder="https://…" />

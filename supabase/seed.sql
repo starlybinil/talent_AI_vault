@@ -81,6 +81,7 @@ update public.programs set
   keywords = '["Electronics","Sensors","Pneumatics","Vacuum systems","Cleanroom safety","Multimeters","Oscilloscopes","Fab equipment"]'::jsonb,
   featured = true
 where slug = 'asu-tsmc';
+update public.programs set learn_more_url = 'https://asuengineeringonline.com/tsmc-foundations-equipment-technician-program' where slug = 'asu-tsmc';
 
 update public.programs set
   industry = 'Advanced manufacturing',

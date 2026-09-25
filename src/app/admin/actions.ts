@@ -403,6 +403,7 @@ const PROGRAM_TEXT_FIELDS = [
   "outcome_detail",
   "hero_poster",
   "hero_video",
+  "learn_more_url",
 ] as const;
 
 function lines(formData: FormData, key: string): string[] {
@@ -447,8 +448,8 @@ export async function saveProgram(_prev: ActionState, formData: FormData): Promi
     return fail("One of the JSON fields (topics, formats, FAQs, stats) is not valid JSON.");
   }
   if (!content.name || !content.short_name) return fail("Name and short name are required.");
-  for (const k of ["hero_poster", "hero_video"] as const) {
-    if (content[k] && !/^https:\/\//.test(String(content[k]))) return fail("Hero image and video links must start with https://");
+  for (const k of ["hero_poster", "hero_video", "learn_more_url"] as const) {
+    if (content[k] && !/^https:\/\//.test(String(content[k]))) return fail("Hero image, video and Learn more links must start with https://");
   }
 
   if (isAdmin) {
