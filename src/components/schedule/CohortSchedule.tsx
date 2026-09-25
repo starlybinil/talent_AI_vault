@@ -125,6 +125,12 @@ export function CohortSchedule({
     onMouseEnter: (e: React.MouseEvent) => setHover({ c, x: e.clientX, y: e.clientY }),
     onMouseMove: (e: React.MouseEvent) => setHover({ c, x: e.clientX, y: e.clientY }),
     onMouseLeave: () => setHover(null),
+    // Keyboard users get the same details card, anchored to the focused bar.
+    onFocus: (e: React.FocusEvent) => {
+      const r = e.currentTarget.getBoundingClientRect();
+      setHover({ c, x: r.left + r.width / 2, y: r.bottom });
+    },
+    onBlur: () => setHover(null),
     onClick: () => open(c),
   });
 
@@ -337,6 +343,8 @@ type HoverProps = (c: ScheduleCohort) => {
   onMouseEnter: (e: React.MouseEvent) => void;
   onMouseMove: (e: React.MouseEvent) => void;
   onMouseLeave: () => void;
+  onFocus: (e: React.FocusEvent) => void;
+  onBlur: () => void;
   onClick: () => void;
 };
 
@@ -396,8 +404,8 @@ function Timeline({
         </div>
         <div className="overflow-hidden rounded-2xl border border-ink/10">
           {byLocation.map(([location, items], li) => {
-            // Leave room after each bar for an outside label when the bar is short.
-            const lanes = packLanes(items, 45);
+            // Bars carry no text (details show on hover), so only leave room for the minimum bar width.
+            const lanes = packLanes(items, 14);
             const address = items[0].address;
             return (
               <div key={location} className={cn("flex", li > 0 && "border-t border-ink/10")}>
@@ -422,12 +430,11 @@ function Timeline({
                   ))}
                   {todayPos !== undefined && <div className="absolute inset-y-0 z-10 w-0.5 bg-maroon/70" style={{ left: `${todayPos * 100}%` }} aria-hidden />}
                   {lanes.map((lane, i) => (
-                    <div key={i} className="relative h-14">
+                    <div key={i} className="relative h-12">
                       {lane.map((c) => {
                         const span = yearSpan(c, year)!;
                         const col = colors[c.format];
                         const pct = fillPct(c);
-                        const narrow = span.width < 0.11;
                         return (
                           <div key={c.cohort_id} className="contents">
                             <button
@@ -435,7 +442,7 @@ function Timeline({
                               {...hoverProps(c)}
                               aria-label={`${c.name}, ${c.location}, ${dateRange(c)}, ${c.registered} of ${c.capacity} admitted`}
                               className={cn(
-                                "group absolute top-1.5 z-20 flex h-11 cursor-pointer flex-col justify-center overflow-hidden px-2.5 text-left shadow-sm ring-offset-2 transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg focus-visible:z-30",
+                                "group absolute top-1.5 z-20 flex h-9 cursor-pointer overflow-hidden shadow-sm ring-offset-2 transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg focus-visible:z-30",
                                 span.clippedStart ? "rounded-l-sm" : "rounded-l-xl",
                                 span.clippedEnd ? "rounded-r-sm" : "rounded-r-xl",
                                 c.status === "closed" && "opacity-60",
@@ -444,44 +451,10 @@ function Timeline({
                               )}
                               style={{ left: `${span.left * 100}%`, width: `max(${span.width * 100}%, 1.75rem)`, background: col.bg, color: col.fg }}
                             >
-                              {narrow ? (
-                                <span className="truncate text-center text-[11px] font-black leading-tight">
-                                  {c.registered}/{c.capacity}
-                                </span>
-                              ) : (
-                                <>
-                                  <span className="truncate text-xs font-black leading-tight">
-                                    {span.clippedStart && "‹ "}
-                                    {c.name}
-                                    {span.clippedEnd && " ›"}
-                                  </span>
-                                  <span className="truncate text-[11px] font-bold leading-tight opacity-80">
-                                    {c.registered}/{c.capacity} admitted
-                                  </span>
-                                </>
-                              )}
                               <span className="absolute inset-x-0 bottom-0 h-1 bg-black/15" aria-hidden>
                                 <span className="block h-full bg-white/80" style={{ width: `${pct}%` }} />
                               </span>
                             </button>
-                            {narrow && (
-                              <span
-                                className="pointer-events-none absolute top-1.5 z-20 flex h-11 flex-col justify-center whitespace-nowrap pl-2 text-left"
-                                style={
-                                  span.left + span.width > 0.8
-                                    ? { right: `calc(${(1 - span.left) * 100}% + 0.25rem)`, textAlign: "right" }
-                                    : { left: `calc(${span.left * 100}% + max(${span.width * 100}%, 1.75rem))` }
-                                }
-                                aria-hidden
-                              >
-                                <span className="text-xs font-black leading-tight text-ink">
-                                  {span.clippedStart && "‹ "}
-                                  {c.name}
-                                  {span.clippedEnd && " ›"}
-                                </span>
-                                <span className="text-[11px] font-bold leading-tight text-ink/50">{c.location}</span>
-                              </span>
-                            )}
                           </div>
                         );
                       })}
