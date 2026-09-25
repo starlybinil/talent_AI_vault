@@ -64,7 +64,7 @@ export async function markExamComplete(appId: string): Promise<ActionState> {
 }
 
 export async function submitCohortPreferences(appId: string, cohortIds: string[]): Promise<ActionState> {
-  if (!cohortIds.length || cohortIds.length > 3) return fail("Choose between 1 and 3 cohorts.");
+  if (!cohortIds.length || cohortIds.length > 3) return fail("Choose 2 or 3 cohorts.");
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("applicant_submit_cohort_preferences", { p_app: appId, p_cohorts: cohortIds });
   if (error) return fail(errorMessage(error));

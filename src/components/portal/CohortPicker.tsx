@@ -14,6 +14,9 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
   const [pending, start] = React.useTransition();
   const [result, setResult] = React.useState<ActionState>(null);
   const byId = Object.fromEntries(cohorts.map((c) => [c.cohort_id, c]));
+  // Two choices are required (the third is optional), unless fewer cohorts are open.
+  const required = Math.min(2, cohorts.length);
+  const missing = Math.max(0, required - ranked.length);
 
   const toggle = (id: string) =>
     setRanked((r) => (r.includes(id) ? r.filter((x) => x !== id) : r.length >= 3 ? r : [...r, id]));
@@ -30,7 +33,7 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
     <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
       <div>
         <p className="text-sm text-ink/60">
-          Tap cohorts to add them to your ranking (up to 3). We&apos;ll register you in the highest-ranked cohort with a seat available. If
+          Tap cohorts to add them to your ranking: {required === 2 ? "pick at least 2" : "pick at least 1"}, up to 3. We&apos;ll register you in the highest-ranked cohort with a seat available. If
           all three are full, you&apos;ll join their waitlists. Right after you submit, you&apos;ll sign your program agreements below.
         </p>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
@@ -96,7 +99,7 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
                       </span>
                     </>
                   ) : (
-                    <span className="text-sm text-white/40">{i === 0 ? "Pick your first choice" : "Optional"}</span>
+                    <span className="text-sm text-white/40">{i === 0 ? "Pick your first choice" : i < required ? "Required: pick your second choice" : "Optional"}</span>
                   )}
                 </li>
               );
@@ -104,7 +107,7 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
           </ol>
           <Button
             className="mt-5 w-full"
-            disabled={ranked.length === 0 || pending || !!result?.ok}
+            disabled={missing > 0 || pending || !!result?.ok}
             onClick={() =>
               start(async () => {
                 setResult(await submitCohortPreferences(applicationId, ranked));
@@ -114,6 +117,11 @@ export function CohortPicker({ applicationId, cohorts }: { applicationId: string
             {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Submit Choices
           </Button>
+          {missing > 0 && !result?.ok && (
+            <p className="mt-2 text-center text-xs font-bold text-white/60">
+              Choose {missing} more cohort{missing === 1 ? "" : "s"} to submit.
+            </p>
+          )}
         </div>
         {result?.error && <Alert tone="danger" className="mt-3">{result.error}</Alert>}
         {result?.ok && <Alert tone="success" className="mt-3">{result.message}</Alert>}
