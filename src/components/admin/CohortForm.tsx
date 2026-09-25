@@ -14,6 +14,7 @@ type Cohort = {
   location_id?: string | null;
   capacity?: number;
   status?: string;
+  visible_to_applicants?: boolean;
 };
 
 export type LocationOption = { id: string; name: string; address: string; active: boolean };
@@ -101,6 +102,22 @@ export function CohortForm({
           <option value="archived">Archived</option>
         </Select>
       </div>
+      <label className="flex items-start gap-3 rounded-2xl border border-ink/10 bg-mist/60 p-4 sm:col-span-2 lg:col-span-4">
+        <input
+          type="checkbox"
+          name="visible_to_applicants"
+          defaultChecked={c.visible_to_applicants ?? true}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-maroon"
+        />
+        <span>
+          <span className="block font-bold text-ink">Visible to applicants</span>
+          <span className="block text-sm text-ink/60">
+            Show this cohort on the public program page and as a choice when applicants enroll. Untick to keep it internal (for
+            example while dates are being finalised). Staff and partner employers still see it on the schedule, and anyone already
+            registered or waitlisted keeps it.
+          </span>
+        </span>
+      </label>
       <div className="flex items-end sm:col-span-2 lg:col-span-4">
         <SubmitButton variant="dark" pendingText="Saving…">{c.id ? "Save changes" : "Create cohort"}</SubmitButton>
       </div>

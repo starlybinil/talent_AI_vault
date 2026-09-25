@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Clock,
   ExternalLink,
+  EyeOff,
   GraduationCap,
   LayoutGrid,
   MapPin,
@@ -292,6 +293,12 @@ export function CohortSchedule({
             {f}
           </button>
         ))}
+        {cohorts.some((c) => c.visible_to_applicants === false) && (
+          <span className="flex items-center gap-1.5 text-xs font-bold text-ink/60">
+            <span className="inline-block h-3 w-5 rounded bg-maroon outline-dashed outline-2 -outline-offset-2 outline-white" aria-hidden />
+            Hidden from applicants
+          </span>
+        )}
         <span className="ml-auto hidden text-xs text-ink/50 sm:inline">Hover for a preview · click a cohort for details</span>
       </div>
 
@@ -440,12 +447,13 @@ function Timeline({
                             <button
                               type="button"
                               {...hoverProps(c)}
-                              aria-label={`${c.name}, ${c.location}, ${dateRange(c)}, ${c.registered} of ${c.capacity} admitted`}
+                              aria-label={`${c.name}, ${c.location}, ${dateRange(c)}, ${c.registered} of ${c.capacity} admitted${c.visible_to_applicants === false ? ", hidden from applicants" : ""}`}
                               className={cn(
                                 "group absolute top-1.5 z-20 flex h-9 cursor-pointer items-center justify-center overflow-hidden px-1 shadow-sm ring-offset-2 transition hover:z-30 hover:-translate-y-0.5 hover:shadow-lg focus-visible:z-30",
                                 span.clippedStart ? "rounded-l-sm" : "rounded-l-xl",
                                 span.clippedEnd ? "rounded-r-sm" : "rounded-r-xl",
                                 c.status === "closed" && "opacity-60",
+                                c.visible_to_applicants === false && "outline-dashed outline-2 -outline-offset-4 outline-white/80",
                                 c.status === "archived" && "opacity-40 grayscale",
                                 selectedId === c.cohort_id && "ring-2 ring-ink",
                               )}
@@ -704,6 +712,7 @@ function GridView({
                 </div>
                 <PhaseBadge phase={phase.key} status={staff ? c.status : undefined} />
               </div>
+              {c.visible_to_applicants === false && <HiddenNote className="mt-2 text-maroon" />}
               <p className="mt-3 flex items-center gap-1.5 text-sm text-ink/70">
                 <CalendarDays className="h-4 w-4 text-ink/40" aria-hidden /> {dateRange(c)} · {durationWeeks(c)} wks
               </p>
@@ -776,9 +785,18 @@ function HoverCard({ c, x, y, colors, staff, today }: { c: ScheduleCohort; x: nu
           {c.completed > 0 ? <Mini label="Graduates" value={c.completed} /> : <Mini label="Confirmed" value={c.confirmed} />}
           {staff ? <Mini label="Waitlist" value={c.waitlisted ?? 0} /> : <Mini label="Weeks" value={durationWeeks(c)} />}
         </div>
+        {c.visible_to_applicants === false && <HiddenNote className="mt-3 text-gold" />}
         <p className="mt-3 text-[11px] font-bold text-white/50">{cohortPhase(c, today).label} · click for details</p>
       </div>
     </div>
+  );
+}
+
+function HiddenNote({ className }: { className?: string }) {
+  return (
+    <p className={cn("flex items-center gap-1.5 text-xs font-bold", className)}>
+      <EyeOff className="h-3.5 w-3.5" aria-hidden /> Hidden from applicants
+    </p>
   );
 }
 
@@ -846,6 +864,7 @@ function DetailPanel({
           <p className="mt-3 inline-flex rounded-full bg-black/15 px-3 py-1 text-xs font-bold">
             {phase.label}
             {staff && c.status !== "open" ? ` · ${c.status}` : ""}
+            {c.visible_to_applicants === false ? " · hidden from applicants" : ""}
           </p>
         </div>
 

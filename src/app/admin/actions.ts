@@ -285,7 +285,8 @@ export async function saveCohort(_prev: ActionState, formData: FormData): Promis
   if (parsed.data.end_date < parsed.data.start_date) return fail("End date must be after the start date.");
   const id = String(formData.get("id") || "");
   const supabase = await createClient();
-  const row = parsed.data;
+  // Unticked checkboxes aren't submitted, so absence means "hidden".
+  const row = { ...parsed.data, visible_to_applicants: formData.get("visible_to_applicants") === "on" };
   const { error } = id ? await supabase.from("cohorts").update(row).eq("id", id) : await supabase.from("cohorts").insert(row);
   if (error) return fail(errorMessage(error));
 

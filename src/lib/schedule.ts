@@ -23,6 +23,8 @@ export type ScheduleCohort = {
   /** Staff only (null for employers). */
   waitlisted: number | null;
   seats_left: number | null;
+  /** False when the cohort is hidden from applicants (staff/employer schedule still shows it). */
+  visible_to_applicants?: boolean;
 };
 
 export type ScheduleAudience = "admin" | "it" | "employer";
