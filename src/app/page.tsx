@@ -81,7 +81,8 @@ export default async function Home() {
         <section className="relative -mt-16 px-4 sm:px-6 lg:px-8">
           <Reveal className="mx-auto max-w-7xl">
             <Link
-              href={`/programs/${featured.slug}`}
+              href={featured.learn_more_url || `/programs/${featured.slug}`}
+              {...(featured.learn_more_url ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className="group grid overflow-hidden rounded-[2rem] bg-gold text-ink shadow-2xl md:grid-cols-[1.2fr_1fr]"
             >
               <div className="p-8 sm:p-12">
