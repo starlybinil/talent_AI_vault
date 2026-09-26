@@ -15,6 +15,8 @@ export type EmailContext = {
   programName: string;
   /** The program's hiring partner, e.g. "TSMC Arizona". */
   employerPartner?: string | null;
+  /** Used to link back to the program's application form. */
+  programSlug?: string | null;
   examUrl?: string | null;
   cohort?: {
     name: string;
@@ -234,6 +236,17 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         paragraphs: [hi, "There's an update on your application. Log in to your portal to see the details and any next steps.", ...note],
         cta: { label: "View my application", href: portal(ctx.applicationId) },
       };
+    case "application_reset":
+      return {
+        subject: `Please re-apply to the ${ctx.programName}`,
+        heading: "Your application has been reset",
+        paragraphs: [
+          hi,
+          `Admissions has reset your application to the <strong>${esc(ctx.programName)}</strong> so you can start the application process again from the beginning.`,
+          "Log in and complete the application form again. Your account stays the same, and you'll hear from us at every step.",
+        ],
+        cta: { label: "Start my application", href: `${SITE_URL}/portal/apply/${ctx.programSlug ?? ""}` },
+      };
     case "new_message":
       return {
         subject: "New message from FoundryReady admissions",
@@ -315,7 +328,7 @@ export async function sendEmail(
   }
 
   await supabase.rpc("log_email", {
-    p_application: ctx.applicationId,
+    p_application: ctx.applicationId || null,
     p_to: ctx.to,
     p_template: template,
     p_subject: rendered.subject,

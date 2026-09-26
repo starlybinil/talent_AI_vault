@@ -120,9 +120,9 @@ describe("admissions flow refinements", () => {
     expect(applicantNextAction("cohort_selection").tab).toBe("enrollment");
   });
 
-  it("allows a reset from anywhere past screening, except once the program is finished", () => {
-    expect(canReset("screening")).toBe(false);
-    expect(canReset("submitted")).toBe(false);
+  it("allows a reset to a fresh application at any stage until the program is finished", () => {
+    expect(canReset("screening")).toBe(true);
+    expect(canReset("submitted")).toBe(true);
     for (const s of ["not_selected", "exam_invited", "exam_failed", "exam_passed", "agreements_submitted", "confirmed", "withdrawn"] as const)
       expect(canReset(s)).toBe(true);
     expect(canReset("completed")).toBe(false);

@@ -38,7 +38,7 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 2. **Assessment.** Record passed / not passed, or send a reminder.
 3. **Acceptance.** A passed assessment waits for **Accept into program & open enrollment**, which emails the applicant to enroll.
 4. **Enrollment decision.** The applicant ranks up to 3 cohorts and signs agreements; they hold a seat in their highest choice with space. Admissions sees the choices with live seats, can **move** them to any other cohort in their list, and **accepts** them into the held cohort once agreements are signed (this confirms enrollment).
-5. **Reset to start** (any stage before completion) clears the assessment, choices and seat and returns the application to screening; signed agreements stay on file. **Remove application** withdraws it (the applicant sees "Withdrawn").
+5. **Reset to start of application process** (any stage before completion) removes the application and emails the applicant to fill in the application form again. Any seat is released to the waitlist, and the old application (timeline, choices, signatures, messages) is kept as a snapshot in the audit log (`application.reset`). **Remove application** withdraws it instead (the applicant sees "Withdrawn").
 
 Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.

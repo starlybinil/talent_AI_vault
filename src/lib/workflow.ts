@@ -182,9 +182,9 @@ export function canChangeCohort(status: Status): boolean {
   return COHORT_HOLD_STATUSES.includes(status);
 }
 
-/** Admissions can send an application back to the start (screening) until the trainee finishes the program. */
+/** Admissions can send an applicant back to the very beginning (a fresh application form) until they finish the program. */
 export function canReset(status: Status): boolean {
-  return !["submitted", "screening", "completed", "hired"].includes(status);
+  return !OUTCOME_STATUSES.includes(status);
 }
 
 /** Statuses where admissions decides the applicant's final cohort (from their own choices) and confirms. */
@@ -295,6 +295,7 @@ export type EmailTemplate =
   | "program_completed"
   | "hired"
   | "new_message"
+  | "application_reset"
   | "status_update";
 
 export const EMAIL_FOR_STATUS: Partial<Record<Status, EmailTemplate>> = {

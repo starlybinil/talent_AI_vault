@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { assertPermission } from "@/lib/session";
-import { notifyStatus, notifyTemplate } from "@/lib/notify";
+import { emailContext, notifyStatus, notifyTemplate } from "@/lib/notify";
+import { sendEmail } from "@/lib/email";
 import { audit } from "@/lib/audit";
 import { fail, ok, type ActionState } from "@/lib/action-state";
 import { cohortSchema, EMPLOYER_FIELD_OPTIONS, locationSchema } from "@/lib/validation";
@@ -122,13 +123,13 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
       if (!error) await notifyStatus(supabase, appId, { note });
       break;
     case "reset": {
+      // The application is removed (snapshot kept in the audit log), so capture the email details first and
+      // send only once the reset has succeeded.
+      const ctx = await emailContext(supabase, appId);
       const { data, error: e } = await supabase.rpc("admin_reset_application", { p_app: appId, p_note: note });
       error = e;
       if (!error) {
-        await notifyTemplate(supabase, appId, "status_update", {
-          note: "Admissions has reset your application to the start of the admissions process. It's back in screening, and we'll email you with next steps.",
-          statusLabel: STATUS_LABEL.screening,
-        });
+        if (ctx) await sendEmail(supabase, "application_reset", { ...ctx, applicationId: "" });
         await emailPromoted(supabase, data as string[]);
       }
       break;
@@ -164,6 +165,7 @@ export async function adminAct(_prev: ActionState, formData: FormData): Promise<
   await audit(supabase, `workflow.${op}`, "application", appId, note ? { note } : {});
   revalidatePath(`/admin/applications/${appId}`);
   revalidatePath("/admin/applications");
+  if (op === "reset") redirect("/admin/applications?reset=1");
   return ok("Done — the applicant has been notified where applicable.");
 }
 

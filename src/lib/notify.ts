@@ -4,7 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, type EmailContext } from "@/lib/email";
 import { EMAIL_FOR_STATUS, type EmailTemplate, type Status } from "@/lib/workflow";
 
-type Prog = { short_name: string; employer_partner: string | null };
+type Prog = { short_name: string; employer_partner: string | null; slug: string };
 
 type AppRow = {
   id: string;
@@ -26,7 +26,7 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
   const { data } = await supabase
     .from("applications")
     .select(
-      "id, email, first_name, status, exam_url, assigned_cohort_id, completed_on, completion_note, hired_employer_name, hired_job_title, hired_start_date, programs(short_name, employer_partner)",
+      "id, email, first_name, status, exam_url, assigned_cohort_id, completed_on, completion_note, hired_employer_name, hired_job_title, hired_start_date, programs(short_name, employer_partner, slug)",
     )
     .eq("id", applicationId)
     .maybeSingle<AppRow>();
@@ -47,6 +47,7 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
     firstName: data.first_name,
     programName: program?.short_name ?? "FoundryReady program",
     employerPartner: program?.employer_partner ?? null,
+    programSlug: program?.slug ?? null,
     examUrl: data.exam_url,
     cohort,
     outcome: {

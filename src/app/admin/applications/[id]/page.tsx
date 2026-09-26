@@ -60,7 +60,7 @@ function opsFor(status: Status, employer: string | null, applicantName: string):
       op: "reset",
       label: "Reset to start of application process",
       variant: "outline",
-      confirm: `Reset ${applicantName}'s application to the start? The assessment result, cohort choices and any seat are cleared and the application goes back to screening. Signed agreements stay on file.`,
+      confirm: `Reset ${applicantName} to the very beginning? This application is removed and they're emailed to fill in a new application form. Any seat is released to the waitlist; the old application (timeline, choices, signatures, messages) is saved in the audit log.`,
     });
   if (canWithdraw(status))
     ops.push({ op: "withdraw", label: "Remove application", variant: "danger", confirm: "Remove this application from the program? Any seat is released to the waitlist, and the applicant sees it as withdrawn." });

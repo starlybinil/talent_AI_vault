@@ -7,7 +7,7 @@ import { queueQuery, type QueueFilters } from "@/lib/admin-queries";
 import { bulkAct } from "@/app/admin/actions";
 import { SelectAll } from "@/components/admin/SelectAll";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
-import { Badge, Card, EmptyState, Input, PageHeader, Select, buttonClass } from "@/components/ui";
+import { Alert, Badge, Card, EmptyState, Input, PageHeader, Select, buttonClass } from "@/components/ui";
 import { EDUCATION_LABEL, STATUSES, STATUS_LABEL, STATUS_TONE, VISA_LABEL, type Status } from "@/lib/workflow";
 import { EDUCATION_LEVELS, VISA_OPTIONS } from "@/lib/validation";
 import { cn, formatDate } from "@/lib/utils";
@@ -31,18 +31,19 @@ type Row = {
 
 const BOARD: Status[] = ["screening", "exam_invited", "exam_passed", "cohort_selection", "waitlisted", "agreements_pending", "agreements_submitted", "confirmed", "completed", "hired"];
 
-export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<QueueFilters & { view?: string }> }) {
+export default async function ApplicationsPage({ searchParams }: { searchParams: Promise<QueueFilters & { view?: string; reset?: string }> }) {
   const sp = await searchParams;
   const session = await requirePermission("admissions.read", "/admin/applications");
   const canManage = can(session.roles, "admissions.manage");
   const supabase = await createClient();
+  const { reset, ...filters } = sp;
   const [{ data, error }, { data: programs }] = await Promise.all([
-    queueQuery(supabase, sp).limit(500),
+    queueQuery(supabase, filters).limit(500),
     supabase.from("programs").select("id, short_name").order("sort"),
   ]);
   const rows = (data ?? []) as unknown as Row[];
   const view = sp.view === "board" ? "board" : "table";
-  const qs = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "view") as [string, string][]).toString();
+  const qs = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "view" && k !== "reset") as [string, string][]).toString();
 
   return (
     <div>
@@ -66,6 +67,12 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
           </>
         }
       />
+      {reset && (
+        <Alert tone="success" className="mb-6" title="Application reset">
+          The applicant has been emailed to start a new application. Their previous application (timeline, choices, signatures and
+          messages) is saved in the audit log, and any seat they held was released to the waitlist.
+        </Alert>
+      )}
 
       <Card className="mb-6 p-4">
         <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]" method="get">
