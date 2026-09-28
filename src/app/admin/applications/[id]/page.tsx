@@ -189,6 +189,24 @@ export default async function AdminApplicationPage({ params }: { params: Promise
             )}
           </Card>
 
+          {Array.isArray(app.leave_reasons) && app.leave_reasons.length > 0 && (
+            <Card className="border-red-200 bg-red-50/40">
+              <h2 className="font-black">Left the program</h2>
+              <p className="mt-1 text-sm text-ink/60">
+                {app.left_at ? `On ${formatDateTime(app.left_at)}` : ""}
+                {app.assigned_cohort_id && cohortById[app.assigned_cohort_id] ? ` · from ${cohortById[app.assigned_cohort_id].name}` : ""}
+              </p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {(app.leave_reasons as string[]).map((r) => (
+                  <li key={r} className="rounded-full bg-white px-3 py-1 text-sm font-bold text-red-800 ring-1 ring-red-200">
+                    {r}
+                  </li>
+                ))}
+              </ul>
+              {app.leave_detail && <p className="mt-3 whitespace-pre-wrap rounded-xl bg-white p-3 text-sm text-ink/80">{app.leave_detail}</p>}
+            </Card>
+          )}
+
           {((prefs ?? []).length > 0 || (enrollments ?? []).length > 0) && (
             <Card>
               <h2 className="font-black">Cohort choices</h2>

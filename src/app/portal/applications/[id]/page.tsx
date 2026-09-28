@@ -11,6 +11,7 @@ import { SignaturePad } from "@/components/portal/SignaturePad";
 import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { CohortDetails } from "@/components/program/CohortCard";
 import { OutcomeCard } from "@/components/portal/OutcomeCard";
+import { InProgram, type ProgramResource } from "@/components/portal/InProgram";
 import { StepCompleteDialog } from "@/components/portal/StepCompleteDialog";
 import { PracticePromo } from "@/components/practice/PracticePromo";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
@@ -37,6 +38,7 @@ const TABS = [
   { key: "overview", label: "Overview" },
   { key: "exam", label: "Assessment" },
   { key: "enrollment", label: "Enrollment" },
+  { key: "program", label: "In program" },
   { key: "messages", label: "Messages" },
   { key: "details", label: "My application" },
 ] as const;
@@ -65,7 +67,7 @@ export default async function ApplicationPage({
   const program = Array.isArray(app.programs) ? app.programs[0] : app.programs;
   // Cohorts and agreements used to be separate tabs; old links (emails) land on Enrollment.
   const requested = sp.tab === "cohorts" || sp.tab === "agreements" ? "enrollment" : sp.tab;
-  const tab = TABS.some((t) => t.key === requested) ? requested! : "overview";
+  const tab = TABS.some((t) => t.key === requested) && (requested !== "program" || isTrainee(status as Status)) ? requested! : "overview";
 
   const [{ data: events }, { data: messages }, { data: enrollments }, { data: prefs }, { data: templates }, { data: signatures }, cohortsRes] =
     await Promise.all([
@@ -85,6 +87,20 @@ export default async function ApplicationPage({
   const decisionReason =
     status === "not_selected" ? [...((events ?? []) as Array<{ to_status: string; note: string | null }>)].reverse().find((e) => e.to_status === "not_selected")?.note ?? null : null;
   const hasSeat = (enrollments ?? []).some((e) => e.status === "registered");
+  // In program: resources for this program (RLS shows only the trainee's own cohort's, plus program-wide ones).
+  let resources: ProgramResource[] = [];
+  if (tab === "program" && isTrainee(status)) {
+    const { data: rows } = await supabase
+      .from("program_resources")
+      .select("id, title, description, url, file_path, file_name, cohort_id, created_at")
+      .eq("program_id", program!.id)
+      .order("sort")
+      .order("created_at", { ascending: false });
+    const files = (rows ?? []).filter((r) => r.file_path).map((r) => r.file_path as string);
+    const { data: signed } = files.length ? await supabase.storage.from("program-resources").createSignedUrls(files, 3600) : { data: [] };
+    const urlFor = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
+    resources = (rows ?? []).map((r) => ({ ...r, href: r.url ?? (r.file_path ? urlFor.get(r.file_path) ?? null : null) }));
+  }
   const signedIds = new Map((signatures ?? []).map((s) => [s.template_id, s]));
   // Enrollment = cohorts + agreements. Signing opens once cohorts are chosen (even on the waitlist).
   const chosen = !["submitted", "screening", "screening_passed", "not_selected", "exam_invited", "exam_passed", "exam_failed", "cohort_selection", "withdrawn"].includes(status);
@@ -127,7 +143,7 @@ export default async function ApplicationPage({
       </Card>
 
       <nav className="mt-6 flex gap-1 overflow-x-auto rounded-2xl bg-white p-1.5 shadow-sm" aria-label="Application sections">
-        {TABS.map((t) => (
+        {TABS.filter((t) => t.key !== "program" || isTrainee(status)).map((t) => (
           <Link
             key={t.key}
             href={`?tab=${t.key}`}
@@ -443,6 +459,10 @@ export default async function ApplicationPage({
               </SubmitButton>
             </ActionForm>
           </Card>
+        )}
+
+        {tab === "program" && isTrainee(status) && (
+          <InProgram appId={app.id} status={status} programName={program?.name ?? ""} cohort={assigned} resources={resources} />
         )}
 
         {tab === "details" && (

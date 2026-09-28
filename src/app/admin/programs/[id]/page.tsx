@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
 import { ProgramForm } from "@/components/admin/ProgramForm";
 import { AgreementsEditor } from "@/components/admin/AgreementsEditor";
+import { ProgramResources } from "@/components/admin/ProgramResources";
 import { setProgramPartner } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Card, Label, PageHeader, Select } from "@/components/ui";
@@ -16,10 +17,12 @@ export default async function ProgramDetail({ params }: { params: Promise<{ id: 
   const supabase = await createClient();
   const { data: program } = await supabase.from("programs").select("*").eq("id", id).maybeSingle();
   if (!program) notFound();
-  const [{ data: templates }, { data: partners }, { data: orgs }] = await Promise.all([
+  const [{ data: templates }, { data: partners }, { data: orgs }, { data: resources }, { data: cohorts }] = await Promise.all([
     supabase.from("agreement_templates").select("*").eq("program_id", id).order("sort"),
     supabase.from("program_partners").select("employer_org_id, employer_orgs(name)").eq("program_id", id),
     supabase.from("employer_orgs").select("id, name").order("name"),
+    supabase.from("program_resources").select("id, title, description, url, file_name, cohort_id").eq("program_id", id).order("sort").order("created_at", { ascending: false }),
+    supabase.from("cohorts").select("id, name").eq("program_id", id).neq("status", "archived").order("start_date"),
   ]);
   const partnerIds = new Set((partners ?? []).map((p) => p.employer_org_id));
 
@@ -79,6 +82,10 @@ export default async function ProgramDetail({ params }: { params: Promise<{ id: 
           </div>
           <SubmitButton variant="dark">Add</SubmitButton>
         </ActionForm>
+      </Card>
+
+      <Card className="mt-6">
+        <ProgramResources programId={id} resources={resources ?? []} cohorts={cohorts ?? []} />
       </Card>
 
       <div className="mt-6">

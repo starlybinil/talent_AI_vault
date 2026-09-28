@@ -184,6 +184,27 @@ export async function withdrawApplication(_prev: ActionState, formData: FormData
   return ok("Your application has been withdrawn and your seat has been released.");
 }
 
+/** A confirmed trainee leaves the program and tells admissions why. */
+export async function leaveProgram(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  const appId = String(formData.get("application_id") || "");
+  const reasons = formData.getAll("reasons").map(String).filter(Boolean);
+  const detail = String(formData.get("detail") || "").trim().slice(0, 1000);
+  if (!reasons.length) return fail("Choose at least one reason you're leaving.");
+  if (reasons.includes("Other") && !detail) return fail("Tell us a little more about your reason (you chose Other).");
+  const supabase = await createClient();
+  const { data: promoted, error } = await supabase.rpc("applicant_leave_program", { p_app: appId, p_reasons: reasons, p_detail: detail || null });
+  if (error) return fail(errorMessage(error));
+  await notifyTemplate(supabase, appId, "status_update", {
+    statusLabel: STATUS_LABEL.withdrawn,
+    note: "You've left the program and your seat has been released. Thank you for letting us know why. Contact admissions if you'd like to return in a future cohort.",
+  });
+  const service = createServiceClient();
+  if (service) for (const id of (promoted as string[]) ?? []) await notifyTemplate(service, id, "waitlist_promoted");
+  revalidatePath(`/portal/applications/${appId}`);
+  revalidatePath("/portal");
+  return ok("You've left the program. We've let admissions know.");
+}
+
 export async function changeCohort(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const appId = String(formData.get("application_id") || "");
   const reason = String(formData.get("reason") || "").trim().slice(0, 500);

@@ -81,11 +81,13 @@ describe("workflow transitions", () => {
     }
   });
 
-  it("marks hired as fully done, confirmed as working toward completion, and rejections as blocked", () => {
+  it("marks hired as fully done, confirmed trainees as in the program, and rejections as blocked", () => {
     expect(stageStates("hired").every((x) => x === "done")).toBe(true);
     const confirmed = stageStates("confirmed");
     expect(confirmed[STAGES.findIndex((s) => s.key === "confirmed")]).toBe("done");
-    expect(confirmed[STAGES.findIndex((s) => s.key === "completed")]).toBe("current");
+    expect(confirmed[STAGES.findIndex((s) => s.key === "in_program")]).toBe("current");
+    expect(confirmed[STAGES.findIndex((s) => s.key === "completed")]).toBe("upcoming");
+    expect(stageStates("completed")[STAGES.findIndex((s) => s.key === "in_program")]).toBe("done");
     expect(stageStates("completed")[STAGES.findIndex((s) => s.key === "hired")]).toBe("current");
     expect(stageStates("exam_failed")).toContain("blocked");
     expect(stageStates("submitted")[0]).toBe("done");

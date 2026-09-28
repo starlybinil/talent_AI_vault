@@ -671,6 +671,62 @@ export async function deleteUser(_prev: ActionState, formData: FormData): Promis
   return ok(`Account deleted.${filesNote}`);
 }
 
+// ---------------------------------------------------------------------------
+// Program resources (shown to trainees on their "In program" tab)
+// ---------------------------------------------------------------------------
+
+export async function addProgramResource(input: {
+  programId: string;
+  cohortId: string | null;
+  title: string;
+  description: string;
+  url: string | null;
+  filePath: string | null;
+  fileName: string | null;
+}): Promise<ActionState> {
+  try {
+    await assertPermission("programs.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const title = input.title.trim();
+  const url = input.url?.trim() || null;
+  if (title.length < 2) return fail("Give the resource a title.");
+  if (!url && !input.filePath) return fail("Add a link or upload a file.");
+  if (url && !/^https:\/\//.test(url)) return fail("Links must start with https://");
+  if (input.filePath && !input.filePath.startsWith(`${input.programId}/`)) return fail("Invalid file.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("program_resources").insert({
+    program_id: input.programId,
+    cohort_id: input.cohortId || null,
+    title: title.slice(0, 160),
+    description: input.description.trim().slice(0, 500) || null,
+    url,
+    file_path: input.filePath,
+    file_name: input.fileName?.slice(0, 200) ?? null,
+  });
+  if (error) return fail(errorMessage(error));
+  await audit(supabase, "program_resource.create", "program", input.programId, { title });
+  revalidatePath(`/admin/programs/${input.programId}`);
+  return ok("Resource added. Trainees see it on their In program tab.");
+}
+
+export async function deleteProgramResource(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("programs.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const id = String(formData.get("resource_id") || "");
+  const supabase = await createClient();
+  const { data: row, error } = await supabase.from("program_resources").delete().eq("id", id).select("program_id, file_path, title").maybeSingle();
+  if (error) return fail(errorMessage(error));
+  if (row?.file_path) await supabase.storage.from("program-resources").remove([row.file_path]);
+  if (row) await audit(supabase, "program_resource.delete", "program", row.program_id, { title: row.title });
+  revalidatePath(`/admin/programs/${row?.program_id ?? ""}`);
+  return ok("Resource removed.");
+}
+
 export async function createEmployerOrg(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertPermission("users.manage");

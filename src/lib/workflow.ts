@@ -112,6 +112,7 @@ export const STAGES = [
   { key: "assessment", label: "Assessment", description: "Complete the TestGorilla assessment" },
   { key: "enroll", label: "Enrollment", description: "Choose your cohorts and sign your agreements" },
   { key: "confirmed", label: "Confirmed", description: "You're in — see you in the lab" },
+  { key: "in_program", label: "In program", description: "Train with your cohort, using your program resources" },
   { key: "completed", label: "Completed", description: "Successfully complete the program" },
   { key: "hired", label: "Hired", description: "Interview with employer partners and start your career" },
 ] as const;
@@ -131,7 +132,7 @@ const STAGE_OF: Record<Status, StageKey> = {
   waitlisted: "enroll",
   agreements_pending: "enroll",
   agreements_submitted: "confirmed",
-  confirmed: "completed",
+  confirmed: "in_program",
   completed: "hired",
   hired: "hired",
   withdrawn: "apply",
@@ -197,6 +198,19 @@ export const NOT_SELECTED_REASONS = [
 export function notSelectedReasons(employer: string | null | undefined): string[] {
   return NOT_SELECTED_REASONS.map((r) => r.replace("{employer}", employer?.trim() || "the employer partner"));
 }
+
+/** Reasons a trainee can give for leaving the program (they pick one or more). */
+export const LEAVE_REASONS = [
+  "Schedule conflict or the time commitment is too much",
+  "I accepted a job or another opportunity",
+  "Personal or family reasons",
+  "Transportation or the training location",
+  "Financial reasons",
+  "Health reasons",
+  "The program isn't what I expected",
+  "I'm relocating",
+  "Other",
+] as const;
 
 /** Admissions can send an applicant back to the very beginning (a fresh application form) until they finish the program. */
 export function canReset(status: Status): boolean {
@@ -265,8 +279,10 @@ export function applicantNextAction(status: Status): { title: string; body: stri
       };
     case "confirmed":
       return {
-        title: "You're confirmed!",
-        body: "Welcome to the program. Your cohort details and calendar invite are in your inbox. Admissions records your completion when you finish.",
+        title: "You're in the program!",
+        body: "Welcome aboard. Your cohort, training location and program resources are on the In program tab. Admissions records your completion when you finish.",
+        tab: "program",
+        cta: "Go to In program",
       };
     case "completed":
       return {

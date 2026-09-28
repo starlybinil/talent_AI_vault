@@ -40,6 +40,8 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 4. **Enrollment decision.** The applicant ranks up to 3 cohorts and signs agreements; they hold a seat in their highest choice with space. Admissions sees the choices with live seats, can **move** them to any other cohort in their list, and **accepts** them into the held cohort once agreements are signed (this confirms enrollment).
 5. **Reset to start of application process** (any stage before completion) removes the application and emails the applicant to fill in the application form again. Any seat is released to the waitlist, and the old application (timeline, choices, signatures, messages) is kept as a snapshot in the audit log (`application.reset`). **Remove application** withdraws it instead (the applicant sees "Withdrawn").
 
+6. **In program.** Confirmed trainees get an **In program** tab: their cohort (dates, times, location with directions), program resources (files or links added under Admin → Programs → *program* → Program resources, for the whole program or one cohort; files are private and only visible to that program's trainees), and **Leave the program**, which asks for one or more reasons. Reasons show on the admin application page and in the timeline.
+
 Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.
 
