@@ -18,7 +18,7 @@ const PROVIDERS: Array<{ id: Provider; label: string; hint: string; icon: React.
   { id: "apple", label: "Continue with Apple", hint: "iCloud", icon: <AppleIcon /> },
 ];
 
-export function AuthForm({ mode, next }: { mode: Mode; next: string }) {
+export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: string; defaultEmail?: string }) {
   const router = useRouter();
   const supabase = React.useMemo(() => createClient(), []);
   const [busy, setBusy] = React.useState<string | null>(null);
@@ -120,7 +120,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next: string }) {
         )}
         <div>
           <Label htmlFor="email">Email address</Label>
-          <Input id="email" name="email" type="email" autoComplete="email" required placeholder="you@yahoo.com" />
+          <Input id="email" name="email" type="email" autoComplete="email" required placeholder="you@yahoo.com" defaultValue={defaultEmail} />
         </div>
         {!useMagic && (
           <div>

@@ -30,6 +30,9 @@ export type EmailContext = {
   note?: string | null;
   messagePreview?: string | null;
   statusLabel?: string | null;
+  /** Role invitations: the role (and employer organization) granted by IT. */
+  roleLabel?: string | null;
+  orgName?: string | null;
   outcome?: {
     completedOn: string | null;
     completionNote: string | null;
@@ -39,7 +42,7 @@ export type EmailContext = {
   } | null;
 };
 
-type Rendered = { subject: string; heading: string; paragraphs: string[]; cta?: { label: string; href: string } };
+type Rendered = { subject: string; heading: string; paragraphs: string[]; cta?: { label: string; href: string }; footer?: string };
 
 const portal = (id: string | null) => `${SITE_URL}/portal${id ? `/applications/${id}` : ""}`;
 
@@ -247,6 +250,31 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         ],
         cta: { label: "Start my application", href: `${SITE_URL}/portal/apply/${ctx.programSlug ?? ""}` },
       };
+    case "role_invite":
+      return {
+        subject: "You're invited to join FoundryReady",
+        heading: "You're invited to FoundryReady",
+        paragraphs: [
+          "Hello,",
+          `You've been invited to join <strong>FoundryReady</strong>, the admissions platform for our no-cost advanced manufacturing training programs, as <strong>${esc(ctx.roleLabel ?? "a team member")}</strong>${ctx.orgName ? ` for <strong>${esc(ctx.orgName)}</strong>` : ""}.`,
+          `Create your account with this email address (<strong>${esc(ctx.to)}</strong>) and your access is set up automatically. You can use a password or a one-time email link.`,
+          "If you weren't expecting this invitation, you can ignore this email.",
+        ],
+        cta: { label: "Create my account", href: `${SITE_URL}/register?email=${encodeURIComponent(ctx.to)}` },
+        footer: "You're receiving this because a FoundryReady administrator invited this email address.",
+      };
+    case "role_granted":
+      return {
+        subject: "Your FoundryReady access has been updated",
+        heading: "New access on FoundryReady",
+        paragraphs: [
+          `Hi${ctx.firstName ? ` ${esc(ctx.firstName)}` : ""},`,
+          `You've been given <strong>${esc(ctx.roleLabel ?? "new")}</strong> access${ctx.orgName ? ` for <strong>${esc(ctx.orgName)}</strong>` : ""} on FoundryReady. Sign in to get started.`,
+          "If you think this was a mistake, reply to this email or contact support.",
+        ],
+        cta: { label: "Sign in", href: `${SITE_URL}/login` },
+        footer: "You're receiving this because a FoundryReady administrator updated your account access.",
+      };
     case "new_message":
       return {
         subject: "New message from FoundryReady admissions",
@@ -273,7 +301,7 @@ export function renderHtml(r: Rendered): string {
 <h1 style="margin:0 0 20px;font-size:26px;line-height:1.2">${esc(r.heading)}</h1>${body}${cta}
 </td></tr>
 <tr><td style="padding:20px 28px;background:#fafafa;color:#747474;font-size:12px;line-height:1.5">
-You're receiving this because you applied to a FoundryReady training program.<br/>FoundryReady · ${esc(BRAND.tagline)} · ${esc(BRAND.location)}</td></tr>
+${esc(r.footer ?? "You're receiving this because you applied to a FoundryReady training program.")}<br/>FoundryReady · ${esc(BRAND.tagline)} · ${esc(BRAND.location)}</td></tr>
 </table></td></tr></table></body></html>`;
 }
 

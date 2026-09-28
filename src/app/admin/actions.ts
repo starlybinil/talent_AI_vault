@@ -12,7 +12,7 @@ import { fail, ok, type ActionState } from "@/lib/action-state";
 import { cohortSchema, EMPLOYER_FIELD_OPTIONS, locationSchema } from "@/lib/validation";
 import { STATUS_LABEL, type Status } from "@/lib/workflow";
 import { errorMessage } from "@/lib/utils";
-import { ROLES, type Role } from "@/lib/rbac";
+import { ROLE_LABEL, ROLES, type Role } from "@/lib/rbac";
 
 // ---------------------------------------------------------------------------
 // Admissions workflow
@@ -571,8 +571,20 @@ export async function grantRole(_prev: ActionState, formData: FormData): Promise
   const { data: userId, error } = await supabase.rpc("it_grant_role", { p_email: email, p_role: role, p_org: org });
   if (error) return fail(errorMessage(error));
   revalidatePath("/admin/users");
-  if (!userId) return ok(`${email} has no account yet. The ${role.replace("_", " ")} role is saved and applies automatically when they register.`);
-  return ok(`Granted ${role.replace("_", " ")} to ${email}.`);
+  // Let the person know: an invitation to register, or a note that their access changed.
+  const orgName = org ? (await supabase.from("employer_orgs").select("name").eq("id", org).maybeSingle()).data?.name ?? null : null;
+  const { data: profile } = userId ? await supabase.from("profiles").select("full_name").eq("id", userId).maybeSingle() : { data: null };
+  const sent = await sendEmail(supabase, userId ? "role_granted" : "role_invite", {
+    applicationId: null,
+    to: email.toLowerCase(),
+    firstName: (profile?.full_name ?? "").split(" ")[0] ?? "",
+    programName: "",
+    roleLabel: ROLE_LABEL[role],
+    orgName,
+  });
+  const emailNote = sent.status === "sent" ? " An email is on its way." : sent.status === "simulated" ? " (Email simulated: Resend isn't connected yet.)" : " The email couldn't be sent; see the Email log.";
+  if (!userId) return ok(`${email} has no account yet: invitation sent to register. The ${ROLE_LABEL[role]} role applies automatically when they sign up.${emailNote}`);
+  return ok(`Granted ${ROLE_LABEL[role]} to ${email}.${emailNote}`);
 }
 
 export async function cancelPendingGrant(_prev: ActionState, formData: FormData): Promise<ActionState> {
