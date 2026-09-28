@@ -412,6 +412,130 @@ export async function promoteWaitlist(_prev: ActionState, formData: FormData): P
 }
 
 // ---------------------------------------------------------------------------
+// Cohort hub: instructors & announcements
+// ---------------------------------------------------------------------------
+
+export async function addCohortInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const cohortId = String(formData.get("cohort_id") || "");
+  const name = String(formData.get("name") || "").trim();
+  const role = String(formData.get("role") || "").trim() || "Instructor";
+  const email = String(formData.get("email") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  if (name.length < 2 || name.length > 120) return fail("Enter the instructor's name.");
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("That email address doesn't look right.");
+  const supabase = await createClient();
+  const { count } = await supabase.from("cohort_instructors").select("id", { count: "exact", head: true }).eq("cohort_id", cohortId);
+  const { error } = await supabase.from("cohort_instructors").insert({
+    cohort_id: cohortId,
+    name,
+    role: role.slice(0, 80),
+    email: email || null,
+    phone: phone.slice(0, 40) || null,
+    sort: count ?? 0,
+  });
+  if (error) return fail(errorMessage(error));
+  await audit(supabase, "cohort.instructor.add", "cohort", cohortId, { name, role });
+  revalidatePath(`/admin/cohorts/${cohortId}`);
+  return ok(`${name} added to this cohort.`);
+}
+
+export async function removeCohortInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const id = String(formData.get("id") || "");
+  const supabase = await createClient();
+  const { data: row, error } = await supabase.from("cohort_instructors").delete().eq("id", id).select("cohort_id, name").maybeSingle();
+  if (error) return fail(errorMessage(error));
+  if (row) {
+    await audit(supabase, "cohort.instructor.remove", "cohort", row.cohort_id, { name: row.name });
+    revalidatePath(`/admin/cohorts/${row.cohort_id}`);
+  }
+  return ok("Instructor removed.");
+}
+
+/** Statuses that count as "placed in" a cohort, by announcement audience. */
+const ANNOUNCE_STATUSES = {
+  trainees: ["confirmed"],
+  all_placed: ["confirmed", "cohort_registered", "agreements_pending", "agreements_submitted"],
+} as const;
+
+export async function sendCohortAnnouncement(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const cohortId = String(formData.get("cohort_id") || "");
+  const subject = String(formData.get("subject") || "").trim();
+  const body = String(formData.get("body") || "").trim();
+  const audience = String(formData.get("audience") || "trainees") === "all_placed" ? "all_placed" : "trainees";
+  if (subject.length < 3 || subject.length > 150) return fail("Add a subject (3–150 characters).");
+  if (body.length < 3 || body.length > 5000) return fail("Write a message (up to 5,000 characters).");
+
+  const supabase = await createClient();
+  const { data: cohort } = await supabase
+    .from("cohorts")
+    .select("name, format, start_date, end_date, schedule, location, address, programs(short_name, employer_partner, slug)")
+    .eq("id", cohortId)
+    .maybeSingle();
+  if (!cohort) return fail("Cohort not found.");
+  const { data: recipients, error: rErr } = await supabase
+    .from("applications")
+    .select("id, email, first_name")
+    .eq("assigned_cohort_id", cohortId)
+    .in("status", [...ANNOUNCE_STATUSES[audience]]);
+  if (rErr) return fail(errorMessage(rErr));
+  const list = recipients ?? [];
+  if (list.length === 0) return fail("Nobody in this cohort matches that audience yet, so nothing was sent.");
+
+  const { data: userData } = await supabase.auth.getUser();
+  const { error } = await supabase.from("cohort_announcements").insert({
+    cohort_id: cohortId,
+    subject,
+    body,
+    audience,
+    recipients: list.length,
+    sent_by: userData.user?.id ?? null,
+  });
+  if (error) return fail(errorMessage(error));
+
+  const prog = (Array.isArray(cohort.programs) ? cohort.programs[0] : cohort.programs) as {
+    short_name: string;
+    employer_partner: string | null;
+    slug: string;
+  } | null;
+  const { programs: _p, ...cohortInfo } = cohort;
+  void _p;
+  let failed = 0;
+  for (const r of list) {
+    const res = await sendEmail(supabase, "cohort_announcement", {
+      applicationId: r.id,
+      to: r.email,
+      firstName: r.first_name,
+      programName: prog?.short_name ?? "FoundryReady program",
+      employerPartner: prog?.employer_partner ?? null,
+      programSlug: prog?.slug ?? null,
+      cohort: cohortInfo,
+      announcement: { subject, body },
+    });
+    if (res.status === "failed") failed++;
+  }
+  await audit(supabase, "cohort.announcement.send", "cohort", cohortId, { subject, audience, recipients: list.length, failed });
+  revalidatePath(`/admin/cohorts/${cohortId}`);
+  return failed
+    ? fail(`Announcement saved, but ${failed} of ${list.length} emails failed. Check the email log.`)
+    : ok(`Announcement sent to ${list.length} ${list.length === 1 ? "person" : "people"}.`);
+}
+
+// ---------------------------------------------------------------------------
 // Programs & agreements
 // ---------------------------------------------------------------------------
 

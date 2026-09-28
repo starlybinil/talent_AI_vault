@@ -35,6 +35,8 @@ export type EmailContext = {
   /** Role invitations: the role (and employer organization) granted by IT. */
   roleLabel?: string | null;
   orgName?: string | null;
+  /** Cohort announcements written by the program team. */
+  announcement?: { subject: string; body: string } | null;
   outcome?: {
     completedOn: string | null;
     completionNote: string | null;
@@ -325,6 +327,24 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         cta: { label: "Sign in", href: `${SITE_URL}/login` },
         footer: "You're receiving this because a FoundryReady administrator updated your account access.",
       };
+    case "cohort_announcement": {
+      const cohortName = ctx.cohort?.name ?? "your cohort";
+      return {
+        subject: `${ctx.announcement?.subject ?? "Update"} · ${cohortName}`,
+        heading: ctx.announcement?.subject ?? "An update from your program team",
+        paragraphs: [
+          hi,
+          ...(ctx.announcement?.body ?? "")
+            .split(/\n{2,}/)
+            .map((p) => p.trim())
+            .filter(Boolean)
+            .map((p) => esc(p).replace(/\n/g, "<br/>")),
+          `<span style="font-size:13px;color:#5a5a5a">Sent to everyone in <strong>${esc(cohortName)}</strong> · ${esc(ctx.programName)}. You can find past announcements in your FoundryReady portal.</span>`,
+        ],
+        cta: { label: "Open my program portal", href: `${portal(ctx.applicationId)}?tab=program` },
+        footer: "You're receiving this because you're placed in a FoundryReady training cohort.",
+      };
+    }
     case "new_message":
       return {
         subject: "New message from FoundryReady admissions",

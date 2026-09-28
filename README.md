@@ -42,6 +42,11 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 
 6. **In program.** Confirmed trainees get an **In program** tab: their cohort (dates, times, location with directions), program resources (files or links added under Admin → Programs → *program* → Program resources, for the whole program or one cohort; files are private and only visible to that program's trainees), and **Leave the program**, which asks for one or more reasons. Reasons show on the admin application page and in the timeline.
 
+7. **Cohort hub** (Admin → Cohorts → *cohort*). Program admins see:
+   - **Cohort at a glance**: the cohort's phase and progress, currently enrolled, awaiting confirmation, waitlist, seats left, left the program (with a tally of leave reasons), retention %, completed and hired.
+   - **Instructors**: add or remove instructors (name, role, email, phone). Enrolled trainees see them on the In program tab.
+   - **Message this cohort**: email everyone in the cohort, either *enrolled trainees* or *enrolled + awaiting confirmation*. Each announcement is kept with its recipient count, shown on the trainees' In program tab, and written to the audit log (`cohort.announcement.send`). Row-level security limits instructors and announcements to people placed in that cohort.
+
 Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.
 

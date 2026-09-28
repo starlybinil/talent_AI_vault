@@ -11,7 +11,7 @@ import { SignaturePad } from "@/components/portal/SignaturePad";
 import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { CohortDetails } from "@/components/program/CohortCard";
 import { OutcomeCard } from "@/components/portal/OutcomeCard";
-import { InProgram, type ProgramResource } from "@/components/portal/InProgram";
+import { InProgram, type CohortAnnouncement, type CohortInstructor, type ProgramResource } from "@/components/portal/InProgram";
 import { StepCompleteDialog } from "@/components/portal/StepCompleteDialog";
 import { PracticePromo } from "@/components/practice/PracticePromo";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
@@ -89,6 +89,8 @@ export default async function ApplicationPage({
   const hasSeat = (enrollments ?? []).some((e) => e.status === "registered");
   // In program: resources for this program (RLS shows only the trainee's own cohort's, plus program-wide ones).
   let resources: ProgramResource[] = [];
+  let instructors: CohortInstructor[] = [];
+  let announcements: CohortAnnouncement[] = [];
   if (tab === "program" && isTrainee(status)) {
     const { data: rows } = await supabase
       .from("program_resources")
@@ -100,6 +102,20 @@ export default async function ApplicationPage({
     const { data: signed } = files.length ? await supabase.storage.from("program-resources").createSignedUrls(files, 3600) : { data: [] };
     const urlFor = new Map((signed ?? []).map((s) => [s.path, s.signedUrl]));
     resources = (rows ?? []).map((r) => ({ ...r, href: r.url ?? (r.file_path ? urlFor.get(r.file_path) ?? null : null) }));
+    // Cohort hub: RLS limits these to the trainee's own cohort.
+    if (app.assigned_cohort_id) {
+      const [{ data: ins }, { data: ann }] = await Promise.all([
+        supabase.from("cohort_instructors").select("id, name, role, email, phone").eq("cohort_id", app.assigned_cohort_id).order("sort").order("created_at"),
+        supabase
+          .from("cohort_announcements")
+          .select("id, subject, body, created_at")
+          .eq("cohort_id", app.assigned_cohort_id)
+          .order("created_at", { ascending: false })
+          .limit(20),
+      ]);
+      instructors = ins ?? [];
+      announcements = ann ?? [];
+    }
   }
   const signedIds = new Map((signatures ?? []).map((s) => [s.template_id, s]));
   // Enrollment = cohorts + agreements. Signing opens once cohorts are chosen (even on the waitlist).
@@ -470,7 +486,7 @@ export default async function ApplicationPage({
         )}
 
         {tab === "program" && isTrainee(status) && (
-          <InProgram appId={app.id} status={status} programName={program?.name ?? ""} cohort={assigned} resources={resources} />
+          <InProgram appId={app.id} status={status} programName={program?.name ?? ""} cohort={assigned} resources={resources} instructors={instructors} announcements={announcements} />
         )}
 
         {tab === "details" && (

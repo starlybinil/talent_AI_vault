@@ -3,7 +3,11 @@ import {
   ExternalLink,
   FileText,
   Flag,
+  Mail,
   MapPin,
+  Megaphone,
+  Phone,
+  Users,
   Sparkles,
 } from "lucide-react";
 import { leaveProgram } from "@/app/portal/actions";
@@ -26,6 +30,9 @@ export type ProgramResource = {
   created_at: string;
 };
 
+export type CohortInstructor = { id: string; name: string; role: string; email: string | null; phone: string | null };
+export type CohortAnnouncement = { id: string; subject: string; body: string; created_at: string };
+
 /** The trainee's "In program" page: their cohort, program resources, and the option to leave. */
 export function InProgram({
   appId,
@@ -33,12 +40,16 @@ export function InProgram({
   programName,
   cohort,
   resources,
+  instructors = [],
+  announcements = [],
 }: {
   appId: string;
   status: Status;
   programName: string;
   cohort: CohortAvailability | null;
   resources: ProgramResource[];
+  instructors?: CohortInstructor[];
+  announcements?: CohortAnnouncement[];
 }) {
   const cohortLabel = cohort?.name ?? "your cohort";
   const progress = cohort
@@ -157,6 +168,53 @@ export function InProgram({
               )}
             </div>
           </div>
+        </Card>
+      )}
+
+      {announcements.length > 0 && (
+        <Card>
+          <h2 className="flex items-center gap-2 text-lg font-black">
+            <Megaphone className="h-5 w-5 text-maroon" aria-hidden /> Announcements from your program team
+          </h2>
+          <ul className="mt-4 space-y-3">
+            {announcements.map((n, i) => (
+              <li key={n.id}>
+                <details open={i === 0} className="rounded-2xl border border-ink/10 p-4">
+                  <summary className="flex cursor-pointer list-none flex-wrap items-baseline justify-between gap-2">
+                    <span className="font-bold">{n.subject}</span>
+                    <span className="text-xs text-ink/40">{formatDate(n.created_at)}</span>
+                  </summary>
+                  <p className="mt-3 whitespace-pre-line text-sm leading-relaxed text-ink/80">{n.body}</p>
+                </details>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {instructors.length > 0 && (
+        <Card>
+          <h2 className="flex items-center gap-2 text-lg font-black">
+            <Users className="h-5 w-5 text-maroon" aria-hidden /> Your instructors
+          </h2>
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+            {instructors.map((t) => (
+              <li key={t.id} className="rounded-2xl bg-mist p-4 text-sm">
+                <p className="font-bold">{t.name}</p>
+                <p className="text-xs font-bold text-maroon">{t.role}</p>
+                {t.email && (
+                  <a href={`mailto:${t.email}`} className="mt-2 flex items-center gap-1.5 break-all text-ink/70 hover:text-maroon">
+                    <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden /> {t.email}
+                  </a>
+                )}
+                {t.phone && (
+                  <a href={`tel:${t.phone.replace(/[^\d+]/g, "")}`} className="mt-1 flex items-center gap-1.5 text-ink/70 hover:text-maroon">
+                    <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden /> {t.phone}
+                  </a>
+                )}
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
