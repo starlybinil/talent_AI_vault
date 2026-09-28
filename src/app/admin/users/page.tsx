@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
-import { createEmployerOrg, deleteUser, grantRole, revokeRole, setUserActive } from "@/app/admin/actions";
+import { cancelPendingGrant, createEmployerOrg, deleteUser, grantRole, revokeRole, setUserActive } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Badge, Card, Input, Label, PageHeader, Select, buttonClass } from "@/components/ui";
 import { ROLES, ROLE_LABEL, type Role } from "@/lib/rbac";
@@ -25,21 +25,25 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   let query = supabase.from("profiles").select("id, email, full_name, active, created_at, user_roles(id, role, employer_org_id)").order("created_at", { ascending: false }).limit(200);
   const term = (sp.q ?? "").replace(/[^\p{L}\p{N}@.\-_ ]/gu, "").trim();
   if (term) query = query.or(`email.ilike.%${term}%,full_name.ilike.%${term}%`);
-  const [{ data: users }, { data: orgs }] = await Promise.all([query, supabase.from("employer_orgs").select("id, name").order("name")]);
+  const [{ data: users }, { data: orgs }, { data: pending }] = await Promise.all([
+    query,
+    supabase.from("employer_orgs").select("id, name").order("name"),
+    supabase.from("pending_role_grants").select("id, email, role, employer_org_id, created_at").order("created_at", { ascending: false }),
+  ]);
   const orgName = Object.fromEntries((orgs ?? []).map((o) => [o.id, o.name]));
   let rows = (users ?? []) as U[];
   if (sp.role && (ROLES as readonly string[]).includes(sp.role)) rows = rows.filter((u) => u.user_roles.some((r) => r.role === sp.role));
 
   return (
     <div>
-      <PageHeader eyebrow="IT administration" title="Users & roles" description="Grant staff and employer access. People must create an account first (any sign-in method)." />
+      <PageHeader eyebrow="IT administration" title="Users & roles" description="Grant staff and employer access. If the person has no account yet, the role is saved and applied automatically when they register with that email." />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <h2 className="font-black">Grant a role</h2>
           <ActionForm action={grantRole} resetOnSuccess className="mt-4 grid gap-3">
             <div>
-              <Label htmlFor="grant-email">Account email</Label>
+              <Label htmlFor="grant-email">Email (existing account or someone yet to register)</Label>
               <Input id="grant-email" name="email" type="email" required placeholder="person@company.com" />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
@@ -67,6 +71,31 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
             </div>
             <SubmitButton variant="dark" className="justify-self-start">Grant role</SubmitButton>
           </ActionForm>
+          {(pending ?? []).length > 0 && (
+            <div className="mt-6 border-t border-ink/10 pt-5">
+              <h3 className="text-sm font-black">Waiting for these people to register</h3>
+              <p className="mt-1 text-xs text-ink/50">They get these roles (instead of Applicant) when they create an account with this email.</p>
+              <ul className="mt-3 divide-y divide-ink/5">
+                {(pending ?? []).map((g) => (
+                  <li key={g.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                    <span className="min-w-0">
+                      <span className="block truncate font-bold">{g.email}</span>
+                      <span className="text-xs text-ink/50">
+                        {ROLE_LABEL[g.role as Role]}
+                        {g.employer_org_id ? ` · ${orgName[g.employer_org_id] ?? "employer"}` : ""} · invited {formatDate(g.created_at)}
+                      </span>
+                    </span>
+                    <ActionForm action={cancelPendingGrant} confirm={`Cancel the pending ${ROLE_LABEL[g.role as Role]} role for ${g.email}?`}>
+                      <input type="hidden" name="grant_id" value={g.id} />
+                      <SubmitButton size="sm" variant="ghost" pendingText="…">
+                        Cancel
+                      </SubmitButton>
+                    </ActionForm>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </Card>
         <Card>
           <h2 className="font-black">Employer organizations</h2>

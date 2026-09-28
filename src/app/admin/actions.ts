@@ -568,10 +568,24 @@ export async function grantRole(_prev: ActionState, formData: FormData): Promise
   if (!ROLES.includes(role)) return fail("Choose a role.");
   if (role === "employer" && !org) return fail("Choose the employer organization.");
   const supabase = await createClient();
-  const { error } = await supabase.rpc("it_grant_role", { p_email: email, p_role: role, p_org: org });
+  const { data: userId, error } = await supabase.rpc("it_grant_role", { p_email: email, p_role: role, p_org: org });
   if (error) return fail(errorMessage(error));
   revalidatePath("/admin/users");
+  if (!userId) return ok(`${email} has no account yet. The ${role.replace("_", " ")} role is saved and applies automatically when they register.`);
   return ok(`Granted ${role.replace("_", " ")} to ${email}.`);
+}
+
+export async function cancelPendingGrant(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("users.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("it_cancel_pending_grant", { p_id: String(formData.get("grant_id") || "") });
+  if (error) return fail(errorMessage(error));
+  revalidatePath("/admin/users");
+  return ok("Pending role cancelled.");
 }
 
 export async function revokeRole(_prev: ActionState, formData: FormData): Promise<ActionState> {
