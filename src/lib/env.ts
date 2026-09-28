@@ -33,7 +33,17 @@ function resolveAnonKey(): string {
 
 export const SUPABASE_ANON_KEY = resolveAnonKey();
 
+/**
+ * The public domain. In production, links (emails, auth callbacks) always use it, and the production
+ * *.vercel.app alias redirects here (see middleware). Set CANONICAL_HOST=off to disable, or to another host.
+ */
+export const CANONICAL_HOST = (process.env.CANONICAL_HOST || "foundryready.org").trim().toLowerCase();
+export const CANONICAL_ENABLED = CANONICAL_HOST !== "off" && process.env.VERCEL_ENV === "production";
+
 function resolveSiteUrl(): string {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL;
+  // A leftover *.vercel.app site URL would put the temporary address in every email; prefer the real domain.
+  if (CANONICAL_ENABLED && (!configured || /\.vercel\.app/i.test(configured))) return `https://${CANONICAL_HOST}`;
   const candidates = [
     process.env.NEXT_PUBLIC_SITE_URL,
     process.env.VERCEL_PROJECT_PRODUCTION_URL && `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`,

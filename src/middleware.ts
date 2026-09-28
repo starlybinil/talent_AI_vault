@@ -1,9 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { isAllowed, requirementFor, type Role } from "@/lib/rbac";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
+import { CANONICAL_ENABLED, CANONICAL_HOST, SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
 
 export async function middleware(request: NextRequest) {
+  // Production traffic on the temporary *.vercel.app address moves to the real domain (same path and query).
+  // Preview deployments are left alone (VERCEL_ENV !== "production").
+  const host = (request.headers.get("host") || "").toLowerCase();
+  if (CANONICAL_ENABLED && host.endsWith(".vercel.app")) {
+    const url = new URL(request.nextUrl.pathname + request.nextUrl.search, `https://${CANONICAL_HOST}`);
+    return NextResponse.redirect(url, 308);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

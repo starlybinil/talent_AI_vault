@@ -159,6 +159,17 @@ New visitors land on account creation and go straight into the application after
 
 ---
 
+## Custom domain (foundryready.org)
+
+In production the site treats `foundryready.org` as its home: requests to the temporary `*.vercel.app` production
+address are redirected there (path kept), and email links use it even if `NEXT_PUBLIC_SITE_URL` still points at
+vercel.app. Preview deployments are unaffected. Set `CANONICAL_HOST` to use a different domain, or `CANONICAL_HOST=off`
+to disable the redirect.
+
+Supabase must also know the domain, or sign-in emails and Google sign-in fall back to the old address:
+Authentication → URL Configuration → **Site URL** `https://foundryready.org`, and **Redirect URLs**
+`https://foundryready.org/**` and `https://www.foundryready.org/**`.
+
 ## Adding a program (e.g. ASU-Amkor, ASU-Intel)
 
 Every partnership is its own row in `programs`, with its own landing page at `/programs/<slug>`, apply link at
