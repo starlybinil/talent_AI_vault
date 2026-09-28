@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
-import { createEmployerOrg, grantRole, revokeRole, setUserActive } from "@/app/admin/actions";
+import { createEmployerOrg, deleteUser, grantRole, revokeRole, setUserActive } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Badge, Card, Input, Label, PageHeader, Select, buttonClass } from "@/components/ui";
 import { ROLES, ROLE_LABEL, type Role } from "@/lib/rbac";
@@ -145,13 +145,34 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                   {u.id === session.userId ? (
                     <Badge tone="info">You</Badge>
                   ) : (
-                    <ActionForm action={setUserActive} confirm={u.active ? `Deactivate ${u.email}? They lose all access.` : undefined}>
-                      <input type="hidden" name="user_id" value={u.id} />
-                      <input type="hidden" name="active" value={u.active ? "0" : "1"} />
-                      <SubmitButton size="sm" variant={u.active ? "outline" : "dark"}>
-                        {u.active ? "Deactivate" : "Reactivate"}
-                      </SubmitButton>
-                    </ActionForm>
+                    <div className="flex flex-wrap items-start gap-2">
+                      <ActionForm action={setUserActive} confirm={u.active ? `Deactivate ${u.email}? They lose all access.` : undefined}>
+                        <input type="hidden" name="user_id" value={u.id} />
+                        <input type="hidden" name="active" value={u.active ? "0" : "1"} />
+                        <SubmitButton size="sm" variant={u.active ? "outline" : "dark"}>
+                          {u.active ? "Deactivate" : "Reactivate"}
+                        </SubmitButton>
+                      </ActionForm>
+                      <details className="group">
+                        <summary className="inline-flex h-9 cursor-pointer list-none items-center rounded-full border border-red-200 px-4 text-sm font-bold text-red-700 hover:bg-red-50">
+                          Delete
+                        </summary>
+                        <ActionForm
+                          action={deleteUser}
+                          confirm={`Permanently delete ${u.email}? This removes their account, applications, messages and signed agreements. It cannot be undone.`}
+                          className="mt-2 grid w-64 gap-2 rounded-2xl border border-red-200 bg-red-50/60 p-3"
+                        >
+                          <input type="hidden" name="user_id" value={u.id} />
+                          <p className="text-xs text-red-800">
+                            Permanently removes the account and everything tied to it. Type <strong>{u.email}</strong> to confirm.
+                          </p>
+                          <Input name="confirm_email" type="email" required placeholder={u.email ?? "email"} aria-label="Confirm email" className="mt-0 h-9 text-sm" />
+                          <SubmitButton size="sm" variant="danger" pendingText="Deleting…">
+                            Delete permanently
+                          </SubmitButton>
+                        </ActionForm>
+                      </details>
+                    </div>
                   )}
                 </td>
               </tr>

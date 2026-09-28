@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { assertPermission } from "@/lib/session";
 import { emailContext, notifyStatus, notifyTemplate } from "@/lib/notify";
 import { sendEmail } from "@/lib/email";
@@ -601,6 +601,37 @@ export async function setUserActive(_prev: ActionState, formData: FormData): Pro
   if (error) return fail(errorMessage(error));
   revalidatePath("/admin/users");
   return ok("User updated.");
+}
+
+/** Permanently delete a user account (IT admins). The user's email must be typed to confirm. */
+export async function deleteUser(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("users.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const userId = String(formData.get("user_id") || "");
+  const confirmEmail = String(formData.get("confirm_email") || "").trim();
+  if (!userId || !confirmEmail) return fail("Type the user's email address to confirm.");
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("it_delete_user", { p_user: userId, p_confirm_email: confirmEmail });
+  if (error) return fail(errorMessage(error));
+
+  // Uploaded files (resume, signatures, signed PDFs) live under the user's folder; removing them needs the
+  // server-only service key. Without it the account is still deleted and the files are left in storage.
+  let filesNote = "";
+  const admin = createServiceClient();
+  if (admin) {
+    const bucket = admin.storage.from("applicant-files");
+    const { data: files } = await bucket.list(userId, { limit: 1000 });
+    const paths = (files ?? []).map((f) => `${userId}/${f.name}`);
+    if (paths.length) await bucket.remove(paths);
+  } else {
+    filesNote = " Uploaded files were kept in storage (add SUPABASE_SERVICE_ROLE_KEY to remove them automatically).";
+  }
+  await emailPromoted(supabase, data as string[]);
+  revalidatePath("/admin/users");
+  return ok(`Account deleted.${filesNote}`);
 }
 
 export async function createEmployerOrg(_prev: ActionState, formData: FormData): Promise<ActionState> {
