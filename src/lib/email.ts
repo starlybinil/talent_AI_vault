@@ -42,7 +42,16 @@ export type EmailContext = {
   } | null;
 };
 
-type Rendered = { subject: string; heading: string; paragraphs: string[]; cta?: { label: string; href: string }; footer?: string; statusLabel?: string | null };
+type Rendered = {
+  subject: string;
+  heading: string;
+  paragraphs: string[];
+  cta?: { label: string; href: string };
+  /** A second, dark button under the main one. */
+  secondary?: { label: string; href: string };
+  footer?: string;
+  statusLabel?: string | null;
+};
 
 const portal = (id: string | null) => `${SITE_URL}/portal${id ? `/applications/${id}` : ""}`;
 
@@ -77,31 +86,39 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         paragraphs: [hi, "Your application passed our initial screening. Your online assessment invitation is on its way.", ...note],
         cta: { label: "View my status", href: portal(ctx.applicationId) },
       };
-    case "exam_invite":
+    case "exam_invite": {
+      const examTab = `${portal(ctx.applicationId)}?tab=exam`;
       return {
         subject: "Action required: complete your TestGorilla assessment",
         heading: "Your assessment is ready",
         paragraphs: [
           hi,
-          `Congratulations — you passed initial screening for the <strong>${esc(ctx.programName)}</strong>. The next step is a short online assessment on TestGorilla.`,
-          ctx.examUrl ? `Your assessment link: <a href="${attr(ctx.examUrl)}">${esc(ctx.examUrl)}</a>` : "",
-          "Please complete it within 7 days, then mark it complete in your portal.",
+          `Congratulations — you passed initial screening for the <strong>${esc(ctx.programName)}</strong>. The next step is a short online assessment on TestGorilla. Please complete it within 7 days.`,
+          "<strong>Step 1.</strong> Take the assessment on TestGorilla, in one sitting in a quiet place.",
+          `<strong>Step 2.</strong> Sign in to your FoundryReady portal and click <strong>&ldquo;I&rsquo;ve completed the assessment&rdquo;</strong> on the Assessment tab, so admissions knows to look for your result.`,
+          ctx.examUrl ? `<span style="font-size:13px;color:#5a5a5a">Assessment link: <a href="${attr(ctx.examUrl)}" style="color:#8C1D40">${esc(ctx.examUrl)}</a><br/>Portal: <a href="${attr(examTab)}" style="color:#8C1D40">${esc(examTab)}</a></span>` : "",
           ...note,
         ].filter(Boolean),
-        cta: { label: "Start the assessment", href: ctx.examUrl || portal(ctx.applicationId) },
+        cta: { label: "Step 1: Take the assessment", href: ctx.examUrl || examTab },
+        secondary: { label: "Step 2: Mark it complete on FoundryReady", href: examTab },
       };
-    case "exam_reminder":
+    }
+    case "exam_reminder": {
+      const examTab = `${portal(ctx.applicationId)}?tab=exam`;
       return {
         subject: "Reminder: your TestGorilla assessment is waiting",
         heading: "Don't miss your assessment",
         paragraphs: [
           hi,
           "A friendly reminder that your program assessment is still open. Completing it is required to move forward.",
-          ctx.examUrl ? `Assessment link: <a href="${attr(ctx.examUrl)}">${esc(ctx.examUrl)}</a>` : "",
-          "Already finished? Mark it complete in your portal so we can follow up.",
+          "<strong>Haven&rsquo;t taken it yet?</strong> Use the first button to open your assessment on TestGorilla.",
+          `<strong>Already finished?</strong> Sign in to your FoundryReady portal and click <strong>&ldquo;I&rsquo;ve completed the assessment&rdquo;</strong> on the Assessment tab so we can follow up on your result.`,
+          ctx.examUrl ? `<span style="font-size:13px;color:#5a5a5a">Assessment link: <a href="${attr(ctx.examUrl)}" style="color:#8C1D40">${esc(ctx.examUrl)}</a><br/>Portal: <a href="${attr(examTab)}" style="color:#8C1D40">${esc(examTab)}</a></span>` : "",
         ].filter(Boolean),
-        cta: { label: "Complete my assessment", href: ctx.examUrl || portal(ctx.applicationId) },
+        cta: { label: "Take the assessment", href: ctx.examUrl || examTab },
+        secondary: { label: "I've finished: mark it complete", href: examTab },
       };
+    }
     case "exam_passed":
       return {
         subject: "You passed the assessment!",
@@ -294,6 +311,11 @@ export function renderHtml(r: Rendered): string {
         r.cta.label,
       )} →</a></p>`
     : "";
+  const secondary = r.secondary
+    ? `<p style="margin:${r.cta ? "-12px" : "28px"} 0 28px"><a href="${attr(r.secondary.href)}" style="background:#191919;color:#ffffff;padding:14px 24px;border-radius:999px;font-weight:700;text-decoration:none;display:inline-block">${esc(
+        r.secondary.label,
+      )} →</a></p>`
+    : "";
   return `<!doctype html><html><body style="margin:0;background:#f3f3f3;font-family:Arial,Helvetica,sans-serif;color:#191919">
 <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:16px;overflow:hidden">
@@ -304,7 +326,7 @@ export function renderHtml(r: Rendered): string {
       ? `<p style="margin:0 0 14px"><span style="display:inline-block;background:#FFF4D1;color:#8C1D40;border:1px solid #F5D77A;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;letter-spacing:.3px">Application status updated: ${esc(r.statusLabel)}</span></p>`
       : ""
   }
-<h1 style="margin:0 0 20px;font-size:26px;line-height:1.2">${esc(r.heading)}</h1>${body}${cta}
+<h1 style="margin:0 0 20px;font-size:26px;line-height:1.2">${esc(r.heading)}</h1>${body}${cta}${secondary}
 </td></tr>
 <tr><td style="padding:20px 28px;background:#fafafa;color:#747474;font-size:12px;line-height:1.5">
 ${esc(r.footer ?? "You're receiving this because you applied to a FoundryReady training program.")}<br/>FoundryReady · ${esc(BRAND.tagline)} · ${esc(BRAND.location)}</td></tr>
