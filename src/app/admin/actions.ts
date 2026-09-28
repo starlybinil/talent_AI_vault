@@ -415,36 +415,40 @@ export async function promoteWaitlist(_prev: ActionState, formData: FormData): P
 // Cohort hub: instructors & announcements
 // ---------------------------------------------------------------------------
 
-export async function addCohortInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+
+/** Create or update an instructor in the directory (instructors can teach many cohorts and programs). */
+export async function saveInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertPermission("cohorts.manage");
   } catch (e) {
     return fail(errorMessage(e));
   }
-  const cohortId = String(formData.get("cohort_id") || "");
+  const id = String(formData.get("id") || "");
   const name = String(formData.get("name") || "").trim();
-  const role = String(formData.get("role") || "").trim() || "Instructor";
+  const title = String(formData.get("title") || "").trim() || "Instructor";
   const email = String(formData.get("email") || "").trim();
   const phone = String(formData.get("phone") || "").trim();
+  const bio = String(formData.get("bio") || "").trim();
   if (name.length < 2 || name.length > 120) return fail("Enter the instructor's name.");
-  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail("That email address doesn't look right.");
-  const supabase = await createClient();
-  const { count } = await supabase.from("cohort_instructors").select("id", { count: "exact", head: true }).eq("cohort_id", cohortId);
-  const { error } = await supabase.from("cohort_instructors").insert({
-    cohort_id: cohortId,
+  if (email && !EMAIL_RE.test(email)) return fail("That email address doesn't look right.");
+  const row = {
     name,
-    role: role.slice(0, 80),
+    title: title.slice(0, 80),
     email: email || null,
     phone: phone.slice(0, 40) || null,
-    sort: count ?? 0,
-  });
-  if (error) return fail(errorMessage(error));
-  await audit(supabase, "cohort.instructor.add", "cohort", cohortId, { name, role });
-  revalidatePath(`/admin/cohorts/${cohortId}`);
-  return ok(`${name} added to this cohort.`);
+    bio: bio.slice(0, 1000) || null,
+    ...(id ? { active: formData.get("active") === "on", updated_at: new Date().toISOString() } : {}),
+  };
+  const supabase = await createClient();
+  const { error } = id ? await supabase.from("instructors").update(row).eq("id", id) : await supabase.from("instructors").insert(row);
+  if (error) return fail(error.code === "23505" ? "An instructor with that email is already in the directory." : errorMessage(error));
+  await audit(supabase, id ? "instructor.update" : "instructor.create", "instructor", id || null, { name });
+  revalidatePath("/admin/instructors");
+  return ok(id ? "Instructor updated." : `${name} added to the directory.`);
 }
 
-export async function removeCohortInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
+export async function deleteInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertPermission("cohorts.manage");
   } catch (e) {
@@ -452,13 +456,54 @@ export async function removeCohortInstructor(_prev: ActionState, formData: FormD
   }
   const id = String(formData.get("id") || "");
   const supabase = await createClient();
-  const { data: row, error } = await supabase.from("cohort_instructors").delete().eq("id", id).select("cohort_id, name").maybeSingle();
+  const { data: row, error } = await supabase.from("instructors").delete().eq("id", id).select("name").maybeSingle();
+  if (error) return fail(errorMessage(error));
+  if (row) await audit(supabase, "instructor.delete", "instructor", id, { name: row.name });
+  revalidatePath("/admin/instructors");
+  return ok("Instructor removed from the directory and all cohorts.");
+}
+
+/** Assign a directory instructor to a cohort, with their role in that cohort. */
+export async function assignInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const cohortId = String(formData.get("cohort_id") || "");
+  const instructorId = String(formData.get("instructor_id") || "");
+  let role = String(formData.get("role") || "").trim().slice(0, 80);
+  if (!cohortId || !instructorId) return fail("Pick an instructor and a cohort.");
+  const supabase = await createClient();
+  if (!role) {
+    const { data: person } = await supabase.from("instructors").select("title").eq("id", instructorId).maybeSingle();
+    role = person?.title || "Instructor";
+  }
+  const { count } = await supabase.from("cohort_instructors").select("id", { count: "exact", head: true }).eq("cohort_id", cohortId);
+  const { error } = await supabase.from("cohort_instructors").insert({ cohort_id: cohortId, instructor_id: instructorId, role, sort: count ?? 0 });
+  if (error) return fail(error.code === "23505" ? "That instructor is already assigned to this cohort." : errorMessage(error));
+  await audit(supabase, "cohort.instructor.assign", "cohort", cohortId, { instructor_id: instructorId, role });
+  revalidatePath(`/admin/cohorts/${cohortId}`);
+  revalidatePath("/admin/instructors");
+  return ok("Instructor assigned.");
+}
+
+export async function unassignInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const id = String(formData.get("id") || "");
+  const supabase = await createClient();
+  const { data: row, error } = await supabase.from("cohort_instructors").delete().eq("id", id).select("cohort_id, instructor_id").maybeSingle();
   if (error) return fail(errorMessage(error));
   if (row) {
-    await audit(supabase, "cohort.instructor.remove", "cohort", row.cohort_id, { name: row.name });
+    await audit(supabase, "cohort.instructor.unassign", "cohort", row.cohort_id, { instructor_id: row.instructor_id });
     revalidatePath(`/admin/cohorts/${row.cohort_id}`);
   }
-  return ok("Instructor removed.");
+  revalidatePath("/admin/instructors");
+  return ok("Instructor unassigned from the cohort.");
 }
 
 /** Statuses that count as "placed in" a cohort, by announcement audience. */

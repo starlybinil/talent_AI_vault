@@ -87,6 +87,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", permission: "analytics.read", icon: "chart" },
   { href: "/admin/applications", label: "Applications", permission: "admissions.read", icon: "inbox" },
   { href: "/admin/cohorts", label: "Cohorts", permission: "admissions.read", icon: "calendar" },
+  { href: "/admin/instructors", label: "Instructors", permission: "cohorts.manage", icon: "teacher" },
   { href: "/admin/locations", label: "Training locations", permission: "cohorts.manage", icon: "map" },
   { href: "/admin/programs", label: "Programs", permission: "programs.manage", icon: "layers" },
   { href: "/admin/agreements", label: "Agreements", permission: "programs.manage", icon: "file" },
@@ -105,6 +106,7 @@ const ROUTE_RULES: Array<[string, Permission | "staff" | "signed_in"]> = [
   ["/admin/applications", "admissions.read"],
   // Program + IT admins see the cohort calendar; the page itself limits editing to cohorts.manage.
   ["/admin/cohorts", "admissions.read"],
+  ["/admin/instructors", "cohorts.manage"],
   ["/admin/locations", "cohorts.manage"],
   ["/admin/programs", "programs.manage"],
   ["/admin/agreements", "programs.manage"],

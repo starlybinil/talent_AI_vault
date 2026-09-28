@@ -30,7 +30,7 @@ export type ProgramResource = {
   created_at: string;
 };
 
-export type CohortInstructor = { id: string; name: string; role: string; email: string | null; phone: string | null };
+export type CohortInstructor = { id: string; name: string; role: string; email: string | null; phone: string | null; bio: string | null };
 export type CohortAnnouncement = { id: string; subject: string; body: string; created_at: string };
 
 /** The trainee's "In program" page: their cohort, program resources, and the option to leave. */
@@ -202,6 +202,7 @@ export function InProgram({
               <li key={t.id} className="rounded-2xl bg-mist p-4 text-sm">
                 <p className="font-bold">{t.name}</p>
                 <p className="text-xs font-bold text-maroon">{t.role}</p>
+                {t.bio && <p className="mt-2 text-ink/70">{t.bio}</p>}
                 {t.email && (
                   <a href={`mailto:${t.email}`} className="mt-2 flex items-center gap-1.5 break-all text-ink/70 hover:text-maroon">
                     <Mail className="h-3.5 w-3.5 shrink-0" aria-hidden /> {t.email}

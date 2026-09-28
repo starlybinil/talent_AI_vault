@@ -105,7 +105,12 @@ export default async function ApplicationPage({
     // Cohort hub: RLS limits these to the trainee's own cohort.
     if (app.assigned_cohort_id) {
       const [{ data: ins }, { data: ann }] = await Promise.all([
-        supabase.from("cohort_instructors").select("id, name, role, email, phone").eq("cohort_id", app.assigned_cohort_id).order("sort").order("created_at"),
+        supabase
+          .from("cohort_instructors")
+          .select("id, role, instructors(name, email, phone, bio)")
+          .eq("cohort_id", app.assigned_cohort_id)
+          .order("sort")
+          .order("created_at"),
         supabase
           .from("cohort_announcements")
           .select("id, subject, body, created_at")
@@ -113,7 +118,9 @@ export default async function ApplicationPage({
           .order("created_at", { ascending: false })
           .limit(20),
       ]);
-      instructors = ins ?? [];
+      instructors = ((ins ?? []) as unknown as Array<{ id: string; role: string; instructors: Omit<CohortInstructor, "id" | "role"> | null }>).flatMap((r) =>
+        r.instructors ? [{ id: r.id, role: r.role, ...r.instructors }] : [],
+      );
       announcements = ann ?? [];
     }
   }

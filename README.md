@@ -44,8 +44,10 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 
 7. **Cohort hub** (Admin → Cohorts → *cohort*). Program admins see:
    - **Cohort at a glance**: the cohort's phase and progress, currently enrolled, awaiting confirmation, waitlist, seats left, left the program (with a tally of leave reasons), retention %, completed and hired.
-   - **Instructors**: add or remove instructors (name, role, email, phone). Enrolled trainees see them on the In program tab.
+   - **Instructors**: assign instructors from the **instructor directory** (Admin → Instructors), with their role in this cohort. Enrolled trainees see them on the In program tab.
    - **Message this cohort**: email everyone in the cohort, either *enrolled trainees* or *enrolled + awaiting confirmation*. Each announcement is kept with its recipient count, shown on the trainees' In program tab, and written to the audit log (`cohort.announcement.send`). Row-level security limits instructors and announcements to people placed in that cohort.
+
+8. **Instructor directory** (Admin → Instructors). Each instructor is added once (name, title, email, phone, short bio) and assigned to any number of cohorts across programs. Each card shows their current and past cohorts and programs. Inactive instructors keep their history but can't be assigned to new cohorts.
 
 Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.
