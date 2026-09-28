@@ -19,6 +19,7 @@ export default async function ApplyPage({ params }: { params: Promise<{ slug: st
     .select("id")
     .eq("program_id", program.id)
     .eq("user_id", session.userId)
+    .neq("status", "withdrawn")
     .maybeSingle();
   if (existing) redirect(`/portal/applications/${existing.id}`);
 

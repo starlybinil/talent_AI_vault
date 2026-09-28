@@ -194,7 +194,7 @@ export default async function AdminApplicationPage({ params }: { params: Promise
               <h2 className="font-black">Left the program</h2>
               <p className="mt-1 text-sm text-ink/60">
                 {app.left_at ? `On ${formatDateTime(app.left_at)}` : ""}
-                {app.assigned_cohort_id && cohortById[app.assigned_cohort_id] ? ` · from ${cohortById[app.assigned_cohort_id].name}` : ""}
+                {app.left_cohort_id && cohortById[app.left_cohort_id] ? ` · from ${cohortById[app.left_cohort_id].name}` : ""}
               </p>
               <ul className="mt-3 flex flex-wrap gap-2">
                 {(app.leave_reasons as string[]).map((r) => (

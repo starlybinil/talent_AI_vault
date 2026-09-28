@@ -305,7 +305,10 @@ export function applicantNextAction(status: Status): { title: string; body: stri
         body: "Thank you for your interest. We aren't able to move your application forward at this time.",
       };
     case "withdrawn":
-      return { title: "Application withdrawn", body: "This application has been withdrawn." };
+      return {
+        title: "Application withdrawn",
+        body: "This application has been withdrawn and any seat you held was released. You're welcome to apply again for a future cohort, or to another program.",
+      };
   }
 }
 

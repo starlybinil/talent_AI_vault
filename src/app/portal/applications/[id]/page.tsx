@@ -196,9 +196,17 @@ export default async function ApplicationPage({
                     {next.cta ?? "Continue"}
                   </ButtonLink>
                 )}
+                {status === "withdrawn" && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <ButtonLink href={`/portal/apply/${program?.slug}`}>Apply again</ButtonLink>
+                    <ButtonLink href="/portal" variant="outline">
+                      Browse other programs
+                    </ButtonLink>
+                  </div>
+                )}
               </Card>
               {PRE_ASSESSMENT_STATUSES.includes(status) && <PracticePromo compact />}
-              {assigned && (
+              {assigned && status !== "withdrawn" && (
                 <Card>
                   <div className="flex items-center justify-between gap-2">
                     <p className="text-xs font-bold uppercase tracking-widest text-maroon">Your cohort</p>

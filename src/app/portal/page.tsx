@@ -21,7 +21,10 @@ export default async function PortalHome() {
       .order("submitted_at", { ascending: false }),
     supabase.from("programs").select("slug, name, tagline, active").eq("active", true).order("sort"),
   ]);
-  const applied = new Set((apps ?? []).map((a) => (Array.isArray(a.programs) ? a.programs[0] : a.programs)?.slug));
+  // A withdrawn application doesn't block applying to that program again.
+  const applied = new Set(
+    (apps ?? []).filter((a) => a.status !== "withdrawn").map((a) => (Array.isArray(a.programs) ? a.programs[0] : a.programs)?.slug),
+  );
   const available = (programs ?? []).filter((p) => !applied.has(p.slug));
   const firstName = session.fullName?.split(" ")[0];
 

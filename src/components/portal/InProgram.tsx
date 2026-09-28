@@ -32,6 +32,7 @@ export function InProgram({
   cohort: CohortAvailability | null;
   resources: ProgramResource[];
 }) {
+  const cohortLabel = cohort?.name ?? "your cohort";
   const mapHref = cohort?.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(cohort.address)}` : null;
   return (
     <div className="grid gap-6">
@@ -105,8 +106,13 @@ export function InProgram({
           <ActionForm
             action={leaveProgram}
             confirm={{
-              title: "Leave the program?",
-              body: "Your seat is released right away and your application is marked withdrawn. Contact admissions if you want to return later.",
+              title: "Are you sure you want to leave?",
+              body: "This is your final confirmation.",
+              points: [
+                `Your seat in ${cohortLabel} goes to the next person on the waitlist right away.`,
+                "Your application is marked withdrawn.",
+                "You can apply again later for a future cohort or another program.",
+              ],
               confirmLabel: "Yes, leave the program",
               tone: "danger",
             }}
@@ -127,6 +133,10 @@ export function InProgram({
               <Label htmlFor="leave-detail">Anything else you&apos;d like us to know? (required if you chose Other)</Label>
               <Textarea id="leave-detail" name="detail" maxLength={1000} placeholder="Optional details" />
             </div>
+            <label className="flex items-start gap-2 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-900">
+              <input type="checkbox" name="acknowledge" value="yes" required className="mt-0.5 h-4 w-4 accent-maroon" />
+              I understand that leaving withdraws my application, gives up my seat in {cohortLabel}, and can&apos;t be undone online.
+            </label>
             <SubmitButton variant="danger" className="justify-self-start" pendingText="Leaving…">
               Leave the program
             </SubmitButton>

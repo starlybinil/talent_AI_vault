@@ -190,6 +190,7 @@ export async function leaveProgram(_prev: ActionState, formData: FormData): Prom
   const reasons = formData.getAll("reasons").map(String).filter(Boolean);
   const detail = String(formData.get("detail") || "").trim().slice(0, 1000);
   if (!reasons.length) return fail("Choose at least one reason you're leaving.");
+  if (formData.get("acknowledge") !== "yes") return fail("Tick the box to confirm you understand what leaving means.");
   if (reasons.includes("Other") && !detail) return fail("Tell us a little more about your reason (you chose Other).");
   const supabase = await createClient();
   const { data: promoted, error } = await supabase.rpc("applicant_leave_program", { p_app: appId, p_reasons: reasons, p_detail: detail || null });
