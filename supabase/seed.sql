@@ -9,8 +9,8 @@ insert into public.programs (
   'ASU-TSMC Foundations for Equipment Technician Program',
   'ASU-TSMC Equipment Technician',
   'Arizona State University × TSMC Arizona',
-  'Become a semiconductor equipment technician in weeks, not years.',
-  'A no-cost, hands-on accelerated training program that prepares you for semiconductor equipment technician roles. Train on industry-standard tools across the Phoenix metro and earn industry-recognized credentials plus a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones.',
+  'Build the foundational skills for an entry-level semiconductor equipment technician role.',
+  'A no-cost, hands-on foundations program that prepares you for entry-level semiconductor equipment technician roles. Build core skills on industry-standard tools across the Phoenix metro and earn industry-recognized credentials plus a guaranteed TSMC Arizona interview upon successful completion of ASU & TSMC program milestones. Graduates keep learning on the job as they grow in the role.',
   '192+ hours',
   '$0 to participants',
   '5, 16 or 18 weeks',
@@ -26,7 +26,7 @@ insert into public.programs (
     {"title": "Semiconductor Equipment & Processes", "desc": "How wafers move through the fab and what technicians keep running.", "icon": "cpu"}
   ]'::jsonb,
   '[
-    {"key": "accelerator", "name": "5-Week Accelerator", "cadence": "Monday – Friday", "weeks": 5, "best_for": "Ready to go full-time and fast-track into the fab."},
+    {"key": "accelerator", "name": "5-Week Accelerator", "cadence": "Monday – Friday", "weeks": 5, "best_for": "Ready to commit full-time and finish sooner."},
     {"key": "intensive", "name": "16-Week Intensive", "cadence": "Monday – Thursday", "weeks": 16, "best_for": "Balance training with other commitments."},
     {"key": "saturday", "name": "18-Week Saturday", "cadence": "Saturdays only", "weeks": 18, "best_for": "Working adults and career changers."}
   ]'::jsonb,
@@ -73,7 +73,7 @@ update public.programs set
   career_role = 'semiconductor equipment technician',
   hero_headline = 'Build the chips that',
   hero_highlight = 'build the future.',
-  why_headline = 'Arizona is building the world''s most advanced chips. You can keep the fab running.',
+  why_headline = 'Arizona is building the world''s most advanced chips. Start your path in the fab.',
   outcome_badge = 'TSMC',
   outcome_title = 'A guaranteed TSMC Arizona interview',
   outcome_detail = 'Upon successful completion of ASU & TSMC program milestones.',
@@ -133,7 +133,7 @@ insert into public.feature_flags (key, enabled, description) values
 
 insert into public.site_content (key, value) values
   ('announcement', '{"text": "Now accepting applications for Fall 2026 cohorts.", "href": "/programs/asu-tsmc"}'::jsonb),
-  ('home_hero', '{"eyebrow": "FoundryReady · Advanced manufacturing careers", "title": "Trained today. Ready on day one.", "subtitle": "No-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry and built with the employers who are hiring."}'::jsonb);
+  ('home_hero', '{"eyebrow": "FoundryReady · Advanced manufacturing careers", "title": "Trained today. Ready to start.", "subtitle": "No-cost, hands-on training that prepares you for entry-level semiconductor and advanced manufacturing careers, funded by government and industry and built with the employers who are hiring."}'::jsonb);
 
 insert into public.system_settings (key, value) values
   ('email_from', '"FoundryReady Admissions <admissions@foundryready.org>"'::jsonb),

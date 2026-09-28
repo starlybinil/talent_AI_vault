@@ -58,7 +58,7 @@ export default async function Home() {
               </h1>
               <p className="mt-6 max-w-2xl text-lg text-white/75 sm:text-xl">
                 {hero?.subtitle ??
-                  "No-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry and built with the employers who are hiring."}
+                  "No-cost, hands-on training that prepares you for entry-level semiconductor and advanced manufacturing careers, funded by government and industry and built with the employers who are hiring."}
               </p>
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
                 <ButtonLink href="#programs" size="lg">
@@ -208,15 +208,15 @@ export default async function Home() {
               {
                 icon: GraduationCap,
                 who: "For learners",
-                title: "No degree. No cost. A real career.",
-                body: "Short, hands-on programs that take you from beginner to job-ready, with an employer interview waiting at the end.",
+                title: "No degree. No cost. A real start.",
+                body: "Short, hands-on foundations programs that prepare you for entry-level technician roles, with an employer interview at the end and plenty of room to keep learning on the job.",
                 cta: { href: "#programs", label: "Find your program" },
               },
               {
                 icon: Factory,
                 who: "For employers",
-                title: "Hire people who are ready on day one.",
-                body: "Shape the curriculum, meet pre-screened graduates, and fill technician roles faster with talent trained on your equipment.",
+                title: "Build your entry-level talent pipeline.",
+                body: "Shape the curriculum and meet pre-screened graduates who have the technical fundamentals and hands-on practice to start in entry-level technician roles.",
                 cta: {
                   href: `mailto:${BRAND.supportEmail}?subject=Employer%20partnership`,
                   label: "Become a hiring partner",
@@ -384,7 +384,7 @@ export default async function Home() {
   );
 }
 
-/** "Trained today. Ready on day one." → second sentence in gold, on its own line. */
+/** "Trained today. Ready to start." → second sentence in gold, on its own line. */
 function HeroTitle({ text }: { text: string }) {
   const parts = text.split(/(?<=[.!?])\s+/);
   if (parts.length < 2) return <>{text}</>;

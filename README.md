@@ -1,6 +1,6 @@
 # FoundryReady (FR) — Advanced Manufacturing Training Programs
 
-> **Trained today. Ready on day one.**
+> **Trained today. Ready to start.**
 
 Application and admissions platform for FoundryReady training programs: no-cost, hands-on, non-degree training funded by government and industry, starting with the
 **ASU-TSMC Foundations for Equipment Technician Program** ($0 · 192+ hands-on hours · a guaranteed

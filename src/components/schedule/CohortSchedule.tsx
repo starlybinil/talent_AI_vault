@@ -951,7 +951,7 @@ function DetailPanel({
                   : `${c.confirmed} confirmed trainee${c.confirmed === 1 ? "" : "s"} graduate ${shortDate(c.end_date)}`}
               </p>
               <p className="mt-1 text-sm text-white/70">
-                Graduates are interview-ready upon successful completion of the program&apos;s milestones.
+                Graduates complete foundational training for entry-level technician roles and are eligible for interviews upon successful completion of the program&apos;s milestones.
               </p>
             </section>
           )}

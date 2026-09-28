@@ -5,14 +5,14 @@ import { SITE_URL } from "@/lib/env";
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "FoundryReady · Trained today. Ready on day one.",
+    default: "FoundryReady · Trained today. Ready to start.",
     template: "%s · FoundryReady",
   },
   description:
-    "FoundryReady: no-cost, hands-on training for semiconductor and advanced manufacturing careers, funded by government and industry and built with university and employer partners.",
+    "FoundryReady: no-cost, hands-on training for entry-level semiconductor and advanced manufacturing careers, funded by government and industry and built with university and employer partners.",
   openGraph: {
-    title: "FoundryReady · Trained today. Ready on day one.",
-    description: "No-cost, hands-on training programs for advanced manufacturing careers, built with universities and the employers who are hiring.",
+    title: "FoundryReady · Trained today. Ready to start.",
+    description: "No-cost, hands-on training programs that prepare you for entry-level advanced manufacturing careers, built with universities and the employers who are hiring.",
     type: "website",
   },
 };

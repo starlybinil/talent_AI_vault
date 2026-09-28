@@ -44,14 +44,14 @@ export function programCopy(p: ProgramCopyInput) {
     employerOrGeneric: employer ?? "the employer partner",
     heroHeadline: p.hero_headline?.trim() || "Train for the career",
     heroHighlight: p.hero_highlight?.trim() || "that builds the future.",
-    whyHeadline: p.why_headline?.trim() || `${industry} employers are hiring. Get trained, get ready, get hired.`,
+    whyHeadline: p.why_headline?.trim() || `${industry} employers are hiring. Build the foundation to get started.`,
     outcomeBadge: p.outcome_badge?.trim() || null,
     outcomeTitle,
     outcomeDetail: p.outcome_detail?.trim() || null,
     audiences: p.audiences?.length ? p.audiences : DEFAULT_AUDIENCES,
     keywords: p.keywords ?? [],
     /** One sentence for hero and meta copy. */
-    pitch: `Trains you for ${role} roles in weeks, not years. Hands-on. No cost.${employer ? ` Built with ${employer}.` : ""}`,
+    pitch: `Prepares you for ${/entry/i.test(role) ? role : `entry-level ${role}`} roles. Hands-on. No cost.${employer ? ` Built with ${employer}.` : ""}`,
   };
 }
 

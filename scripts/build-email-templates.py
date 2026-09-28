@@ -89,7 +89,7 @@ def layout(*, title: str, preheader: str, banner: str, banner_alt: str, body: st
     <tr><td class="pad" style="background:{INK};padding:20px 32px">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
         <td align="left"><a href="{SITE}" target="_blank"><img src="{IMG}/logo.png" width="200" height="37" alt="FoundryReady" style="display:block;border:0;outline:none;width:200px;height:37px"></a></td>
-        <td align="right" class="hide-sm" style="font-family:{FONT};font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:{GOLD}">Trained today.<br><span style="color:#ffffff">Ready on day one.</span></td>
+        <td align="right" class="hide-sm" style="font-family:{FONT};font-size:11px;font-weight:bold;letter-spacing:1.5px;text-transform:uppercase;color:{GOLD}">Trained today.<br><span style="color:#ffffff">Ready to start.</span></td>
       </tr></table>
     </td></tr>
     <!-- Banner -->
