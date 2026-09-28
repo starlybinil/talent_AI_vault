@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cohortPhase, defaultYear, durationWeeks, meetingDays, meetsOn, packLanes, scheduleYears, yearSpan } from "@/lib/schedule";
+import { cohortPhase, defaultYear, durationWeeks, meetingDays, meetsOn, packLanes, scheduleYears, yearSpan, encouragement, programProgress } from "@/lib/schedule";
 
 const c = (start_date: string, end_date: string, schedule = "Mon–Fri · 8:00 AM – 4:30 PM") => ({ start_date, end_date, schedule });
 
@@ -55,5 +55,26 @@ describe("phase and duration", () => {
     expect(cohortPhase(acc, "2026-09-23").key).toBe("upcoming");
     expect(cohortPhase(acc, "2026-10-28").label).toBe("In session · week 2 of 5");
     expect(cohortPhase(acc, "2026-12-01").key).toBe("completed");
+  });
+});
+
+describe("programProgress", () => {
+  it("counts down before the cohort starts", () => {
+    const p = programProgress("2027-01-11", "2027-02-12", "2027-01-01");
+    expect(p).toMatchObject({ phase: "upcoming", daysUntil: 10, weeks: 5 });
+  });
+  it("reports percent and week while running", () => {
+    const p = programProgress("2027-01-11", "2027-02-12", "2027-01-27");
+    expect(p.phase).toBe("running");
+    if (p.phase === "running") {
+      expect(p.week).toBe(3);
+      expect(p.pct).toBeGreaterThan(45);
+      expect(p.pct).toBeLessThan(55);
+      expect(p.daysLeft).toBe(16);
+    }
+    expect(encouragement(p)).toMatch(/momentum|halfway/);
+  });
+  it("is finished after the end date", () => {
+    expect(programProgress("2027-01-11", "2027-02-12", "2027-03-01").phase).toBe("finished");
   });
 });

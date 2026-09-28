@@ -186,3 +186,35 @@ export function dateRange(c: Pick<ScheduleCohort, "start_date" | "end_date">): s
 export function todayInArizona(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Phoenix" });
 }
+
+export type ProgramProgress =
+  | { phase: "upcoming"; daysUntil: number; weeks: number }
+  | { phase: "running"; pct: number; week: number; weeks: number; daysLeft: number }
+  | { phase: "finished"; weeks: number };
+
+/** Where a trainee is in their cohort today (dates are YYYY-MM-DD, inclusive). */
+export function programProgress(start: string, end: string, today: string): ProgramProgress {
+  const weeks = durationWeeks({ start_date: start, end_date: end });
+  if (today < start) return { phase: "upcoming", daysUntil: daysBetween(today, start), weeks };
+  if (today > end) return { phase: "finished", weeks };
+  const total = daysBetween(start, end) + 1;
+  const done = daysBetween(start, today) + 1;
+  return {
+    phase: "running",
+    pct: Math.min(100, Math.max(1, Math.round((done / total) * 100))),
+    week: Math.min(weeks, Math.floor((done - 1) / 7) + 1),
+    weeks,
+    daysLeft: daysBetween(today, end),
+  };
+}
+
+/** A short, encouraging line for the trainee's progress. */
+export function encouragement(p: ProgramProgress): string {
+  if (p.phase === "upcoming") return p.daysUntil <= 7 ? "Almost time! Get a good night's sleep and review your first-week resources." : "Your seat is secured. Use the time to review your resources and plan your commute.";
+  if (p.phase === "finished") return "You made it to the finish line! Admissions will record your completion soon.";
+  if (p.pct < 25) return "Great start! The first weeks build the foundation for everything that follows. Keep showing up.";
+  if (p.pct < 50) return "You're building real momentum. Every lab session adds a skill employers are hiring for.";
+  if (p.pct < 75) return "Past the halfway mark: the hardest part is behind you. Stay with it!";
+  if (p.pct < 100) return "The finish line is in sight. Your credential and employer interview are within reach.";
+  return "Final day! Finish strong.";
+}
