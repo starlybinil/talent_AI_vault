@@ -11,8 +11,8 @@ import { CountUp, Reveal, Stagger, StaggerItem } from "@/components/brand/motion
 import { TopicIcon } from "@/components/program/TopicIcon";
 import { CohortDetails, SeatsBar } from "@/components/program/CohortCard";
 import { ButtonLink } from "@/components/ui";
-import { getCohortAvailability, getFlags, getProgram } from "@/lib/data";
-import { HERO_CLIPS, IMAGES } from "@/lib/media";
+import { getCohortAvailability, getFlags, getProgram, getSiteImages, pickImage } from "@/lib/data";
+import { HERO_CLIPS } from "@/lib/media";
 import { STAGES } from "@/lib/workflow";
 import { programCopy } from "@/lib/program";
 
@@ -36,13 +36,13 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
   const { slug } = await params;
   const program = await getProgram(slug);
   if (!program) notFound();
-  const [cohorts, flags] = await Promise.all([getCohortAvailability(program.id), getFlags()]);
+  const [cohorts, flags, photos] = await Promise.all([getCohortAvailability(program.id), getFlags(), getSiteImages()]);
   const open = cohorts.filter((c) => c.status === "open");
   const applyHref = `/apply/${program.slug}`;
   const accepting = program.active && flags.applications_open !== false;
   const copy = programCopy(program);
   const heroClips = program.hero_video ? [program.hero_video] : HERO_CLIPS;
-  const heroPoster = program.hero_poster || IMAGES.wafer;
+  const heroPoster = program.hero_poster || pickImage(photos, 0).src;
   const heroStats = [
     lead(program.cost_label) && [lead(program.cost_label), "Tuition"],
     lead(program.hours_label) && [lead(program.hours_label), "Hands-on hours"],
@@ -159,8 +159,8 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
             <div className="absolute -left-4 -top-4 h-full w-full rounded-[2rem] bg-gold" aria-hidden />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={IMAGES.oscilloscope}
-              alt="Technician trainee troubleshooting an electronics board with an oscilloscope"
+              src={pickImage(photos, 1).src}
+              alt={pickImage(photos, 1).alt}
               className="relative aspect-[4/3] w-full rounded-[2rem] object-cover shadow-2xl"
               loading="lazy"
             />
@@ -320,7 +320,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
       {/* ELIGIBILITY */}
       <section className="relative overflow-hidden bg-ink-950 py-20 sm:py-28">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={IMAGES.pneumaticsLab} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" loading="lazy" />
+        <img src={pickImage(photos, 2).src} alt="" className="absolute inset-0 h-full w-full object-cover opacity-25" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-r from-ink-950 via-ink-950/90 to-ink-950/40" aria-hidden />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Reveal className="max-w-2xl">
@@ -365,7 +365,7 @@ export default async function ProgramPage({ params }: { params: Promise<{ slug: 
       {/* FINAL CTA */}
       <section className="relative overflow-hidden py-24 sm:py-32">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={IMAGES.fabExterior} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+        <img src={pickImage(photos, 3).src} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/70 to-maroon/40" aria-hidden />
         <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <Reveal>

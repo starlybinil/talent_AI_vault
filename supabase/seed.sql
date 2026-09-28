@@ -139,3 +139,14 @@ insert into public.system_settings (key, value) values
   ('email_from', '"FoundryReady Admissions <admissions@foundryready.org>"'::jsonb),
   ('support_email', '"support@foundryready.org"'::jsonb),
   ('exam_reminder_days', '[3, 7]'::jsonb);
+
+-- Generated fab imagery for the site media library (Higgsfield); IT admins add real program photos in Admin → Media.
+insert into public.site_media (url, alt, caption, source, sort) values
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030054_9c3ebf4f-a6e2-48a6-825b-01fc8da86bfe_min.webp', 'Equipment technician in a cleanroom suit inspecting inside a wafer processing tool', 'Cleanroom · tool inspection', 'generated', 0),
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030052_0676b77f-eb88-4ad4-9ad2-796256517b05_min.webp', 'Technician in a hard hat checking vacuum pumps and gas lines in the sub-fab', 'Sub-fab · vacuum pumps', 'generated', 1),
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030053_4c9387c1-7749-4290-94e5-acf8559ed42c_min.webp', 'Two technicians loading a wafer carrier onto a tool load port in the cleanroom', 'Cleanroom · wafer load port', 'generated', 2),
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030052_0f9e1b8e-00cb-484a-bb86-209c8b62cab4_min.webp', 'Gloved hands tightening a gas-line fitting with a torque wrench in the sub-fab', 'Sub-fab · gas line fittings', 'generated', 3),
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030053_5ef9b844-cecd-45ff-9b08-d7bc78b8ff06_min.webp', 'Amber-lit fab corridor with overhead wafer transport and rows of tools', 'Cleanroom · fab corridor', 'generated', 4),
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030053_76786e53-846b-4149-bf52-78134a59a3bf_min.webp', 'Instructor and trainees around a pneumatics and electronics training bench', 'Training lab', 'generated', 5),
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030053_1d6093fa-c007-4bbc-811c-58e83f04ac20_min.webp', 'Technician performing preventive maintenance on an etch tool vacuum chamber', 'Cleanroom · preventive maintenance', 'generated', 6),
+  ('https://d8j0ntlcm91z4.cloudfront.net/user_3Ji2ekPsox1wLHuWkDUqiQBwxF6/hf_20260928_030053_85756762-2b7e-41f6-9fcf-10721749a15d_min.webp', 'Technician with a checklist beside chemical delivery cabinets and lockout tags in the sub-fab', 'Sub-fab · chemical distribution', 'generated', 7);

@@ -727,6 +727,51 @@ export async function deleteProgramResource(_prev: ActionState, formData: FormDa
   return ok("Resource removed.");
 }
 
+// ---------------------------------------------------------------------------
+// Site media library (IT admins and web developers)
+// ---------------------------------------------------------------------------
+
+export async function addSiteMedia(input: { path: string; alt: string; caption: string }): Promise<ActionState> {
+  try {
+    await assertPermission("media.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const alt = input.alt.trim();
+  if (alt.length < 3) return fail("Describe the photo in a few words (used for accessibility).");
+  if (!/^[\w\-./]+$/.test(input.path)) return fail("Invalid file.");
+  const supabase = await createClient();
+  const { error } = await supabase.from("site_media").insert({ path: input.path, alt: alt.slice(0, 200), caption: input.caption.trim().slice(0, 120) || null, source: "upload" });
+  if (error) return fail(errorMessage(error));
+  await audit(supabase, "site_media.upload", "site_media", null, { path: input.path });
+  revalidatePath("/admin/media");
+  revalidatePath("/", "layout");
+  return ok("Photo added. It now appears in rotation across the site.");
+}
+
+export async function updateSiteMedia(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("media.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const id = String(formData.get("media_id") || "");
+  const op = String(formData.get("op") || "");
+  const supabase = await createClient();
+  if (op === "delete") {
+    const { data: row, error } = await supabase.from("site_media").delete().eq("id", id).select("path").maybeSingle();
+    if (error) return fail(errorMessage(error));
+    if (row?.path) await supabase.storage.from("site-media").remove([row.path]);
+    await audit(supabase, "site_media.delete", "site_media", id, {});
+  } else {
+    const { error } = await supabase.from("site_media").update({ active: op === "show" }).eq("id", id);
+    if (error) return fail(errorMessage(error));
+  }
+  revalidatePath("/admin/media");
+  revalidatePath("/", "layout");
+  return ok(op === "delete" ? "Photo deleted." : op === "show" ? "Photo is back in rotation." : "Photo hidden from the site.");
+}
+
 export async function createEmployerOrg(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertPermission("users.manage");

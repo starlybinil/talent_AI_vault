@@ -167,6 +167,13 @@ New visitors land on account creation and go straight into the application after
 
 ---
 
+## Media library
+
+Site photos (featured program, program pages, catalog) come from **Admin → Media library** (IT admins and web
+developers): upload real program photos (public `site-media` bucket, `site_media` table), hide or delete any image.
+Program photos show first, then eight generated cleanroom and sub-fab images; they rotate on each visit. A program's own
+"Hero image URL" still takes priority on its pages.
+
 ## Custom domain (foundryready.org)
 
 In production the site treats `foundryready.org` as its home: requests to the temporary `*.vercel.app` production

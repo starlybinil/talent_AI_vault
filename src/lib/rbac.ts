@@ -26,6 +26,7 @@ export const PERMISSIONS = [
   "email_log.read",
   "settings.manage",
   "content.manage",
+  "media.manage",
   "flags.manage",
   "system.read",
   "employer.portal",
@@ -50,10 +51,11 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "audit.read",
     "email_log.read",
     "settings.manage",
+    "media.manage",
     "flags.manage",
     "system.read",
   ],
-  web_developer: ["content.manage", "flags.manage", "system.read"],
+  web_developer: ["content.manage", "media.manage", "flags.manage", "system.read"],
 };
 
 export function permissionsFor(roles: readonly Role[]): Set<Permission> {
@@ -93,6 +95,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin/email-log", label: "Email log", permission: "email_log.read", icon: "mail" },
   { href: "/admin/settings", label: "Settings", permission: "settings.manage", icon: "settings" },
   { href: "/admin/content", label: "Site content", permission: "content.manage", icon: "pen" },
+  { href: "/admin/media", label: "Media library", permission: "media.manage", icon: "image" },
   { href: "/admin/flags", label: "Feature flags", permission: "flags.manage", icon: "flag" },
   { href: "/admin/system", label: "System health", permission: "system.read", icon: "activity" },
 ];
@@ -110,6 +113,7 @@ const ROUTE_RULES: Array<[string, Permission | "staff" | "signed_in"]> = [
   ["/admin/email-log", "email_log.read"],
   ["/admin/settings", "settings.manage"],
   ["/admin/content", "content.manage"],
+  ["/admin/media", "media.manage"],
   ["/admin/flags", "flags.manage"],
   ["/admin/system", "system.read"],
   ["/admin", "staff"],

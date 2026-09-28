@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createPublicClient } from "@/lib/supabase/server";
+import { SUPABASE_URL } from "@/lib/env";
+import { IMAGES } from "@/lib/media";
 
 export type Topic = { title: string; desc: string; icon: string };
 export type Format = { key: string; name: string; cadence: string; weeks: number; best_for: string };
@@ -90,4 +92,39 @@ export async function getContent<T = Record<string, unknown>>(key: string): Prom
   const supabase = createPublicClient();
   const { data } = await supabase.from("site_content").select("value").eq("key", key).maybeSingle();
   return (data?.value as T) ?? null;
+}
+
+export type SiteImage = { src: string; alt: string };
+
+/**
+ * Photos for the public site, from the media library (real program photos uploaded by IT / web developers,
+ * plus generated fab imagery). Shuffled on each render so pages don't show the same picture every time.
+ */
+export async function getSiteImages(): Promise<SiteImage[]> {
+  const supabase = createPublicClient();
+  const { data } = await supabase.from("site_media").select("path, url, alt, source").eq("active", true).order("sort").order("created_at", { ascending: false });
+  const rows = (data ?? []) as Array<{ path: string | null; url: string | null; alt: string; source: string }>;
+  const toImage = (r: (typeof rows)[number]) => ({
+    src: r.path ? `${SUPABASE_URL}/storage/v1/object/public/site-media/${r.path.split("/").map(encodeURIComponent).join("/")}` : (r.url as string),
+    alt: r.alt,
+  });
+  // Real program photos lead; generated imagery fills in.
+  const uploads = shuffle(rows.filter((r) => r.source === "upload").map(toImage));
+  const generated = shuffle(rows.filter((r) => r.source !== "upload").map(toImage));
+  const pool = [...uploads, ...generated];
+  return pool.length ? pool : [{ src: IMAGES.wafer, alt: "Trainee holding a silicon wafer in a cleanroom" }];
+}
+
+/** Pick the i-th image from a pool, cycling when there are fewer images than slots. */
+export function pickImage(pool: SiteImage[], i: number): SiteImage {
+  return pool[i % pool.length];
+}
+
+function shuffle<T>(items: T[]): T[] {
+  const a = [...items];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
 }

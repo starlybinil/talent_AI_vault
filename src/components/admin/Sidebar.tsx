@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, CalendarDays, FileSignature, Flag, Inbox, Layers, Mail, MapPin, PenLine, Settings, ShieldCheck, Users } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, FileSignature, Flag, Inbox, Layers, Mail, MapPin, PenLine, Settings, ShieldCheck, Users, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
@@ -15,6 +15,7 @@ const ICONS = {
   mail: Mail,
   settings: Settings,
   pen: PenLine,
+  image: ImageIcon,
   flag: Flag,
   activity: Activity,
   file: FileSignature,

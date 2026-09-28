@@ -17,7 +17,7 @@ import { Announcement } from "@/components/site/Announcement";
 import { HeroVideo } from "@/components/brand/HeroVideo";
 import { Reveal, Stagger, StaggerItem } from "@/components/brand/motion";
 import { ButtonLink } from "@/components/ui";
-import { getContent, listPrograms } from "@/lib/data";
+import { getContent, listPrograms, getSiteImages, pickImage } from "@/lib/data";
 import { HERO_CLIPS, IMAGES } from "@/lib/media";
 import { pickFeatured, programCopy } from "@/lib/program";
 
@@ -26,9 +26,10 @@ export const revalidate = 60;
 type HomeHero = { eyebrow: string; title: string; subtitle: string };
 
 export default async function Home() {
-  const [programs, hero] = await Promise.all([
+  const [programs, hero, photos] = await Promise.all([
     listPrograms(),
     getContent<HomeHero>("home_hero"),
+    getSiteImages(),
   ]);
   const featured = pickFeatured(programs);
   // Enrolling programs first, then the ones still coming.
@@ -125,8 +126,8 @@ export default async function Home() {
               <div className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={featured.hero_poster || IMAGES.wafer}
-                  alt={`${featured.short_name} trainee at work`}
+                  src={featured.hero_poster || pickImage(photos, 0).src}
+                  alt={featured.hero_poster ? `${featured.short_name} trainee at work` : pickImage(photos, 0).alt}
                   className="h-64 w-full object-cover md:h-full"
                 />
                 {/* Blend the photo into the tinted panel */}
@@ -268,15 +269,15 @@ export default async function Home() {
             </h2>
           </Reveal>
           <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {catalog.map((p) => {
+            {catalog.map((p, i) => {
               const c = programCopy(p);
               return (
                 <Reveal key={p.id}>
                   <div className="flex h-full flex-col overflow-hidden rounded-3xl border border-ink/10 transition hover:border-maroon/40 hover:shadow-xl">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={p.hero_poster || IMAGES.wafer}
-                      alt={`${p.short_name} trainee at work`}
+                      src={p.hero_poster || pickImage(photos, i + 1).src}
+                      alt={p.hero_poster ? `${p.short_name} trainee at work` : pickImage(photos, i + 1).alt}
                       className={`aspect-[16/9] w-full bg-ink object-cover ${p.active ? "" : "grayscale opacity-60"}`}
                       loading="lazy"
                     />
