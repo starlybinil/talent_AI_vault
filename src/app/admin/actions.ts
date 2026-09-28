@@ -98,15 +98,16 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
       const { data, error: e } = await supabase.rpc("admin_assign_cohort", { p_app: appId, p_cohort: extra.cohortId, p_note: note });
       error = e;
       if (!error) {
-        const { data: now } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
-        if (now?.status === "agreements_submitted") {
-          // Already signed: just tell them where they're placed; confirmation follows.
-          await notifyTemplate(supabase, appId, "status_update", {
-            note: note ?? "Admissions has placed you in a different cohort from your choices. Your cohort details are in your portal.",
-            statusLabel: STATUS_LABEL.agreements_submitted,
-          });
-        } else {
-          await notifyTemplate(supabase, appId, "cohort_registered", { note });
+        // Placement is announced only when admissions confirms (the "confirmed" email names the cohort).
+        // If this placement took them off the waitlist, just prompt them to sign their agreements.
+        const { data: evs } = await supabase
+          .from("application_events")
+          .select("from_status, to_status")
+          .eq("application_id", appId)
+          .order("created_at", { ascending: false })
+          .limit(3);
+        if ((evs ?? []).some((e) => e.to_status === "cohort_registered" && e.from_status === "waitlisted")) {
+          await notifyTemplate(supabase, appId, "waitlist_promoted");
         }
         await emailPromoted(supabase, (data as { promoted: string[] })?.promoted);
       }

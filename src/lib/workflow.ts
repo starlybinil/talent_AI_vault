@@ -306,6 +306,7 @@ export type EmailTemplate =
   | "cohort_registered"
   | "waitlisted"
   | "waitlist_promoted"
+  | "choices_received"
   | "agreements_submitted"
   | "confirmed"
   | "program_completed"
@@ -324,7 +325,8 @@ export const EMAIL_FOR_STATUS: Partial<Record<Status, EmailTemplate>> = {
   cohort_selection: "accepted",
   exam_failed: "exam_failed",
   not_selected: "not_selected",
-  agreements_pending: "cohort_registered",
+  // Choices submitted: confirm the choices only. The cohort is named when admissions confirms (the "confirmed" email).
+  agreements_pending: "choices_received",
   waitlisted: "waitlisted",
   agreements_submitted: "agreements_submitted",
   confirmed: "confirmed",

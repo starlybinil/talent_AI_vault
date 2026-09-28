@@ -41,8 +41,18 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
       .maybeSingle();
     cohort = c;
   }
+  const { data: prefs } = await supabase
+    .from("cohort_preferences")
+    .select("rank, cohorts(name, start_date, end_date, location)")
+    .eq("application_id", data.id)
+    .order("rank");
+  const choices = ((prefs ?? []) as Array<{ rank: number; cohorts: unknown }>).flatMap((p) => {
+    const c = (Array.isArray(p.cohorts) ? p.cohorts[0] : p.cohorts) as { name: string; start_date: string; end_date: string; location: string } | null;
+    return c ? [{ rank: p.rank, ...c }] : [];
+  });
   return {
     applicationId: data.id,
+    choices,
     to: data.email,
     firstName: data.first_name,
     programName: program?.short_name ?? "FoundryReady program",

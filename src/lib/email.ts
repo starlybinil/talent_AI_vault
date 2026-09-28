@@ -28,6 +28,8 @@ export type EmailContext = {
     address: string | null;
   } | null;
   note?: string | null;
+  /** The applicant's ranked cohort choices. */
+  choices?: Array<{ rank: number; name: string; start_date: string; end_date: string; location: string }>;
   messagePreview?: string | null;
   statusLabel?: string | null;
   /** Role invitations: the role (and employer organization) granted by IT. */
@@ -54,6 +56,15 @@ type Rendered = {
 };
 
 const portal = (id: string | null) => `${SITE_URL}/portal${id ? `/applications/${id}` : ""}`;
+
+function choiceLines(choices: EmailContext["choices"]): string[] {
+  if (!choices?.length) return [];
+  return [
+    choices
+      .map((c) => `<strong>Choice #${c.rank}:</strong> ${esc(c.name)}<br/><span style="color:#5a5a5a;font-size:14px">${formatDate(c.start_date)} – ${formatDate(c.end_date)} · ${esc(c.location)}</span>`)
+      .join("<br/><br/>"),
+  ];
+}
 
 function cohortLines(c: EmailContext["cohort"]): string[] {
   if (!c) return [];
@@ -180,15 +191,27 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         ],
         cta: { label: "Sign my agreements", href: `${portal(ctx.applicationId)}?tab=enrollment#agreements` },
       };
+    case "choices_received":
+      return {
+        subject: "We received your cohort choices",
+        heading: "Your cohort choices are in",
+        paragraphs: [
+          hi,
+          `Thanks! We've received your cohort choices for the <strong>${esc(ctx.programName)}</strong>:`,
+          ...choiceLines(ctx.choices),
+          "<strong>Next:</strong> if you haven't already, review and e-sign your program agreements in the portal.",
+          "Admissions will then review your choices and confirm which cohort you're accepted into. We'll email you as soon as that's done.",
+        ],
+        cta: { label: "Sign my agreements", href: `${portal(ctx.applicationId)}?tab=enrollment#agreements` },
+      };
     case "waitlist_promoted":
       return {
-        subject: "A seat opened up — you're in!",
+        subject: "A seat opened up in one of your cohort choices",
         heading: "You've been moved off the waitlist",
         paragraphs: [
           hi,
-          "Good news — a seat opened and you've been registered in:",
-          ...cohortLines(ctx.cohort),
-          "If you haven't signed your program agreements yet, sign them now. Admissions then sends your final confirmation.",
+          "Good news: a seat opened up in one of the cohorts you chose.",
+          "If you haven't signed your program agreements yet, sign them now. Admissions will then confirm which cohort you're accepted into and email you.",
         ],
         cta: { label: "View my enrollment", href: `${portal(ctx.applicationId)}?tab=enrollment#agreements` },
       };
@@ -198,7 +221,8 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         heading: "You're on the waitlist",
         paragraphs: [
           hi,
-          "All of the cohorts you selected are currently full, so we've added you to their waitlists in your ranked order.",
+          "All of the cohorts you selected are currently full, so we've added you to their waitlists in your ranked order:",
+          ...choiceLines(ctx.choices),
           "If a seat opens, you'll be registered automatically and we'll email you right away.",
           "Sign your program agreements now so you're ready: once a seat opens you'll go straight to final confirmation.",
         ],
@@ -208,21 +232,28 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
       return {
         subject: "Agreements received",
         heading: "We received your signed agreements",
-        paragraphs: [hi, "Thanks! Admissions is verifying your documents. You'll receive your final confirmation soon."],
+        paragraphs: [
+          hi,
+          "Thanks! We've received your signed program agreements.",
+          "Admissions will now review your cohort choices and confirm which cohort you're accepted into. You'll get an email as soon as that's done.",
+        ],
         cta: { label: "View my status", href: portal(ctx.applicationId) },
       };
     case "confirmed":
       return {
-        subject: `You're confirmed — welcome to the ${ctx.programName}`,
-        heading: "You're officially in!",
+        subject: `Congratulations! You're accepted into ${ctx.cohort?.name ?? "your cohort"}`,
+        heading: "Congratulations, you're in!",
         paragraphs: [
           hi,
-          "Your documents are verified and your enrollment is confirmed. Here are your cohort details:",
+          `Admissions has confirmed your enrollment in the <strong>${esc(ctx.programName)}</strong>. You've been accepted into:`,
           ...cohortLines(ctx.cohort),
-          "A calendar invite is attached. We can't wait to see you in the lab.",
+          "A calendar invite for your cohort is attached.",
+          `<strong>Need a different cohort?</strong> You can request a change in your portal (Details tab &rarr; Change cohort) while seats are available.`,
+          "Otherwise, no action is needed right now. We'll share more information about your first day, what to bring and how to prepare as your start date gets closer.",
           ...note,
         ],
-        cta: { label: "Open my portal", href: portal(ctx.applicationId) },
+        cta: { label: "View my cohort", href: `${portal(ctx.applicationId)}?tab=enrollment` },
+        secondary: { label: "Change my cohort", href: `${portal(ctx.applicationId)}?tab=details#change-cohort` },
       };
     case "program_completed":
       return {

@@ -85,7 +85,7 @@ test("applicant enrolls: ranks cohorts, then signs every agreement on the same p
   const cards = page.locator("button[aria-pressed]");
   for (let i = 0; i < 3; i++) await cards.nth(i).click();
   await page.getByRole("button", { name: "Submit Choices" }).click();
-  await expect(page.getByText("Your seat is reserved!")).toBeVisible();
+  await expect(page.getByText("Your cohort choices are in!")).toBeVisible();
 
   while ((await page.getByRole("button", { name: "Sign document" }).count()) > 0) {
     const form = page.locator("form").filter({ has: page.getByRole("button", { name: "Sign document" }) }).first();
@@ -116,7 +116,7 @@ test("admissions accepts into the held cohort; applicant sees Confirmed", async 
   await expect(page.getByText("Holding seat")).toBeVisible();
   await adminOp(page, applicationPath, "& confirm");
   await expect(page.getByText("Confirmed").first()).toBeVisible();
-  await expect(page.getByText("You're confirmed — welcome")).toBeVisible(); // email log entry
+  await expect(page.getByText("Congratulations! You're accepted into")).toBeVisible(); // email log entry
   await signOut(page);
 
   await signIn(page, applicantEmail, applicantPassword);

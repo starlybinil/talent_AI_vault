@@ -262,8 +262,8 @@ export default async function ApplicationPage({
               </div>
             )}
             {sp.chosen === "registered" && status !== "agreements_submitted" && (
-              <Alert tone="success" title="Your seat is reserved!">
-                Last step: sign your program agreements below. Once they&apos;re signed, admissions sends your final confirmation.
+              <Alert tone="success" title="Your cohort choices are in!">
+                Next: sign your program agreements below. Admissions then confirms which cohort you&apos;re accepted into and emails you.
               </Alert>
             )}
             {sp.chosen === "waitlisted" && (
