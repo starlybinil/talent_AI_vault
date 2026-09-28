@@ -9,6 +9,7 @@ import {
   stageStates,
   canReset,
   PLACEMENT_STATUSES,
+  notSelectedReasons,
 } from "@/lib/workflow";
 
 describe("workflow transitions", () => {
@@ -131,5 +132,14 @@ describe("admissions flow refinements", () => {
 
   it("admissions places applicants while they hold or wait for a seat", () => {
     expect(PLACEMENT_STATUSES).toEqual(["cohort_registered", "waitlisted", "agreements_pending", "agreements_submitted"]);
+  });
+});
+
+describe("not-selected reasons", () => {
+  it("names the program's employer partner in the screening reason", () => {
+    const reasons = notSelectedReasons("TSMC Arizona");
+    expect(reasons).toContain("Did not meet key program requirements, as determined by initial screening by TSMC Arizona.");
+    expect(reasons.some((r) => r.includes("minimum age"))).toBe(true);
+    expect(notSelectedReasons(null).join(" ")).not.toContain("{employer}");
   });
 });

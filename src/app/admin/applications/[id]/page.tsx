@@ -9,9 +9,9 @@ import { Timeline, type TimelineEvent } from "@/components/portal/Timeline";
 import { StatusTracker } from "@/components/portal/StatusTracker";
 import { MessageThread, type Message } from "@/components/portal/MessageThread";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
-import { Alert, Badge, Card, Input, Label, Textarea } from "@/components/ui";
+import { Alert, Badge, Card, Input, Label, Select, Textarea } from "@/components/ui";
 import type { CohortAvailability } from "@/lib/data";
-import { EDUCATION_LABEL, PLACEMENT_STATUSES, STATUS_LABEL, STATUS_TONE, VISA_LABEL, canReset, canWithdraw, isTrainee, type Status } from "@/lib/workflow";
+import { EDUCATION_LABEL, PLACEMENT_STATUSES, notSelectedReasons, STATUS_LABEL, STATUS_TONE, VISA_LABEL, canReset, canWithdraw, isTrainee, type Status } from "@/lib/workflow";
 import { OutcomePanel } from "@/components/admin/OutcomePanel";
 import { EnrollmentDecision } from "@/components/admin/EnrollmentDecision";
 import { todayInArizona } from "@/lib/schedule";
@@ -34,7 +34,7 @@ function opsFor(status: Status, employer: string | null, applicantName: string):
       break;
     case "screening":
       ops.push({ op: "pass_and_invite", label: "Pass screening & send assessment", needsUrl: true });
-      ops.push({ op: "not_selected", label: "Not selected", variant: "outline", confirm: "Mark this applicant as not selected? They'll be emailed." });
+      ops.push({ op: "not_selected", label: "Not selected", variant: "outline", confirm: "Mark this applicant as not selected? They'll be emailed that a decision was made; the reason is visible only in their portal." });
       break;
     case "screening_passed":
       ops.push({ op: "send_invite", label: "Send assessment invite", needsUrl: true });
@@ -334,6 +334,31 @@ export default async function AdminApplicationPage({ params }: { params: Promise
                       <div className="mb-3">
                         <Label htmlFor={`url-${o.op}`}>TestGorilla link</Label>
                         <Input id={`url-${o.op}`} name="exam_url" type="url" defaultValue={app.exam_url ?? program?.default_exam_url ?? ""} placeholder="https://app.testgorilla.com/…" />
+                      </div>
+                    )}
+                    {o.op === "not_selected" && (
+                      <div className="mb-3 grid gap-2">
+                        <Label htmlFor="reason-not-selected">Reason (required)</Label>
+                        <Select id="reason-not-selected" name="reason" required defaultValue="">
+                          <option value="" disabled>
+                            Choose a reason…
+                          </option>
+                          {notSelectedReasons(program?.employer_partner).map((r) => (
+                            <option key={r} value={r}>
+                              {r}
+                            </option>
+                          ))}
+                          <option value="other">Other (write it below)</option>
+                        </Select>
+                        <Textarea
+                          name="note"
+                          placeholder="Additional detail (required if you chose Other)"
+                          className="min-h-16 text-sm"
+                          aria-label="Additional detail"
+                        />
+                        <p className="text-xs text-ink/50">
+                          The applicant is emailed that a decision was made. The reason is shown only after they sign in.
+                        </p>
                       </div>
                     )}
                     {/* Only removal carries a note: the applicant deserves a reason. Other steps send their standard email. */}

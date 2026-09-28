@@ -82,8 +82,11 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
       if (!error) await notifyStatus(supabase, appId, { note });
       break;
     case "not_selected":
+      // A reason is required. It's saved on the application's timeline (visible to the applicant only after
+      // signing in) and deliberately left out of the email.
+      if (!note) return "Choose or write the reason this applicant was not selected.";
       error = await transition("not_selected");
-      if (!error) await notifyStatus(supabase, appId, { note });
+      if (!error) await notifyStatus(supabase, appId);
       break;
     case "accept":
       // Assessment passed -> accepted into the program; enrollment (cohort choice + agreements) opens.
@@ -155,7 +158,13 @@ export async function adminAct(_prev: ActionState, formData: FormData): Promise<
   }
   const appId = String(formData.get("application_id") || "");
   const op = String(formData.get("op") || "") as AdminOp;
-  const note = String(formData.get("note") || "").trim() || null;
+  const reasonPick = String(formData.get("reason") || "");
+  const reasonText = String(formData.get("note") || "").trim();
+  // Not selected: a canned reason, optionally with extra detail (or free text when "Other" is picked).
+  const note =
+    op === "not_selected"
+      ? [reasonPick === "other" ? "" : reasonPick, reasonText].filter(Boolean).join(" ").slice(0, 1000) || null
+      : reasonText || null;
   const supabase = await createClient();
   const err = await runOp(supabase, appId, op, note, {
     examUrl: String(formData.get("exam_url") || ""),
@@ -256,7 +265,8 @@ export async function bulkAct(_prev: ActionState, formData: FormData): Promise<A
   }
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   const op = String(formData.get("op") || "") as AdminOp;
-  const allowed: AdminOp[] = ["pass_and_invite", "send_invite", "send_reminder", "not_selected", "accept", "confirm"];
+  // "Not selected" needs a per-applicant reason, so it's done from the application page.
+  const allowed: AdminOp[] = ["pass_and_invite", "send_invite", "send_reminder", "accept", "confirm"];
   if (!allowed.includes(op)) return fail("Choose a bulk action.");
   if (!ids.length) return fail("Select at least one application.");
   const supabase = await createClient();

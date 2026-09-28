@@ -81,6 +81,9 @@ export default async function ApplicationPage({
   const cohortById = Object.fromEntries(((cohortsRes.data ?? []) as CohortAvailability[]).map((c) => [c.cohort_id, c]));
   const assigned = app.assigned_cohort_id ? cohortById[app.assigned_cohort_id] : null;
   const next = applicantNextAction(status);
+  // Why they weren't selected: shown here (signed in) and never in email.
+  const decisionReason =
+    status === "not_selected" ? [...((events ?? []) as Array<{ to_status: string; note: string | null }>)].reverse().find((e) => e.to_status === "not_selected")?.note ?? null : null;
   const hasSeat = (enrollments ?? []).some((e) => e.status === "registered");
   const signedIds = new Map((signatures ?? []).map((s) => [s.template_id, s]));
   // Enrollment = cohorts + agreements. Signing opens once cohorts are chosen (even on the waitlist).
@@ -166,6 +169,12 @@ export default async function ApplicationPage({
                 <p className="text-xs font-bold uppercase tracking-widest text-maroon">Next step</p>
                 <p className="mt-2 text-lg font-black">{next.title}</p>
                 <p className="mt-1 text-sm text-ink/70">{next.body}</p>
+                {status === "not_selected" && decisionReason && (
+                  <div className="mt-4 rounded-xl border border-ink/10 bg-white p-4">
+                    <p className="text-xs font-bold uppercase tracking-widest text-ink/50">Reason</p>
+                    <p className="mt-1 text-sm font-bold text-ink">{decisionReason}</p>
+                  </div>
+                )}
                 {(next.tab || next.href) && (
                   <ButtonLink href={next.href ?? `?tab=${next.tab}`} className="mt-4">
                     {next.cta ?? "Continue"}

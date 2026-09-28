@@ -182,6 +182,22 @@ export function canChangeCohort(status: Status): boolean {
   return COHORT_HOLD_STATUSES.includes(status);
 }
 
+/**
+ * Standard reasons admissions picks from when an applicant is not selected. The reason is shown to the applicant
+ * only inside their portal (never in email). `{employer}` is replaced with the program's employer partner.
+ */
+export const NOT_SELECTED_REASONS = [
+  "Did not meet the minimum age requirement (18 or older by program completion).",
+  "Did not meet key program requirements, as determined by initial screening by {employer}.",
+  "Did not meet the education requirement (high school diploma or GED).",
+  "The application was incomplete or its information could not be verified.",
+  "The program reached capacity for this intake.",
+] as const;
+
+export function notSelectedReasons(employer: string | null | undefined): string[] {
+  return NOT_SELECTED_REASONS.map((r) => r.replace("{employer}", employer?.trim() || "the employer partner"));
+}
+
 /** Admissions can send an applicant back to the very beginning (a fresh application form) until they finish the program. */
 export function canReset(status: Status): boolean {
   return !OUTCOME_STATUSES.includes(status);

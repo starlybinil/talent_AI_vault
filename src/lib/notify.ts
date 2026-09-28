@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sendEmail, type EmailContext } from "@/lib/email";
-import { EMAIL_FOR_STATUS, type EmailTemplate, type Status } from "@/lib/workflow";
+import { EMAIL_FOR_STATUS, STATUS_LABEL, type EmailTemplate, type Status } from "@/lib/workflow";
 
 type Prog = { short_name: string; employer_partner: string | null; slug: string };
 
@@ -69,9 +69,11 @@ export async function notifyStatus(
   const ctx = await emailContext(supabase, applicationId);
   if (!ctx) return;
   const { data } = await supabase.from("applications").select("status").eq("id", applicationId).maybeSingle();
-  const template = opts.override ?? EMAIL_FOR_STATUS[(data?.status ?? "submitted") as Status];
+  const status = (data?.status ?? "submitted") as Status;
+  const template = opts.override ?? EMAIL_FOR_STATUS[status];
   if (!template) return;
-  await sendEmail(supabase, template, { ...ctx, note: opts.note ?? null });
+  // Every milestone email carries an "Application status updated: …" line.
+  await sendEmail(supabase, template, { ...ctx, note: opts.note ?? null, statusLabel: STATUS_LABEL[status] });
 }
 
 export async function notifyTemplate(

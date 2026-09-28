@@ -42,7 +42,7 @@ export type EmailContext = {
   } | null;
 };
 
-type Rendered = { subject: string; heading: string; paragraphs: string[]; cta?: { label: string; href: string }; footer?: string };
+type Rendered = { subject: string; heading: string; paragraphs: string[]; cta?: { label: string; href: string }; footer?: string; statusLabel?: string | null };
 
 const portal = (id: string | null) => `${SITE_URL}/portal${id ? `/applications/${id}` : ""}`;
 
@@ -145,8 +145,10 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         paragraphs: [
           hi,
           `Thank you for your interest in the <strong>${esc(ctx.programName)}</strong>. After careful review, we're unable to move your application forward at this time.`,
-          ...note,
+          // The reason is private: shown only after signing in, never in the email body.
+          "You can see the reason for this decision by signing in to your FoundryReady portal.",
         ],
+        cta: { label: "Sign in to view details", href: portal(ctx.applicationId) },
       };
     case "cohort_registered":
       return {
@@ -235,7 +237,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
     case "status_update":
       return {
         subject: "Your application status was updated",
-        heading: ctx.statusLabel ? `Status: ${ctx.statusLabel}` : "Application update",
+        heading: "Your application status has changed",
         paragraphs: [hi, "There's an update on your application. Log in to your portal to see the details and any next steps.", ...note],
         cta: { label: "View my application", href: portal(ctx.applicationId) },
       };
@@ -297,7 +299,11 @@ export function renderHtml(r: Rendered): string {
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:16px;overflow:hidden">
 <tr><td style="background:#191919;padding:20px 28px"><span style="display:inline-block;background:#8C1D40;color:#FFC627;font-weight:900;font-size:14px;line-height:28px;width:28px;text-align:center;border-radius:7px;vertical-align:middle;margin-right:8px">FR</span><span style="color:#fff;font-weight:800;font-size:20px;letter-spacing:-0.5px;vertical-align:middle">Foundry<span style="color:#FFC627">Ready</span></span></td></tr>
 <tr><td style="height:6px;background:linear-gradient(90deg,#8C1D40,#FFC627)"></td></tr>
-<tr><td style="padding:32px 28px">
+<tr><td style="padding:32px 28px">${
+    r.statusLabel
+      ? `<p style="margin:0 0 14px"><span style="display:inline-block;background:#FFF4D1;color:#8C1D40;border:1px solid #F5D77A;border-radius:999px;padding:6px 12px;font-size:12px;font-weight:700;letter-spacing:.3px">Application status updated: ${esc(r.statusLabel)}</span></p>`
+      : ""
+  }
 <h1 style="margin:0 0 20px;font-size:26px;line-height:1.2">${esc(r.heading)}</h1>${body}${cta}
 </td></tr>
 <tr><td style="padding:20px 28px;background:#fafafa;color:#747474;font-size:12px;line-height:1.5">
@@ -321,7 +327,7 @@ export async function sendEmail(
   template: EmailTemplate,
   ctx: EmailContext,
 ): Promise<{ status: "sent" | "simulated" | "failed"; error?: string }> {
-  const rendered = renderEmail(template, ctx);
+  const rendered = { ...renderEmail(template, ctx), statusLabel: ctx.statusLabel ?? null };
   const html = renderHtml(rendered);
   const apiKey = process.env.RESEND_API_KEY;
   let status: "sent" | "simulated" | "failed" = "simulated";
