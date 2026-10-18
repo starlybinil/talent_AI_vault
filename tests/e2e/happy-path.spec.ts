@@ -51,15 +51,30 @@ test("applicant registers from the ASU entry link and applies", async ({ page })
 
   await page.getByLabel("Phone number").fill("(602) 555-0199");
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByLabel("Highest diploma or degree earned").selectOption("bachelor");
-  await page.getByLabel("Program major").fill("Electrical Engineering Technology");
+  const answer = (question: RegExp, option: string) => page.getByRole("group", { name: question }).getByLabel(option, { exact: true }).check();
+  // Eligibility
+  await answer(/at least 18 years/, "Yes");
+  await answer(/currently authorized to work/, "Yes");
+  await answer(/visa sponsorship/, "No");
+  await answer(/years of professional work experience/, "0–5 years");
   await page.getByRole("button", { name: "Continue" }).click();
+  // Education
+  await page.getByLabel("What is the highest level of education you have completed?").selectOption("hs_ged");
+  await answer(/completed a bachelor/, "No");
+  await answer(/currently enrolled/, "No");
+  await page.getByRole("button", { name: "Continue" }).click();
+  // Role & pay
+  await answer(/interested in pursuing employment/, "Yes");
+  await answer(/cleanroom environment/, "Yes");
+  await answer(/shift schedules/, "Yes");
+  await answer(/pay range/, "Yes");
+  await page.getByRole("button", { name: "Continue" }).click();
+  // Resume
   await page.getByLabel("Resume file").setInputFiles(path.join(__dirname, "../fixtures/resume.pdf"));
   await expect(page.getByText("Uploaded. Click to replace.")).toBeVisible();
   await page.getByRole("button", { name: "Continue" }).click();
-  await page.getByLabel("No", { exact: true }).first().check();
-  await page.getByLabel("Yes", { exact: true }).last().check();
-  await page.getByRole("button", { name: "Continue" }).click();
+  // Review & acknowledge
+  await page.getByLabel("I certify and acknowledge the statements above.").check();
   await page.getByRole("button", { name: "Submit application" }).click();
 
   await page.waitForURL(/\/portal\/applications\/[0-9a-f-]+/);

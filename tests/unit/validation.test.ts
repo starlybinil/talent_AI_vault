@@ -7,10 +7,18 @@ const base = {
   last_name: "Rivera",
   phone: "(602) 555-0123",
   highest_education: "hs_ged",
-  major: "",
-  visa_sponsorship: "no",
   will_be_18_by_completion: "yes",
+  work_authorized: "yes",
+  visa_sponsorship: "no",
+  work_experience: "0_5",
+  stem_degree_completed: "no",
+  stem_degree_enrolled: "no",
+  role_interest: "yes",
+  cleanroom_willing: "unsure",
+  shift_willing: "yes",
+  pay_range_accepted: "yes",
   share_with_employers: true,
+  acknowledged: true,
   resume_path: "uid/resumes/1.pdf",
 };
 
@@ -19,16 +27,28 @@ describe("application schema", () => {
     expect(applicationSchema.safeParse(base).success).toBe(true);
   });
 
-  it("requires a major when a degree was earned", () => {
-    const r = applicationSchema.safeParse({ ...base, highest_education: "bachelor" });
+  it("requires the acknowledgement", () => {
+    expect(applicationSchema.safeParse({ ...base, acknowledged: false }).success).toBe(false);
+  });
+
+  it("requires role & pay answers only for programs that ask them", () => {
+    const { role_interest: _r, cleanroom_willing: _c, shift_willing: _s, pay_range_accepted: _p, ...noRole } = base;
+    void [_r, _c, _s, _p];
+    const r = applicationSchema.safeParse(noRole);
     expect(r.success).toBe(false);
-    expect(r.error?.issues[0].path[0]).toBe("major");
-    expect(applicationSchema.safeParse({ ...base, highest_education: "bachelor", major: "EE" }).success).toBe(true);
+    expect(r.error?.issues.map((i) => i.path[0])).toEqual(["role_interest", "cleanroom_willing", "shift_willing", "pay_range_accepted"]);
+    expect(applicationSchema.safeParse({ ...noRole, program_slug: "another-program" }).success).toBe(true);
+  });
+
+  it("accepts the deck's education options, including no diploma", () => {
+    expect(applicationSchema.safeParse({ ...base, highest_education: "no_hs" }).success).toBe(true);
+    expect(applicationSchema.safeParse({ ...base, work_experience: "20" }).success).toBe(false);
   });
 
   it("rejects bad phone numbers and missing answers", () => {
     expect(applicationSchema.safeParse({ ...base, phone: "12345" }).success).toBe(false);
     expect(applicationSchema.safeParse({ ...base, visa_sponsorship: "" }).success).toBe(false);
+    expect(applicationSchema.safeParse({ ...base, work_authorized: "" }).success).toBe(false);
     expect(applicationSchema.safeParse({ ...base, resume_path: "" }).success).toBe(false);
   });
 });

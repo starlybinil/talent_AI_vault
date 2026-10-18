@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { answerRows, eligibilityFlags } from "@/lib/application-questions";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Download, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -159,11 +160,9 @@ export default async function AdminApplicationPage({ params }: { params: Promise
             <h2 className="font-black">Application</h2>
             <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
               {[
-                ["Highest diploma/degree", EDUCATION_LABEL[app.highest_education]],
-                ["Major", app.major || "—"],
-                ["Visa sponsorship (now/future)", VISA_LABEL[app.visa_sponsorship]],
-                ["18+ by completion", app.will_be_18_by_completion ? "Yes" : "No"],
+                ...answerRows(app, { education: EDUCATION_LABEL, visa: VISA_LABEL }),
                 ["Shares with employers", app.share_with_employers ? "Yes" : "No"],
+                ["Acknowledgement", app.acknowledged_at ? `Certified ${formatDate(app.acknowledged_at)}` : "—"],
                 ["Assessment", app.exam_result ? app.exam_result : app.exam_invited_at ? `Invited ${formatDate(app.exam_invited_at)}${app.exam_self_reported_at ? " · applicant says complete" : ""}${app.exam_reminders_sent ? ` · ${app.exam_reminders_sent} reminder(s)` : ""}` : "—"],
               ].map(([k, v]) => (
                 <div key={k}>
@@ -172,9 +171,9 @@ export default async function AdminApplicationPage({ params }: { params: Promise
                 </div>
               ))}
             </dl>
-            {!app.will_be_18_by_completion && (
+            {eligibilityFlags(app).length > 0 && (
               <Alert tone="warn" className="mt-4">
-                Applicant indicated they will <strong>not</strong> be 18 by program completion.
+                Review eligibility: the applicant {eligibilityFlags(app).join("; ")}.
               </Alert>
             )}
             {app.resume_path && (

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { answerRows } from "@/lib/application-questions";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Download, ExternalLink, FileSignature, PartyPopper } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -504,10 +505,7 @@ export default async function ApplicationPage({
                 ["Name", `${app.first_name} ${app.last_name}`],
                 ["Email", app.email],
                 ["Phone", app.phone],
-                ["Highest diploma/degree", EDUCATION_LABEL[app.highest_education]],
-                ["Major", app.major || "—"],
-                ["Visa sponsorship", VISA_LABEL[app.visa_sponsorship]],
-                ["18+ by completion", app.will_be_18_by_completion ? "Yes" : "No"],
+                ...answerRows(app, { education: EDUCATION_LABEL, visa: VISA_LABEL }),
                 ["Share with employer partners", app.share_with_employers ? "Yes" : "No"],
               ].map(([k, v]) => (
                 <div key={k}>

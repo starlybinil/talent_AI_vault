@@ -15,7 +15,7 @@ export type QueueFilters = {
 };
 
 export const QUEUE_SELECT =
-  "id, first_name, last_name, email, phone, highest_education, major, visa_sponsorship, will_be_18_by_completion, share_with_employers, status, exam_result, exam_invited_at, exam_self_reported_at, exam_reminders_sent, utm_source, submitted_at, updated_at, resume_path, program_id, programs(short_name, slug), cohorts:assigned_cohort_id(name, start_date)";
+  "id, first_name, last_name, email, phone, highest_education, major, visa_sponsorship, will_be_18_by_completion, work_authorized, work_experience, stem_degree_completed, stem_degree_enrolled, role_interest, cleanroom_willing, shift_willing, pay_range_accepted, acknowledged_at, share_with_employers, status, exam_result, exam_invited_at, exam_self_reported_at, exam_reminders_sent, utm_source, submitted_at, updated_at, resume_path, program_id, programs(short_name, slug), cohorts:assigned_cohort_id(name, start_date)";
 
 /** Builds the admissions queue query from URL filters (shared by the page and CSV export). */
 export function queueQuery(supabase: SupabaseClient, f: QueueFilters, select = QUEUE_SELECT) {

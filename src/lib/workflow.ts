@@ -355,6 +355,7 @@ export const EMAIL_FOR_STATUS: Partial<Record<Status, EmailTemplate>> = {
 };
 
 export const EDUCATION_LABEL: Record<string, string> = {
+  no_hs: "No high school diploma / GED",
   hs_ged: "High school diploma / GED",
   some_college: "Some college (no degree)",
   certificate: "Technical certificate",
@@ -366,7 +367,7 @@ export const EDUCATION_LABEL: Record<string, string> = {
 export const DEGREE_LEVELS = ["associate", "bachelor", "master_plus"] as const;
 
 export const VISA_LABEL: Record<string, string> = {
-  now: "Yes — now",
-  future: "Yes — in the future",
+  now: "Yes (now)",
+  future: "Yes",
   no: "No",
 };

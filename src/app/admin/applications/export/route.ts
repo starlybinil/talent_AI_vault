@@ -1,3 +1,4 @@
+import { CLEANROOM_LABEL, WORK_EXPERIENCE_LABEL, yesNo } from "@/lib/application-questions";
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getSession } from "@/lib/session";
@@ -18,7 +19,7 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const rows = (data ?? []) as unknown as Row[];
   const csv = toCsv(
-    ["Application ID", "Program", "First name", "Last name", "Email", "Phone", "Education", "Major", "Visa sponsorship", "18+ by completion", "Shares with employers", "Status", "Assessment", "Cohort", "Source", "Submitted", "Updated"],
+    ["Application ID", "Program", "First name", "Last name", "Email", "Phone", "Education", "Major", "Visa sponsorship", "18+ by completion", "Work authorized", "Work experience", "STEM degree completed", "STEM degree enrolled", "Role interest", "Cleanroom", "Shifts", "Pay range accepted", "Acknowledged", "Shares with employers", "Status", "Assessment", "Cohort", "Source", "Submitted", "Updated"],
     rows.map((r) => [
       r.id,
       r.programs?.short_name,
@@ -30,6 +31,15 @@ export async function GET(request: NextRequest) {
       r.major,
       VISA_LABEL[r.visa_sponsorship as string],
       r.will_be_18_by_completion ? "Yes" : "No",
+      yesNo(r.work_authorized as boolean | null),
+      WORK_EXPERIENCE_LABEL[r.work_experience as string] ?? "",
+      yesNo(r.stem_degree_completed as boolean | null),
+      yesNo(r.stem_degree_enrolled as boolean | null),
+      yesNo(r.role_interest as boolean | null),
+      CLEANROOM_LABEL[r.cleanroom_willing as string] ?? "",
+      yesNo(r.shift_willing as boolean | null),
+      yesNo(r.pay_range_accepted as boolean | null),
+      r.acknowledged_at ? "Yes" : "",
       r.share_with_employers ? "Yes" : "No",
       STATUS_LABEL[r.status as Status],
       r.exam_result,

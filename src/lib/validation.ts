@@ -1,7 +1,7 @@
 import { z } from "zod";
-import { DEGREE_LEVELS } from "@/lib/workflow";
+import { CLEANROOM_OPTIONS, ROLE_FIT, WORK_EXPERIENCE } from "@/lib/application-questions";
 
-export const EDUCATION_LEVELS = ["hs_ged", "some_college", "certificate", "associate", "bachelor", "master_plus"] as const;
+export const EDUCATION_LEVELS = ["no_hs", "hs_ged", "some_college", "certificate", "associate", "bachelor", "master_plus"] as const;
 export const VISA_OPTIONS = ["now", "future", "no"] as const;
 
 export const RESUME_TYPES = [
@@ -23,16 +23,27 @@ export const applicationSchema = z
       .trim()
       .regex(phoneRegex, "Enter a valid phone number")
       .refine((v) => v.replace(/\D/g, "").length >= 10, "Enter a valid phone number"),
-    highest_education: z.enum(EDUCATION_LEVELS, { message: "Select your highest diploma or degree" }),
+    highest_education: z.enum(EDUCATION_LEVELS, { message: "Select the highest level of education you have completed" }),
     major: z.string().trim().max(120).optional().default(""),
-    visa_sponsorship: z.enum(VISA_OPTIONS, { message: "Tell us whether you need visa sponsorship" }),
     will_be_18_by_completion: z.enum(["yes", "no"], { message: "Please answer the age question" }),
+    work_authorized: z.enum(["yes", "no"], { message: "Tell us whether you're authorized to work in the U.S." }),
+    visa_sponsorship: z.enum(VISA_OPTIONS, { message: "Tell us whether you'll need visa sponsorship" }),
+    work_experience: z.enum(WORK_EXPERIENCE, { message: "Select your years of work experience" }),
+    stem_degree_completed: z.enum(["yes", "no"], { message: "Please answer this question" }),
+    stem_degree_enrolled: z.enum(["yes", "no"], { message: "Please answer this question" }),
+    role_interest: z.enum(["yes", "no"]).optional(),
+    cleanroom_willing: z.enum(CLEANROOM_OPTIONS).optional(),
+    shift_willing: z.enum(["yes", "no"]).optional(),
+    pay_range_accepted: z.enum(["yes", "no"]).optional(),
     share_with_employers: z.boolean().default(false),
+    acknowledged: z.literal(true, { message: "Please check the box to certify and acknowledge the statements" }),
     resume_path: z.string().min(1, "Please upload your resume"),
   })
   .superRefine((v, ctx) => {
-    if ((DEGREE_LEVELS as readonly string[]).includes(v.highest_education) && !v.major) {
-      ctx.addIssue({ code: "custom", path: ["major"], message: "Enter your program major" });
+    // Role & pay questions apply only to programs that define them (answers are informational, not filtered).
+    if (!ROLE_FIT[v.program_slug]) return;
+    for (const k of ["role_interest", "cleanroom_willing", "shift_willing", "pay_range_accepted"] as const) {
+      if (!v[k]) ctx.addIssue({ code: "custom", path: [k], message: "Please answer this question" });
     }
   });
 
