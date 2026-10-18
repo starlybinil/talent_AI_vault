@@ -37,10 +37,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
   const canManage = can(session.roles, "admissions.manage");
   const supabase = await createClient();
   const { reset, ...filters } = sp;
-  const [{ data, error }, { data: programs }] = await Promise.all([
-    queueQuery(supabase, filters).limit(500),
-    supabase.from("programs").select("id, short_name").order("sort"),
-  ]);
+  const { data, error } = await queueQuery(supabase, filters).limit(500);
   const rows = (data ?? []) as unknown as Row[];
   const view = sp.view === "board" ? "board" : "table";
   const qs = new URLSearchParams(Object.entries(sp).filter(([k, v]) => v && k !== "view" && k !== "reset") as [string, string][]).toString();
@@ -75,20 +72,12 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
       )}
 
       <Card className="mb-6 p-4">
-        <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_2fr_auto]" method="get">
+        <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] xl:grid-cols-[1.5fr_1fr_1fr_1fr_2.5fr_auto]" method="get">
           <input type="hidden" name="view" value={view} />
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 mt-0.5 h-4 w-4 -translate-y-1/2 text-ink/40" />
             <Input name="q" defaultValue={sp.q} placeholder="Search name, email or phone" className="pl-9" aria-label="Search" />
           </div>
-          <Select name="program" defaultValue={sp.program ?? ""} aria-label="Program">
-            <option value="">All programs</option>
-            {(programs ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.short_name}
-              </option>
-            ))}
-          </Select>
           <Select name="status" defaultValue={sp.status ?? ""} aria-label="Stage">
             <option value="">All stages</option>
             <option value="active">Active (in progress)</option>
@@ -114,7 +103,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
               </option>
             ))}
           </Select>
-          <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-2 xl:col-span-1">
+          <div className="grid min-w-0 grid-cols-2 gap-2 sm:col-span-2 lg:col-span-3 xl:col-span-1">
             <label className="grid gap-1 text-[11px] font-bold uppercase tracking-wider text-ink/50">
               Applied from
               <Input type="date" name="from" defaultValue={sp.from ?? ""} aria-label="Applied from" />
