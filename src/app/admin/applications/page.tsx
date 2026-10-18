@@ -75,7 +75,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
       )}
 
       <Card className="mb-6 p-4">
-        <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto]" method="get">
+        <form className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_1fr] xl:grid-cols-[2fr_1fr_1fr_1fr_1fr_2fr_auto]" method="get">
           <input type="hidden" name="view" value={view} />
           <div className="relative">
             <Search className="pointer-events-none absolute left-3 top-1/2 mt-0.5 h-4 w-4 -translate-y-1/2 text-ink/40" />
@@ -114,7 +114,17 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
               </option>
             ))}
           </Select>
-          <div className="flex gap-2 sm:mt-1.5">
+          <div className="grid grid-cols-2 gap-2 sm:col-span-2 lg:col-span-2 xl:col-span-1">
+            <label className="grid gap-1 text-[11px] font-bold uppercase tracking-wider text-ink/50">
+              Applied from
+              <Input type="date" name="from" defaultValue={sp.from ?? ""} aria-label="Applied from" />
+            </label>
+            <label className="grid gap-1 text-[11px] font-bold uppercase tracking-wider text-ink/50">
+              Applied to
+              <Input type="date" name="to" defaultValue={sp.to ?? ""} aria-label="Applied to" />
+            </label>
+          </div>
+          <div className="flex items-end gap-2">
             <button className={buttonClass("dark", "md")} type="submit">
               Filter
             </button>
@@ -184,7 +194,6 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                     </th>
                   )}
                   <th className="px-4 py-3">Applicant</th>
-                  <th className="px-4 py-3">Program</th>
                   <th className="px-4 py-3">Stage</th>
                   <th className="px-4 py-3">Education</th>
                   <th className="px-4 py-3">Visa</th>
@@ -206,7 +215,6 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                       </Link>
                       <p className="text-xs text-ink/50">{r.email}</p>
                     </td>
-                    <td className="px-4 py-3 text-ink/70">{r.programs?.short_name}</td>
                     <td className="px-4 py-3">
                       <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                       {r.exam_self_reported_at && r.status === "exam_invited" && <p className="mt-1 text-xs text-emerald-700">Says exam done</p>}
