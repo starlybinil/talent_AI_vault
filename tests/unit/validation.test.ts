@@ -43,6 +43,7 @@ describe("application schema", () => {
   it("accepts the deck's education options, including no diploma", () => {
     expect(applicationSchema.safeParse({ ...base, highest_education: "no_hs" }).success).toBe(true);
     expect(applicationSchema.safeParse({ ...base, work_experience: "20" }).success).toBe(false);
+    expect(applicationSchema.safeParse({ ...base, stem_degree_completed: "unsure", stem_degree_enrolled: "unsure" }).success).toBe(true);
   });
 
   it("rejects bad phone numbers and missing answers", () => {

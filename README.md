@@ -19,7 +19,7 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 3. Completes the application, following the *ET Program Admissions Process* deck:
    - **About you**: name, phone (email comes from the account)
    - **Eligibility**: 18+ by the end of the program; currently authorized to work in the U.S.; will require visa sponsorship in the future; years of professional work experience (0–5, 6–10, 10+)
-   - **Education**: highest level completed (no HS diploma/GED, HS diploma/GED, associate, bachelor's, master's or higher); completed a STEM bachelor's or higher; currently enrolled in one
+   - **Education**: highest level completed (no HS diploma/GED, HS diploma/GED, associate, bachelor's, master's or higher); completed a STEM bachelor's or higher, and currently enrolled in one (each Yes/No/Unsure)
    - **Role & pay** (programs that define it in `src/lib/application-questions.ts`, e.g. ASU-TSMC): interest in the TSMC Arizona Equipment Technician role, cleanroom/bunny-suit willingness (Yes/No/Unsure), shift availability, acceptance of the anticipated $25–$30/hr pay range. These answers are informational and never filter applicants
    - **Resume upload**, consent to share with employer partners, and a required **application acknowledgement** checkbox (six certification statements, timestamped as `acknowledged_at`)
    - Admissions sees all answers on the application page, with a warning for eligibility answers to review (under 18, not work-authorized, needs sponsorship, no diploma/GED). They're also in the CSV export

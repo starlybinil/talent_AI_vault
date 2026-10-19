@@ -42,8 +42,6 @@ export async function submitApplication(input: unknown): Promise<SubmitApplicati
       ...v,
       will_be_18_by_completion: v.will_be_18_by_completion === "yes",
       work_authorized: v.work_authorized === "yes",
-      stem_degree_completed: v.stem_degree_completed === "yes",
-      stem_degree_enrolled: v.stem_degree_enrolled === "yes",
       role_interest: v.role_interest ? v.role_interest === "yes" : null,
       shift_willing: v.shift_willing ? v.shift_willing === "yes" : null,
       pay_range_accepted: v.pay_range_accepted ? v.pay_range_accepted === "yes" : null,

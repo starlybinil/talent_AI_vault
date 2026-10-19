@@ -54,6 +54,7 @@ const YES_NO = [
   { value: "yes", label: "Yes" },
   { value: "no", label: "No" },
 ];
+const YES_NO_UNSURE = [...YES_NO, { value: "unsure", label: "Unsure" }];
 
 export function ApplicationForm({
   programSlug,
@@ -281,8 +282,9 @@ export function ApplicationForm({
                   </Select>
                   <FieldError>{errors.highest_education}</FieldError>
                 </div>
-                {choice("stem_degree_completed", "Have you completed a bachelor’s degree or higher in a STEM field?", YES_NO)}
-                {choice("stem_degree_enrolled", "Are you currently enrolled in a bachelor’s degree or higher program in a STEM field?", YES_NO)}
+                {choice("stem_degree_completed", "Have you completed a bachelor’s degree or higher in a STEM field?", YES_NO_UNSURE, 3)}
+                {choice("stem_degree_enrolled", "Are you currently enrolled in a bachelor’s degree or higher program in a STEM field?", YES_NO_UNSURE, 3)}
+                <p className="-mt-4 text-xs text-ink/50">STEM means science, technology, engineering or math (for example engineering, computer science, physics, chemistry, biology or mathematics). Not sure? Choose Unsure.</p>
               </div>
             )}
 
@@ -374,8 +376,8 @@ export function ApplicationForm({
                     ["Will require visa sponsorship", values.visa_sponsorship === "future" ? "Yes" : answer(values.visa_sponsorship)],
                     ["Work experience", WORK_EXPERIENCE_LABEL[values.work_experience] ?? "—"],
                     ["Highest education", EDUCATION_LABEL[values.highest_education] ?? "—"],
-                    ["STEM bachelor’s or higher completed", answer(values.stem_degree_completed)],
-                    ["Enrolled in a STEM bachelor’s or higher", answer(values.stem_degree_enrolled)],
+                    ["STEM bachelor’s or higher completed", CLEANROOM_LABEL[values.stem_degree_completed] ?? "—"],
+                    ["Enrolled in a STEM bachelor’s or higher", CLEANROOM_LABEL[values.stem_degree_enrolled] ?? "—"],
                     ...(fit
                       ? [
                           [`Interested in the ${fit.role} role`, answer(values.role_interest)],

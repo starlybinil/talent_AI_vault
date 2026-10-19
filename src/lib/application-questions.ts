@@ -57,8 +57,8 @@ type AnswerSource = {
   work_experience?: string | null;
   highest_education: string | null;
   major?: string | null;
-  stem_degree_completed?: boolean | null;
-  stem_degree_enrolled?: boolean | null;
+  stem_degree_completed?: string | null;
+  stem_degree_enrolled?: string | null;
   role_interest?: boolean | null;
   cleanroom_willing?: string | null;
   shift_willing?: boolean | null;
@@ -74,8 +74,8 @@ export function answerRows(a: AnswerSource, labels: { education: Record<string, 
     ["Will require visa sponsorship", a.visa_sponsorship ? labels.visa[a.visa_sponsorship] ?? a.visa_sponsorship : "—"],
     ["Work experience", a.work_experience ? WORK_EXPERIENCE_LABEL[a.work_experience] ?? a.work_experience : "—"],
     ["Highest education", a.highest_education ? labels.education[a.highest_education] ?? a.highest_education : "—"],
-    ["STEM bachelor’s or higher completed", yesNo(a.stem_degree_completed)],
-    ["Enrolled in a STEM bachelor’s or higher", yesNo(a.stem_degree_enrolled)],
+    ["STEM bachelor’s or higher completed", a.stem_degree_completed ? CLEANROOM_LABEL[a.stem_degree_completed] : "—"],
+    ["Enrolled in a STEM bachelor’s or higher", a.stem_degree_enrolled ? CLEANROOM_LABEL[a.stem_degree_enrolled] : "—"],
   ];
   if (a.major) rows.push(["Major (earlier form)", a.major]);
   if (a.role_interest != null || a.cleanroom_willing || a.shift_willing != null || a.pay_range_accepted != null) {

@@ -61,7 +61,7 @@ test("applicant registers from the ASU entry link and applies", async ({ page })
   // Education
   await page.getByLabel("What is the highest level of education you have completed?").selectOption("hs_ged");
   await answer(/completed a bachelor/, "No");
-  await answer(/currently enrolled/, "No");
+  await answer(/currently enrolled/, "Unsure");
   await page.getByRole("button", { name: "Continue" }).click();
   // Role & pay
   await answer(/interested in pursuing employment/, "Yes");
