@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createHash } from "crypto";
+import { richTextToPdfLines } from "@/lib/richtext";
 import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
 
 const MAROON = rgb(0x8c / 255, 0x1d / 255, 0x40 / 255);
@@ -82,10 +83,17 @@ export async function buildSignedAgreementPdf(input: {
   page.drawText(`Version ${input.version}`, { x: margin, y, size: 9, font, color: GRAY });
   y -= 26;
 
-  for (const line of wrap(clean(input.body), font, 11, W - margin * 2)) {
-    ensure(16);
-    page.drawText(line, { x: margin, y, size: 11, font, color: INK });
-    y -= 16;
+  // Agreement text may use light formatting (headings, lists); see src/lib/richtext.ts.
+  for (const block of richTextToPdfLines(input.body)) {
+    const indent = block.indent ? 14 : 0;
+    const f = block.heading ? bold : font;
+    const size = block.heading ? 12.5 : 11;
+    const wrapped = block.text ? wrap(clean(block.text), f, size, W - margin * 2 - indent) : [""];
+    wrapped.forEach((line, i) => {
+      ensure(16);
+      page.drawText(line, { x: margin + indent + (block.indent && i > 0 ? 10 : 0), y, size, font: f, color: block.heading ? MAROON : INK });
+      y -= block.text ? 16 : 8;
+    });
   }
 
   y -= 20;

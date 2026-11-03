@@ -1,6 +1,7 @@
 import { saveAgreementTemplate } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
-import { Card, Input, Label, Textarea } from "@/components/ui";
+import { Card, Input, Label } from "@/components/ui";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 
 export type AgreementTemplate = { id: string; title: string; body: string; version: number; required: boolean; active: boolean };
 
@@ -30,7 +31,7 @@ export function AgreementsEditor({ programId, templates }: { programId: string; 
                   <input type="checkbox" name="active" defaultChecked={t.active} className="h-4 w-4 accent-maroon" /> Active
                 </label>
               </div>
-              <Textarea name="body" defaultValue={t.body} className="min-h-40 text-sm" required />
+              <RichTextEditor name="body" defaultValue={t.body} required />
               <SubmitButton size="sm" variant="dark" className="justify-self-start">Save agreement</SubmitButton>
             </ActionForm>
           ))}
@@ -38,7 +39,7 @@ export function AgreementsEditor({ programId, templates }: { programId: string; 
             <input type="hidden" name="program_id" value={programId} />
             <p className="font-bold">Add an agreement</p>
             <Input name="title" placeholder="Title" required />
-            <Textarea name="body" placeholder="Agreement text" className="min-h-32 text-sm" required />
+            <RichTextEditor name="body" placeholder="Agreement text" required />
             <label className="flex items-center gap-2 text-sm font-bold">
               <input type="checkbox" name="required" defaultChecked className="h-4 w-4 accent-maroon" /> Required
             </label>

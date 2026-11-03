@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { RichText } from "@/components/ui/RichText";
 import { answerRows } from "@/lib/application-questions";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Download, ExternalLink, FileSignature, PartyPopper } from "lucide-react";
@@ -427,7 +428,9 @@ export default async function ApplicationPage({
                             </Badge>
                           )}
                         </div>
-                        <div className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap rounded-xl bg-mist p-4 text-sm leading-relaxed text-ink/80">{t.body}</div>
+                        <div className="mt-4 max-h-64 overflow-y-auto rounded-xl bg-mist p-4 text-sm leading-relaxed text-ink/80">
+                          <RichText text={t.body} />
+                        </div>
                         {signedCurrent ? (
                           <p className="mt-4 text-sm text-ink/60">
                             Signed as <strong>{sig.typed_name}</strong>.{" "}

@@ -100,7 +100,7 @@ export function Select({ className, children, ...props }: React.SelectHTMLAttrib
   );
 }
 
-export function Textarea({ className, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+export function Textarea({ className, ...props }: React.ComponentProps<"textarea">) {
   return <textarea className={cn(fieldBase, "min-h-24 py-3", className)} {...props} />;
 }
 
