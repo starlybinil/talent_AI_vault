@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireSession } from "@/lib/session";
 import { can, firstAdminPage } from "@/lib/rbac";
 import { Bars, Sparkline } from "@/components/admin/Bars";
+import { remindAllCohortSelection } from "@/app/admin/actions";
+import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { ButtonLink, Card, PageHeader, Stat } from "@/components/ui";
 import { EDUCATION_LABEL, STATUS_LABEL, VISA_LABEL, type Status } from "@/lib/workflow";
 import type { CohortAvailability } from "@/lib/data";
@@ -42,6 +44,8 @@ export default async function AdminDashboard() {
   const needsReview = s("submitted") + s("screening");
   const awaitingExam = s("exam_invited");
   const toVerify = s("agreements_submitted");
+  const choosingCohorts = s("cohort_selection");
+  const canManage = can(session.roles, "admissions.manage");
   const confirmed = s("confirmed");
   const graduates = s("completed") + s("hired");
   const hired = s("hired");
@@ -75,6 +79,34 @@ export default async function AdminDashboard() {
         <Stat label="Hired" value={hired} />
         <Stat label="Placement rate" value={graduates ? `${Math.round((hired / graduates) * 100)}%` : "—"} hint="Hired ÷ graduates" />
       </div>
+
+      {choosingCohorts > 0 && (
+        <Card className="mt-6 flex flex-col gap-4 border-gold/70 bg-gold/5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-maroon">Waiting on applicants</p>
+            <p className="mt-1 font-black">
+              {choosingCohorts} accepted applicant{choosingCohorts === 1 ? " hasn't" : "s haven't"} chosen cohorts yet
+            </p>
+            <Link href="/admin/applications?status=cohort_selection" className="text-sm font-bold text-maroon hover:underline">
+              See who →
+            </Link>
+          </div>
+          {canManage && (
+            <ActionForm
+              action={remindAllCohortSelection}
+              confirm={{
+                title: "Send cohort reminders?",
+                body: `Email all ${choosingCohorts} applicant${choosingCohorts === 1 ? "" : "s"} who haven't chosen cohorts a reminder to choose them and sign their agreements.`,
+                confirmLabel: "Send reminders",
+              }}
+            >
+              <SubmitButton size="sm" variant="dark" pendingText="Sending…">
+                Email reminder to all {choosingCohorts}
+              </SubmitButton>
+            </ActionForm>
+          )}
+        </Card>
+      )}
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
         <Card>

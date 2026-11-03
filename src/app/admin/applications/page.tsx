@@ -155,6 +155,7 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
                 <option value="pass_and_invite">Pass screening & send assessment invite</option>
                 <option value="send_invite">Send assessment invite</option>
                 <option value="send_reminder">Send assessment reminder</option>
+                <option value="cohort_reminder">Remind to choose cohorts (accepted, no choices yet)</option>
                 <option value="accept">Accept into program & open enrollment (assessment passed)</option>
                 <option value="confirm">Accept into held cohort & confirm (agreements signed)</option>
               </Select>

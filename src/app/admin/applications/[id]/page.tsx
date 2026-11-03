@@ -55,6 +55,9 @@ function opsFor(status: Status, employer: string | null, applicantName: string):
     case "exam_failed":
       ops.push({ op: "send_invite", label: "Re-invite to assessment", needsUrl: true, variant: "dark" });
       break;
+    case "cohort_selection":
+      ops.push({ op: "cohort_reminder", label: "Email reminder to choose cohorts", variant: "dark", confirm: `Email ${applicantName} a reminder to choose cohorts and sign agreements?` });
+      break;
   }
   if (canReset(status))
     ops.push({
@@ -117,6 +120,11 @@ export default async function AdminApplicationPage({ params }: { params: Promise
     const p = (people ?? []).find((x) => x.id === uid);
     return p?.full_name || p?.email || "Staff";
   };
+
+  // Waiting on cohort choices: since the latest move into cohort_selection, and the last reminder sent.
+  const waitingSince = status === "cohort_selection" ? [...(events ?? [])].reverse().find((e) => e.to_status === "cohort_selection")?.created_at ?? null : null;
+  const waitingDays = waitingSince ? Math.max(0, Math.floor((Date.now() - new Date(waitingSince).getTime()) / 86_400_000)) : 0;
+  const lastCohortReminder = (emails ?? []).find((e) => e.template === "cohort_reminder")?.created_at ?? null;
 
   const cohorts = (cohortsRes.data ?? []) as CohortAvailability[];
   const cohortById = Object.fromEntries(cohorts.map((c) => [c.cohort_id, c]));
@@ -343,7 +351,17 @@ export default async function AdminApplicationPage({ params }: { params: Promise
               <h2 className="font-black">Move through the workflow</h2>
               <p className="mt-1 text-sm text-ink/60">The applicant sees each change in their portal and gets an email.</p>
               <div className="mt-5 space-y-4">
-                {WAITING[status] && <p className="rounded-2xl bg-mist p-4 text-sm font-bold text-ink/70">{WAITING[status]}</p>}
+                {WAITING[status] && (
+                  <div className="rounded-2xl bg-mist p-4 text-sm text-ink/70">
+                    <p className="font-bold">{WAITING[status]}</p>
+                    {status === "cohort_selection" && (
+                      <p className="mt-1">
+                        {waitingSince ? `Waiting ${waitingDays} day${waitingDays === 1 ? "" : "s"} (since ${formatDate(waitingSince)}).` : null}{" "}
+                        {lastCohortReminder ? `Last reminder sent ${formatDate(lastCohortReminder)}.` : "No reminder sent yet."}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {showDecision && (
                   <EnrollmentDecision
                     appId={app.id}

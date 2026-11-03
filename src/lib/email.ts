@@ -156,6 +156,18 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         ],
         cta: { label: "Enroll now", href: `${portal(ctx.applicationId)}?tab=enrollment` },
       };
+    case "cohort_reminder":
+      return {
+        subject: `Reminder: choose your cohorts for the ${ctx.programName}`,
+        heading: "Your seat is waiting: choose your cohorts",
+        paragraphs: [
+          hi,
+          `You've been accepted into the <strong>${esc(ctx.programName)}</strong>, but we haven't received your cohort choices yet.`,
+          "Log in to rank your <strong>top cohorts</strong> (at least 2) and sign your program agreements on the same page. Seats are limited and fill up in the order choices come in, so please choose soon.",
+          "Questions about dates or locations? Reply from the Messages tab in your portal and admissions will help.",
+        ],
+        cta: { label: "Choose my cohorts", href: `${portal(ctx.applicationId)}?tab=enrollment` },
+      };
     case "exam_failed":
       return {
         subject: "An update on your application",

@@ -23,6 +23,7 @@ export type AdminOp =
   | "pass_and_invite"
   | "send_invite"
   | "send_reminder"
+  | "cohort_reminder"
   | "exam_passed"
   | "exam_failed"
   | "not_selected"
@@ -74,6 +75,12 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
       if (data?.status !== "exam_invited") return "Reminders can only be sent while the assessment is open.";
       await notifyTemplate(supabase, appId, "exam_reminder");
       ({ error } = await supabase.rpc("admin_record_exam_reminder", { p_app: appId }));
+      break;
+    }
+    case "cohort_reminder": {
+      const { data } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
+      if (data?.status !== "cohort_selection") return "Cohort reminders only go to applicants who still need to choose cohorts.";
+      await notifyTemplate(supabase, appId, "cohort_reminder");
       break;
     }
     case "exam_passed":
@@ -267,7 +274,7 @@ export async function bulkAct(_prev: ActionState, formData: FormData): Promise<A
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   const op = String(formData.get("op") || "") as AdminOp;
   // "Not selected" needs a per-applicant reason, so it's done from the application page.
-  const allowed: AdminOp[] = ["pass_and_invite", "send_invite", "send_reminder", "accept", "confirm"];
+  const allowed: AdminOp[] = ["pass_and_invite", "send_invite", "send_reminder", "cohort_reminder", "accept", "confirm"];
   if (!allowed.includes(op)) return fail("Choose a bulk action.");
   if (!ids.length) return fail("Select at least one application.");
   const supabase = await createClient();
@@ -280,6 +287,25 @@ export async function bulkAct(_prev: ActionState, formData: FormData): Promise<A
   revalidatePath("/admin/applications");
   if (failures.length) return fail(`${ids.length - failures.length} updated, ${failures.length} skipped — ${failures.slice(0, 3).join("; ")}`);
   return ok(`${ids.length} application${ids.length === 1 ? "" : "s"} updated.`);
+}
+
+/** Dashboard: email every applicant still waiting to choose cohorts. */
+export async function remindAllCohortSelection(_prev: ActionState, _formData: FormData): Promise<ActionState> {
+  void _formData;
+  try {
+    await assertPermission("admissions.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("applications").select("id").eq("status", "cohort_selection");
+  if (error) return fail(errorMessage(error));
+  const ids = (data ?? []).map((r) => r.id as string);
+  if (!ids.length) return ok("Nobody is waiting to choose cohorts.");
+  for (const id of ids) await notifyTemplate(supabase, id, "cohort_reminder");
+  await audit(supabase, "workflow.bulk.cohort_reminder", "application", null, { count: ids.length });
+  revalidatePath("/admin");
+  return ok(`Reminder sent to ${ids.length} applicant${ids.length === 1 ? "" : "s"}.`);
 }
 
 export async function adminMessage(_prev: ActionState, formData: FormData): Promise<ActionState> {
