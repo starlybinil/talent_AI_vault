@@ -30,6 +30,8 @@ type Values = {
   work_experience: string;
   stem_degree_completed: string;
   stem_degree_enrolled: string;
+  major: string;
+  current_program: string;
   role_interest: string;
   cleanroom_willing: string;
   shift_willing: string;
@@ -44,7 +46,7 @@ type Step = { key: string; title: string; fields: readonly string[] };
 const ALL_STEPS: Step[] = [
   { key: "about", title: "About you", fields: ["first_name", "last_name", "phone"] },
   { key: "eligibility", title: "Eligibility", fields: ["will_be_18_by_completion", "work_authorized", "visa_sponsorship", "work_experience"] },
-  { key: "education", title: "Education", fields: ["highest_education", "stem_degree_completed", "stem_degree_enrolled"] },
+  { key: "education", title: "Education", fields: ["highest_education", "major", "stem_degree_completed", "stem_degree_enrolled", "current_program"] },
   { key: "role", title: "Role & pay", fields: ["role_interest", "cleanroom_willing", "shift_willing", "pay_range_accepted"] },
   { key: "resume", title: "Resume", fields: ["resume_path"] },
   { key: "review", title: "Review & acknowledge", fields: ["acknowledged"] },
@@ -86,6 +88,8 @@ export function ApplicationForm({
     work_experience: "",
     stem_degree_completed: "",
     stem_degree_enrolled: "",
+    major: "",
+    current_program: "",
     role_interest: "",
     cleanroom_willing: "",
     shift_willing: "",
@@ -98,6 +102,7 @@ export function ApplicationForm({
   const STEPS = React.useMemo(() => ALL_STEPS.filter((st) => st.key !== "role" || fit), [fit]);
   const stepKey = STEPS[step].key;
   const statements = acknowledgements(programName, fit, employerPartner);
+  const needsDegreeName = ["associate", "bachelor", "master_plus"].includes(values.highest_education);
   const [resumeName, setResumeName] = React.useState<string | null>(null);
   const [uploading, setUploading] = React.useState(false);
   const [errors, setErrors] = React.useState<Record<string, string>>({});
@@ -112,6 +117,9 @@ export function ApplicationForm({
   const payload = () => {
     const v: Record<string, unknown> = { ...values, program_slug: programSlug };
     if (!fit) for (const k of ["role_interest", "cleanroom_willing", "shift_willing", "pay_range_accepted"]) delete v[k];
+    // Only send the follow-up answers that apply.
+    if (!needsDegreeName) v.major = "";
+    if (values.stem_degree_enrolled !== "yes") v.current_program = "";
     return v;
   };
   const choice = (k: keyof Values, label: React.ReactNode, options: ReadonlyArray<{ value: string; label: string }>, cols = 2) => (
@@ -282,8 +290,36 @@ export function ApplicationForm({
                   </Select>
                   <FieldError>{errors.highest_education}</FieldError>
                 </div>
+                {needsDegreeName && (
+                  <div className="-mt-4">
+                    <Label htmlFor="major">Name of the degree you earned</Label>
+                    <Input
+                      id="major"
+                      value={values.major}
+                      onChange={(e) => set("major", e.target.value)}
+                      maxLength={120}
+                      placeholder="e.g. Associate of Applied Science in Electronics Technology"
+                      aria-invalid={!!errors.major}
+                    />
+                    <FieldError>{errors.major}</FieldError>
+                  </div>
+                )}
                 {choice("stem_degree_completed", "Have you completed a bachelor’s degree or higher in a STEM field?", YES_NO_UNSURE, 3)}
                 {choice("stem_degree_enrolled", "Are you currently enrolled in a bachelor’s degree or higher program in a STEM field?", YES_NO_UNSURE, 3)}
+                {values.stem_degree_enrolled === "yes" && (
+                  <div className="-mt-4">
+                    <Label htmlFor="current_program">Name of the program you’re enrolled in</Label>
+                    <Input
+                      id="current_program"
+                      value={values.current_program}
+                      onChange={(e) => set("current_program", e.target.value)}
+                      maxLength={160}
+                      placeholder="e.g. B.S. Electrical Engineering, Arizona State University"
+                      aria-invalid={!!errors.current_program}
+                    />
+                    <FieldError>{errors.current_program}</FieldError>
+                  </div>
+                )}
                 <p className="-mt-4 text-xs text-ink/50">STEM means science, technology, engineering or math (for example engineering, computer science, physics, chemistry, biology or mathematics). Not sure? Choose Unsure.</p>
               </div>
             )}
@@ -378,6 +414,8 @@ export function ApplicationForm({
                     ["Highest education", EDUCATION_LABEL[values.highest_education] ?? "—"],
                     ["STEM bachelor’s or higher completed", CLEANROOM_LABEL[values.stem_degree_completed] ?? "—"],
                     ["Enrolled in a STEM bachelor’s or higher", CLEANROOM_LABEL[values.stem_degree_enrolled] ?? "—"],
+                    ...(needsDegreeName ? [["Degree earned", values.major || "—"]] : []),
+                    ...(values.stem_degree_enrolled === "yes" ? [["Current program", values.current_program || "—"]] : []),
                     ...(fit
                       ? [
                           [`Interested in the ${fit.role} role`, answer(values.role_interest)],

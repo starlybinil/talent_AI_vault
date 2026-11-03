@@ -27,6 +27,16 @@ describe("application schema", () => {
     expect(applicationSchema.safeParse(base).success).toBe(true);
   });
 
+  it("asks for the degree name (associate's or higher) and the current program (if enrolled)", () => {
+    const deg = applicationSchema.safeParse({ ...base, highest_education: "associate" });
+    expect(deg.error?.issues.map((i) => i.path[0])).toEqual(["major"]);
+    expect(applicationSchema.safeParse({ ...base, highest_education: "bachelor", major: "B.S. Biology" }).success).toBe(true);
+    const enr = applicationSchema.safeParse({ ...base, stem_degree_enrolled: "yes" });
+    expect(enr.error?.issues.map((i) => i.path[0])).toEqual(["current_program"]);
+    expect(applicationSchema.safeParse({ ...base, stem_degree_enrolled: "yes", current_program: "B.S. EE, ASU" }).success).toBe(true);
+    expect(applicationSchema.safeParse({ ...base, stem_degree_enrolled: "unsure" }).success).toBe(true);
+  });
+
   it("requires the acknowledgement", () => {
     expect(applicationSchema.safeParse({ ...base, acknowledged: false }).success).toBe(false);
   });

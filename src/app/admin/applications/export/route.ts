@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   const rows = (data ?? []) as unknown as Row[];
   const csv = toCsv(
-    ["Application ID", "Program", "First name", "Last name", "Email", "Phone", "Education", "Major", "Visa sponsorship", "18+ by completion", "Work authorized", "Work experience", "STEM degree completed", "STEM degree enrolled", "Role interest", "Cleanroom", "Shifts", "Pay range accepted", "Acknowledged", "Shares with employers", "Status", "Assessment", "Cohort", "Source", "Submitted", "Updated"],
+    ["Application ID", "Program", "First name", "Last name", "Email", "Phone", "Education", "Degree earned", "Current program", "Visa sponsorship", "18+ by completion", "Work authorized", "Work experience", "STEM degree completed", "STEM degree enrolled", "Role interest", "Cleanroom", "Shifts", "Pay range accepted", "Acknowledged", "Shares with employers", "Status", "Assessment", "Cohort", "Source", "Submitted", "Updated"],
     rows.map((r) => [
       r.id,
       r.programs?.short_name,
@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       r.phone,
       EDUCATION_LABEL[r.highest_education as string],
       r.major,
+      r.current_program,
       VISA_LABEL[r.visa_sponsorship as string],
       r.will_be_18_by_completion ? "Yes" : "No",
       yesNo(r.work_authorized as boolean | null),

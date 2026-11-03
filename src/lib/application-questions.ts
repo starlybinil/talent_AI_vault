@@ -57,6 +57,7 @@ type AnswerSource = {
   work_experience?: string | null;
   highest_education: string | null;
   major?: string | null;
+  current_program?: string | null;
   stem_degree_completed?: string | null;
   stem_degree_enrolled?: string | null;
   role_interest?: boolean | null;
@@ -89,7 +90,8 @@ export function answerRows(a: AnswerSource, labels: { education: Record<string, 
     ["STEM bachelor’s or higher completed", a.stem_degree_completed ? CLEANROOM_LABEL[a.stem_degree_completed] : "—", fromText(a.stem_degree_completed, "no")],
     ["Enrolled in a STEM bachelor’s or higher", a.stem_degree_enrolled ? CLEANROOM_LABEL[a.stem_degree_enrolled] : "—", fromText(a.stem_degree_enrolled, "no")],
   ];
-  if (a.major) rows.push(["Major (earlier form)", a.major, null]);
+  if (a.major) rows.push(["Degree earned", a.major, null]);
+  if (a.current_program) rows.push(["Current program", a.current_program, null]);
   if (a.role_interest != null || a.cleanroom_willing || a.shift_willing != null || a.pay_range_accepted != null) {
     rows.push(
       ["Interested in the role", yesNo(a.role_interest), fromBool(a.role_interest, true)],

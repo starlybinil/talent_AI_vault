@@ -25,6 +25,7 @@ export const applicationSchema = z
       .refine((v) => v.replace(/\D/g, "").length >= 10, "Enter a valid phone number"),
     highest_education: z.enum(EDUCATION_LEVELS, { message: "Select the highest level of education you have completed" }),
     major: z.string().trim().max(120).optional().default(""),
+    current_program: z.string().trim().max(160).optional().default(""),
     will_be_18_by_completion: z.enum(["yes", "no"], { message: "Please answer the age question" }),
     work_authorized: z.enum(["yes", "no"], { message: "Tell us whether you're authorized to work in the U.S." }),
     visa_sponsorship: z.enum(VISA_OPTIONS, { message: "Tell us whether you'll need visa sponsorship" }),
@@ -40,6 +41,11 @@ export const applicationSchema = z
     resume_path: z.string().min(1, "Please upload your resume"),
   })
   .superRefine((v, ctx) => {
+    // Associate's degree or higher: name the degree earned. Currently enrolled: name the program.
+    if (["associate", "bachelor", "master_plus"].includes(v.highest_education) && !v.major)
+      ctx.addIssue({ code: "custom", path: ["major"], message: "Enter the name of the degree you earned" });
+    if (v.stem_degree_enrolled === "yes" && !v.current_program)
+      ctx.addIssue({ code: "custom", path: ["current_program"], message: "Enter the name of the program you're enrolled in" });
     // Role & pay questions apply only to programs that define them (answers are informational, not filtered).
     if (!ROLE_FIT[v.program_slug]) return;
     for (const k of ["role_interest", "cleanroom_willing", "shift_willing", "pay_range_accepted"] as const) {

@@ -46,7 +46,6 @@ export async function submitApplication(input: unknown): Promise<SubmitApplicati
       shift_willing: v.shift_willing ? v.shift_willing === "yes" : null,
       pay_range_accepted: v.pay_range_accepted ? v.pay_range_accepted === "yes" : null,
       cleanroom_willing: v.cleanroom_willing ?? null,
-      major: "",
       email: session.email,
       utm_source: utm.utm_source ?? "",
       utm_medium: utm.utm_medium ?? "",
