@@ -348,33 +348,6 @@ export default async function Home() {
                 </Reveal>
               );
             })}
-            <Reveal>
-              <a
-                href={`mailto:${BRAND.supportEmail}?subject=New%20program%20partnership`}
-                className="group flex h-full flex-col justify-between rounded-3xl border-2 border-dashed border-ink/15 p-8 transition hover:border-maroon"
-              >
-                <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-ink/50">
-                    Universities &amp; employers
-                  </p>
-                  <h3 className="mt-3 text-2xl font-black leading-tight">
-                    Launch the next program with us.
-                  </h3>
-                  <p className="mt-2 text-ink/60">
-                    Each {BRAND.name} program pairs a training partner with a
-                    hiring employer. Bring a role you need filled and we&apos;ll
-                    build the pathway together.
-                  </p>
-                </div>
-                <span className="mt-6 inline-flex items-center gap-2 font-black text-maroon">
-                  Start a partnership{" "}
-                  <ArrowRight
-                    className="h-4 w-4 transition group-hover:translate-x-1"
-                    aria-hidden
-                  />
-                </span>
-              </a>
-            </Reveal>
           </div>
         </div>
       </section>
