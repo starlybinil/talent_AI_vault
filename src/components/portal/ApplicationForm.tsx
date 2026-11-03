@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { submitApplication } from "@/app/portal/actions";
 import { Alert, Button, FieldError, Input, Label, Select } from "@/components/ui";
 import { EDUCATION_LABEL } from "@/lib/workflow";
-import { applicationSchema, validateResume } from "@/lib/validation";
+import { applicationSchema, followUpIssues, validateResume } from "@/lib/validation";
 import {
   CLEANROOM_LABEL,
   CLEANROOM_OPTIONS,
@@ -135,13 +135,17 @@ export function ApplicationForm({
   );
 
   function validateStep(i: number): boolean {
-    const parsed = applicationSchema.safeParse(payload());
+    const data = payload();
+    const parsed = applicationSchema.safeParse(data);
     if (parsed.success) return true;
     const fields = STEPS[i].fields;
     const errs: Record<string, string> = {};
-    for (const issue of parsed.error.issues) {
-      const k = String(issue.path[0]);
-      if ((fields.length === 0 || fields.includes(k)) && !errs[k]) errs[k] = issue.message;
+    const issues: Array<[string, string]> = [
+      ...parsed.error.issues.map((issue) => [String(issue.path[0]), issue.message] as [string, string]),
+      ...followUpIssues(data as Parameters<typeof followUpIssues>[0]),
+    ];
+    for (const [k, message] of issues) {
+      if ((fields.length === 0 || fields.includes(k)) && !errs[k]) errs[k] = message;
     }
     setErrors(errs);
     return Object.keys(errs).length === 0;

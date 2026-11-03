@@ -41,17 +41,36 @@ export const applicationSchema = z
     resume_path: z.string().min(1, "Please upload your resume"),
   })
   .superRefine((v, ctx) => {
-    // Associate's degree or higher: name the degree earned. Currently enrolled: name the program.
-    if (["associate", "bachelor", "master_plus"].includes(v.highest_education) && !v.major)
-      ctx.addIssue({ code: "custom", path: ["major"], message: "Enter the name of the degree you earned" });
-    if (v.stem_degree_enrolled === "yes" && !v.current_program)
-      ctx.addIssue({ code: "custom", path: ["current_program"], message: "Enter the name of the program you're enrolled in" });
-    // Role & pay questions apply only to programs that define them (answers are informational, not filtered).
-    if (!ROLE_FIT[v.program_slug]) return;
-    for (const k of ["role_interest", "cleanroom_willing", "shift_willing", "pay_range_accepted"] as const) {
-      if (!v[k]) ctx.addIssue({ code: "custom", path: [k], message: "Please answer this question" });
-    }
+    for (const [path, message] of followUpIssues(v)) ctx.addIssue({ code: "custom", path: [path], message });
   });
+
+/**
+ * Answers required only because of an earlier answer. Kept separate from the schema so the form can check them on
+ * each step: zod skips refinements while any other field (e.g. the resume on a later step) is still missing.
+ */
+export function followUpIssues(v: {
+  program_slug: string;
+  highest_education?: string;
+  major?: string;
+  stem_degree_enrolled?: string;
+  current_program?: string;
+  role_interest?: string;
+  cleanroom_willing?: string;
+  shift_willing?: string;
+  pay_range_accepted?: string;
+}): Array<[string, string]> {
+  const out: Array<[string, string]> = [];
+  // Associate's degree or higher: name the degree earned. Currently enrolled: name the program.
+  if (["associate", "bachelor", "master_plus"].includes(v.highest_education ?? "") && !v.major?.trim())
+    out.push(["major", "Enter the name of the degree you earned"]);
+  if (v.stem_degree_enrolled === "yes" && !v.current_program?.trim())
+    out.push(["current_program", "Enter the name of the program you're enrolled in"]);
+  // Role & pay questions apply only to programs that define them (answers are informational, not filtered).
+  if (ROLE_FIT[v.program_slug])
+    for (const k of ["role_interest", "cleanroom_willing", "shift_willing", "pay_range_accepted"] as const)
+      if (!v[k]) out.push([k, "Please answer this question"]);
+  return out;
+}
 
 export type ApplicationInput = z.infer<typeof applicationSchema>;
 
