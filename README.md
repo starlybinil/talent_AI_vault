@@ -27,7 +27,7 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 5. Passing applicants get the **TestGorilla** assessment link by email, plus automatic reminders (day 3 and day 7) and a manual "send reminder" button
    - As soon as they've applied (and while admissions screens their application), applicants get the **Practice Lab** (`/portal/practice`) as their next step. It has four practice assessments they can repeat as often as they like, each attempt different:
      - **Cognitive ability** (18 questions): numerical reasoning (percentages, ratios, fractions, costs, efficiency, tables and charts), problem solving and logic (sequences, deduction, rule-based compliance, ordering), and attention to detail. Every question is generated with new values
-     - **Situational judgement** (10 of 24 fab scenarios): safety, quality and integrity, teamwork, communication, reliability, learning. Responses are scored 0 to 3, with explanations
+     - **Situational judgment** (10 of 24 fab scenarios): safety, quality and integrity, teamwork, communication, reliability, learning. Responses are scored 0 to 3, with explanations
      - **Hand tools** (12 questions from 30 illustrated tools): name the tool, spot the tool, and pick the right tool for the job, plus a tool library with a "hide names" self-quiz
      - **Typing speed**: fab-themed passages, live WPM and accuracy
      Recently seen tools and scenarios are used last, results are private to the applicant, and each attempt ends with a full answer review
@@ -62,7 +62,7 @@ The rules are enforced in the database (`public.transition_allowed`) and mirrore
 
 | Role | Area | Can |
 |---|---|---|
-| **Applicant** | `/portal` | Practice Lab (cognitive ability, situational judgement, hand tools, typing), apply, track status (through completion and hire), open the assessment, rank cohorts, e-sign, message admissions, change cohort or withdraw, permanently delete their account (Account settings) |
+| **Applicant** | `/portal` | Practice Lab (cognitive ability, situational judgment, hand tools, typing), apply, track status (through completion and hire), open the assessment, rank cohorts, e-sign, message admissions, change cohort or withdraw, permanently delete their account (Account settings) |
 | **Employer partner** (e.g. TSMC Arizona) | `/employer` | Cohort calendar for partnered programs (where and when trainees learn, how many are admitted/confirmed, graduation dates). Program outcomes (completed, hired by whom) for consenting candidates. See **only the fields the program allows**, and only for applicants who consented, for programs their organization partners on. Pipeline dashboard, shortlist, interview-interest and assessment-result notes to admissions, CSV export. |
 | **Program admin** (admissions manager) | `/admin` | Analytics (incl. graduates, hires, placement rate), queue with filters and bulk actions, CSV export, full workflow including recording program completion and hires, cohorts and waitlists, programs, agreements, employer-visibility policy, messaging and internal notes |
 | **IT admin** | `/admin` | Read-only cohort calendar; users and roles, employer orgs, audit log, email log, integrations and settings; read-only admissions |

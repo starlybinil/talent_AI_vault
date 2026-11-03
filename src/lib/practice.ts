@@ -82,7 +82,7 @@ export function scoreTyping(target: string, typed: string, seconds: number, keys
 export function typingLevel(wpm: number): { label: string; note: string } {
   if (wpm >= 60) return { label: "Excellent", note: "Faster than most professional typists." };
   if (wpm >= 45) return { label: "Strong", note: "Comfortably above average." };
-  if (wpm >= 30) return { label: "Good", note: "Solid, workplace-ready speed. Keep practising for accuracy." };
+  if (wpm >= 30) return { label: "Good", note: "Solid, workplace-ready speed. Keep practicing for accuracy." };
   return { label: "Building", note: "Focus on accuracy first; speed follows with practice." };
 }
 
@@ -158,7 +158,7 @@ export function mutate(rng: Rng, s: string): string {
     if (kind <= 5 && LOOKALIKES[ch]) {
       out = s.slice(0, i) + pick(rng, LOOKALIKES[ch]) + s.slice(i + 1); // look-alike swap
     } else if (kind <= 7) {
-      // swap with the next alphanumeric neighbour (transposition)
+      // swap with the next alphanumeric neighbor (transposition)
       const j = i + 1;
       if (j < s.length && /[A-Z0-9]/.test(s[j]) && /[A-Z0-9]/.test(ch) && s[j] !== ch) out = s.slice(0, i) + s[j] + ch + s.slice(j + 1);
     } else if (kind === 8 && /[0-9]/.test(ch)) {
@@ -222,7 +222,7 @@ export function attentionLevel(pct: number): { label: string; note: string } {
   if (pct >= 95) return { label: "Sharp eye", note: "Excellent. You caught almost every detail." };
   if (pct >= 85) return { label: "Strong", note: "Very good. Review the ones you missed to spot the pattern." };
   if (pct >= 70) return { label: "Developing", note: "Slow down slightly and compare character by character." };
-  return { label: "Keep practising", note: "Read each code in small chunks (e.g. 3–4 characters) and compare." };
+  return { label: "Keep practicing", note: "Read each code in small chunks (e.g. 3–4 characters) and compare." };
 }
 
 function round1(n: number) {

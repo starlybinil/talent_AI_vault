@@ -1,4 +1,4 @@
-/** Shared shape for the Practice Lab's multiple-choice assessments (cognitive, hand tools, situational judgement). */
+/** Shared shape for the Practice Lab's multiple-choice assessments (cognitive, hand tools, situational judgment). */
 
 export type Visual =
   | { type: "table"; headers: string[]; rows: Array<Array<string | number>>; caption?: string }
@@ -24,7 +24,7 @@ export type QuizQuestion = {
   monoOptions?: boolean;
 };
 
-/** 0–1 credit for a choice: weighted when options carry scores (situational judgement), else right/wrong. */
+/** 0–1 credit for a choice: weighted when options carry scores (situational judgment), else right/wrong. */
 export function questionScore(q: QuizQuestion, choice: number | null): number {
   if (choice === null || choice < 0 || choice >= q.options.length) return 0;
   const scored = q.options.some((o) => typeof o.score === "number");

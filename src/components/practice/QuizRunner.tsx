@@ -21,7 +21,7 @@ export type QuizRunnerProps = {
   suggestedMinutes: number;
   level: (pct: number) => { label: string; note: string };
   accent?: "maroon" | "ink";
-  /** Situational judgement: every option earns some credit, so say "best answer" instead of "correct". */
+  /** Situational judgment: every option earns some credit, so say "best answer" instead of "correct". */
   weighted?: boolean;
 };
 

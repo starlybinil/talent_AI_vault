@@ -139,7 +139,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         paragraphs: [
           hi,
           `${ctx.employerPartner ? esc(ctx.employerPartner) : "Our employer partner"} has confirmed a successful assessment result. 🎉`,
-          `Admissions is now finalising your acceptance into the <strong>${esc(ctx.programName)}</strong>. You'll get another email as soon as enrollment opens for you.`,
+          `Admissions is now finalizing your acceptance into the <strong>${esc(ctx.programName)}</strong>. You'll get another email as soon as enrollment opens for you.`,
           ...note,
         ],
         cta: { label: "View my application", href: portal(ctx.applicationId) },

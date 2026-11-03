@@ -15,7 +15,7 @@ export function JudgementTest({ personalBest, recent }: { personalBest: number |
       build={() => judgementQuiz(seededRng(Date.now()), recent)}
       intro={
         <div className="bg-gradient-to-br from-maroon to-maroon-900 p-6 text-white sm:p-8">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Situational judgement · 10 scenarios · about 10 minutes</p>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-gold">Situational judgment · 10 scenarios · about 10 minutes</p>
           <h3 className="mt-2 text-2xl font-black">What would you do?</h3>
           <p className="mt-2 max-w-2xl text-white/75">
             Real situations technicians face on the job. Choose the <strong className="text-white">most effective</strong> response. Every

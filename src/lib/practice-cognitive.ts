@@ -138,7 +138,7 @@ const NUMERICAL: Template[] = [
       return mcq(rng, {
         id: "num-ratio",
         section: SECTIONS.num,
-        prompt: `A cleaning solution is mixed as water to concentrate in the ratio ${w}:${c}. How many litres of concentrate are needed to make ${total} litres of solution?`,
+        prompt: `A cleaning solution is mixed as water to concentrate in the ratio ${w}:${c}. How many liters of concentrate are needed to make ${total} liters of solution?`,
         correct: `${n(ans)} L`,
         distractors: [`${n((total * w) / (w + c))} L`, `${n(total / c)} L`, `${n(total / w)} L`, `${n(ans + c)} L`, `${n(ans * 2)} L`],
         explanation: `The ratio has ${w} + ${c} = ${w + c} parts, and concentrate is ${c} of them: ${total} × ${c}/${w + c} = ${n(ans)} L.`,
@@ -250,7 +250,7 @@ const NUMERICAL: Template[] = [
       return mcq(rng, {
         id: "num-convert",
         section: SECTIONS.num,
-        prompt: `A fitting is ${label} inch wide. What is that in millimetres? (1 inch = 25.4 mm)`,
+        prompt: `A fitting is ${label} inch wide. What is that in millimeters? (1 inch = 25.4 mm)`,
         correct: `${n(mm)} mm`,
         distractors: [`${n(value * 2.54)} mm`, `${n(mm * 2)} mm`, `${n(value / 25.4)} mm`, `${n(mm + 2.54)} mm`, `${n(25.4 / value)} mm`],
         explanation: `${label} = ${value}. ${value} × 25.4 = ${n(mm)} mm.`,
@@ -381,7 +381,7 @@ const LOGIC: Template[] = [
       return mcq(rng, {
         id: "logic-code-sequence",
         section: SECTIONS.logic,
-        prompt: `Bins are labelled in a pattern: ${[0, 1, 2, 3].map(term).join(", ")}, ?  What is the next label?`,
+        prompt: `Bins are labeled in a pattern: ${[0, 1, 2, 3].map(term).join(", ")}, ?  What is the next label?`,
         correct: ans,
         distractors: [
           `${letters[l0 + ls * 4 + 1]}${n0 + ns * 4}`,
@@ -719,5 +719,5 @@ export function cognitiveLevel(pct: number): { label: string; note: string } {
   if (pct >= 90) return { label: "Excellent", note: "Very strong reasoning. Keep your speed up and you'll be well prepared." };
   if (pct >= 75) return { label: "Strong", note: "Good work. Review the explanations for the ones you missed; patterns repeat." };
   if (pct >= 55) return { label: "Developing", note: "You're getting there. Slow down on multi-step questions and write down intermediate numbers." };
-  return { label: "Keep practising", note: "Focus on one section at a time. Read every question twice, and use the explanations to learn the method." };
+  return { label: "Keep practicing", note: "Focus on one section at a time. Read every question twice, and use the explanations to learn the method." };
 }

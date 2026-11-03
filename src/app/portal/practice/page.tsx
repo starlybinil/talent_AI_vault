@@ -13,7 +13,7 @@ export const metadata = { title: "Practice Lab" };
 
 const ACTIVITIES = {
   cognitive: { label: "Cognitive ability", blurb: "Numerical, logic & attention to detail", icon: Brain, unit: "%" },
-  judgement: { label: "Situational judgement", blurb: "What would you do on the job?", icon: MessagesSquare, unit: "%" },
+  judgement: { label: "Situational judgment", blurb: "What would you do on the job?", icon: MessagesSquare, unit: "%" },
   tools: { label: "Hand tools", blurb: "Recognize the tools of the trade", icon: Wrench, unit: "%" },
   typing: { label: "Typing speed", blurb: "Speed and accuracy at the keyboard", icon: Keyboard, unit: " wpm" },
 } as const;
@@ -41,7 +41,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
             <Lock className="h-8 w-8 text-gold" aria-hidden />
             <p className="mt-3 text-2xl font-black">Unlocks when you apply</p>
             <p className="mt-2 max-w-xl text-white/70">
-              Once your application is submitted, you can practise cognitive ability, situational judgement, hand-tool recognition and
+              Once your application is submitted, you can practice cognitive ability, situational judgment, hand-tool recognition and
               typing as often as you like while admissions reviews it.
             </p>
             <ButtonLink href="/portal" className="mt-6">
@@ -73,7 +73,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Pro
       <PageHeader
         eyebrow="Practice Lab"
         title="Get ready for your assessment"
-        description="Four practice assessments to use while admissions reviews your application. Every attempt is different, so practise as often as you like."
+        description="Four practice assessments to use while admissions reviews your application. Every attempt is different, so practice as often as you like."
       />
 
       <nav className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Practice assessments">

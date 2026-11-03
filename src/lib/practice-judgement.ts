@@ -1,5 +1,5 @@
 /**
- * Situational judgement practice: realistic workplace scenarios for a technician in a fab or advanced
+ * Situational judgment practice: realistic workplace scenarios for a technician in a fab or advanced
  * manufacturing plant. Each response is scored 0–3 (3 = most effective). Names and details are filled in
  * at random and options shuffle, so repeat scenarios still read differently.
  */
@@ -12,7 +12,7 @@ export const COMPETENCIES = {
   team: "Teamwork & respect",
   comms: "Communication",
   reliable: "Reliability & ownership",
-  learning: "Learning & judgement",
+  learning: "Learning & judgment",
 } as const;
 
 type Scenario = {
@@ -343,8 +343,8 @@ export function judgementQuiz(rng: Rng, recent: readonly string[] = [], count = 
 }
 
 export function judgementLevel(pct: number): { label: string; note: string } {
-  if (pct >= 90) return { label: "Excellent judgement", note: "You consistently choose safe, honest, team-first responses, exactly what fabs look for." };
-  if (pct >= 75) return { label: "Sound judgement", note: "Good instincts. Review where a 'good' answer wasn't the 'best' one." };
+  if (pct >= 90) return { label: "Excellent judgment", note: "You consistently choose safe, honest, team-first responses, exactly what fabs look for." };
+  if (pct >= 75) return { label: "Sound judgment", note: "Good instincts. Review where a 'good' answer wasn't the 'best' one." };
   if (pct >= 55) return { label: "Developing", note: "Remember the priorities: safety first, follow procedures, be honest, and communicate early." };
-  return { label: "Keep practising", note: "When in doubt: stop, follow the procedure, and tell your supervisor. Read each explanation." };
+  return { label: "Keep practicing", note: "When in doubt: stop, follow the procedure, and tell your supervisor. Read each explanation." };
 }

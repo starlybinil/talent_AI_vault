@@ -113,7 +113,7 @@ export function CohortForm({
           <span className="block font-bold text-ink">Visible to applicants</span>
           <span className="block text-sm text-ink/60">
             Show this cohort on the public program page and as a choice when applicants enroll. Untick to keep it internal (for
-            example while dates are being finalised). Staff and partner employers still see it on the schedule, and anyone already
+            example while dates are being finalized). Staff and partner employers still see it on the schedule, and anyone already
             registered or waitlisted keeps it.
           </span>
         </span>

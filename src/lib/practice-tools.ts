@@ -20,7 +20,6 @@ export const TOOLS: HandTool[] = [
   {
     id: "combination-wrench",
     name: "Combination wrench",
-    aka: "Spanner",
     category: "Fastening",
     use: "Turns nuts and bolts. One end is open for quick access, the other is a closed ring (box end) for a firm grip.",
     tip: "Pull the wrench toward you rather than pushing, so your knuckles are safe if it slips.",
@@ -199,7 +198,7 @@ export const TOOLS: HandTool[] = [
     category: "Measuring & layout",
     use: "A very precise measuring tool with a C-frame and a screw thimble, reading to 0.001 mm on some models.",
     tip: "Use the ratchet stop on the thimble so you apply the same light pressure every time.",
-    tasks: ["check the thickness of a shim to within a few thousandths of a millimetre"],
+    tasks: ["check the thickness of a shim to within a few thousandths of a millimeter"],
   },
   {
     id: "spirit-level",

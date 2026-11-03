@@ -345,7 +345,7 @@ export async function deleteCohort(_prev: ActionState, formData: FormData): Prom
   for (const id of (data as string[]) ?? []) {
     await notifyTemplate(supabase, id, "status_update", {
       statusLabel: STATUS_LABEL.cohort_selection,
-      note: `The cohort you were in has been cancelled${note ? ` (${note})` : ""}. We're sorry for the change. Your application is still active: log in and choose your new top 3 cohorts.`,
+      note: `The cohort you were in has been canceled${note ? ` (${note})` : ""}. We're sorry for the change. Your application is still active: log in and choose your new top 3 cohorts.`,
     });
   }
   revalidatePath("/admin/cohorts");
@@ -777,7 +777,7 @@ export async function cancelPendingGrant(_prev: ActionState, formData: FormData)
   const { error } = await supabase.rpc("it_cancel_pending_grant", { p_id: String(formData.get("grant_id") || "") });
   if (error) return fail(errorMessage(error));
   revalidatePath("/admin/users");
-  return ok("Pending role cancelled.");
+  return ok("Pending role canceled.");
 }
 
 export async function revokeRole(_prev: ActionState, formData: FormData): Promise<ActionState> {

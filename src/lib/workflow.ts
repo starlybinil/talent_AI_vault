@@ -230,8 +230,8 @@ export function applicantNextAction(status: Status): { title: string; body: stri
     case "submitted":
     case "screening":
       return {
-        title: "Practise while we review your application",
-        body: "Admissions is reviewing your application (usually a few business days) and will email you with any update. Meanwhile, use the Practice Lab to get ready for the assessment: cognitive ability, situational judgement, hand tools and typing.",
+        title: "Practice while we review your application",
+        body: "Admissions is reviewing your application (usually a few business days) and will email you with any update. Meanwhile, use the Practice Lab to get ready for the assessment: cognitive ability, situational judgment, hand tools and typing.",
         href: "/portal/practice",
         cta: "Open the Practice Lab",
       };
@@ -240,7 +240,7 @@ export function applicantNextAction(status: Status): { title: string; body: stri
         title: "You passed initial screening",
         body: "Your assessment invitation is being prepared. Watch your inbox for the TestGorilla link, and warm up in the Practice Lab in the meantime.",
         href: "/portal/practice",
-        cta: "Keep practising",
+        cta: "Keep practicing",
       };
     case "exam_invited":
       return {
@@ -251,7 +251,7 @@ export function applicantNextAction(status: Status): { title: string; body: stri
     case "exam_passed":
       return {
         title: "You passed the assessment!",
-        body: "Congratulations! Admissions is finalising your acceptance into the program. We'll email you as soon as enrollment opens for you.",
+        body: "Congratulations! Admissions is finalizing your acceptance into the program. We'll email you as soon as enrollment opens for you.",
       };
     case "cohort_selection":
       return {

@@ -148,7 +148,7 @@ export function cohortPhase(c: Pick<ScheduleCohort, "start_date" | "end_date">, 
   return { key: "running", label: `In session · week ${week} of ${durationWeeks(c)}` };
 }
 
-/** One colour per format, from the ASU palette. */
+/** One color per format, from the ASU palette. */
 const FORMAT_PALETTE = [
   { bg: "#8C1D40", fg: "#FFFFFF" },
   { bg: "#FFC627", fg: "#191919" },

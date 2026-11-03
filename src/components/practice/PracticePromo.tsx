@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 const ITEMS = [
   { key: "cognitive", label: "Cognitive ability", icon: Brain },
-  { key: "judgement", label: "Situational judgement", icon: MessagesSquare },
+  { key: "judgement", label: "Situational judgment", icon: MessagesSquare },
   { key: "tools", label: "Hand tools", icon: Wrench },
   { key: "typing", label: "Typing speed", icon: Keyboard },
 ] as const;
