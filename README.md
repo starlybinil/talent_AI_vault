@@ -15,7 +15,7 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 **Admissions journey** (every step is visible to the applicant in their portal and sends an email):
 
 1. A prospective learner arrives from ASU's **Get Started Today** button → `/apply/asu-tsmc`
-2. Signs in with **Google (Gmail), Facebook, Apple (iCloud)**, or **any email address** (Yahoo, Outlook, etc.) with a password or magic link
+2. Signs in with **any email address** (Gmail, Yahoo, iCloud, Outlook, etc.) using a password or a one-time sign-in link (Google, Facebook and Apple buttons were removed from the sign-in pages)
 3. Completes the application, following the *ET Program Admissions Process* deck:
    - **About you**: name, phone (email comes from the account)
    - **Eligibility**: 18+ by the end of the program; currently authorized to work in the U.S.; will require visa sponsorship in the future; years of professional work experience (0–5, 6–10, 10+)

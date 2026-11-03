@@ -6,18 +6,9 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Alert, Button, Input, Label } from "@/components/ui";
-import { AppleIcon, FacebookIcon, GoogleIcon } from "./ProviderIcons";
 import { cn } from "@/lib/utils";
 
 type Mode = "login" | "register";
-type Provider = "google" | "facebook" | "apple";
-
-const PROVIDERS: Array<{ id: Provider; label: string; hint: string; icon: React.ReactNode }> = [
-  { id: "google", label: "Continue with Google", hint: "Gmail", icon: <GoogleIcon /> },
-  { id: "facebook", label: "Continue with Facebook", hint: "Facebook", icon: <FacebookIcon /> },
-  { id: "apple", label: "Continue with Apple", hint: "iCloud", icon: <AppleIcon /> },
-];
-
 export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: string; defaultEmail?: string }) {
   const router = useRouter();
   const supabase = React.useMemo(() => createClient(), []);
@@ -28,20 +19,6 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
 
   const callback = (path = next) =>
     `${window.location.origin}/auth/callback?next=${encodeURIComponent(path)}`;
-
-  async function oauth(provider: Provider) {
-    setError(null);
-    setBusy(provider);
-    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo: callback() } });
-    if (error) {
-      setBusy(null);
-      setError(
-        /not enabled|unsupported provider/i.test(error.message)
-          ? `${provider[0].toUpperCase() + provider.slice(1)} sign-in isn't configured yet. Please use your email address below.`
-          : error.message,
-      );
-    }
-  }
 
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -90,27 +67,6 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
 
   return (
     <div>
-      <div className="grid gap-3">
-        {PROVIDERS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => oauth(p.id)}
-            disabled={!!busy}
-            className="flex h-12 w-full cursor-pointer items-center justify-center gap-3 rounded-full border border-ink/15 bg-white text-[15px] font-bold text-ink transition hover:border-ink hover:bg-mist disabled:opacity-60"
-          >
-            {busy === p.id ? <Loader2 className="h-5 w-5 animate-spin" /> : p.icon}
-            {p.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="my-7 flex items-center gap-4 text-xs font-bold uppercase tracking-widest text-ink/40">
-        <span className="h-px flex-1 bg-ink/10" />
-        or use any email — Gmail, Yahoo, iCloud, Outlook…
-        <span className="h-px flex-1 bg-ink/10" />
-      </div>
-
       <form onSubmit={onSubmit} className="grid gap-4" noValidate={false}>
         {mode === "register" && (
           <div>
