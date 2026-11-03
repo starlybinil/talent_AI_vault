@@ -26,7 +26,7 @@ export default function ForgotPasswordPage() {
     <AuthShell title="Reset your password" subtitle="We'll email you a secure link.">
       {sent ? (
         <Alert tone="success" title="Check your inbox">
-          If an account exists for {sent}, a reset link is on its way.
+          If an account exists for {sent}, a reset link is on its way. Don&apos;t see it within a few minutes? Check your spam or junk folder for an email from FoundryReady.
         </Alert>
       ) : (
         <form onSubmit={onSubmit} className="grid gap-4">

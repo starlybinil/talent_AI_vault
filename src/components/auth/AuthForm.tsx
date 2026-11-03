@@ -37,7 +37,7 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
           options: { emailRedirectTo: callback(), shouldCreateUser: mode === "register", data: fullName ? { full_name: fullName } : undefined },
         });
         if (error) throw error;
-        setInfo(`We sent a sign-in link to ${email}. Open it on this device to continue.`);
+        setInfo(`We sent a sign-in link to ${email}. Open it on this device to continue. Don't see it within a few minutes? Check your spam or junk folder, and mark emails from FoundryReady (foundryready.org) as \"Not spam\" so you don't miss updates about your application.`);
         return;
       }
       if (mode === "register") {
@@ -56,7 +56,7 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
           return;
         }
         if (!data.session) {
-          setInfo(`Check your inbox — we sent a confirmation link to ${email}. Click it to activate your account and continue your application.`);
+          setInfo(`Check your inbox — we sent a confirmation link to ${email}. Click it to activate your account and continue your application. Don't see it within a few minutes? Check your spam or junk folder, and mark emails from FoundryReady (foundryready.org) as \"Not spam\" so you don't miss updates about your application.`);
           return;
         }
       } else {
