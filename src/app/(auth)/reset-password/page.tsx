@@ -14,6 +14,7 @@ export default function ResetPasswordPage() {
     e.preventDefault();
     const password = String(new FormData(e.currentTarget).get("password") || "");
     if (password.length < 8) return setError("Use at least 8 characters.");
+    if (password !== String(new FormData(e.currentTarget).get("confirm_password") || "")) return setError("The passwords don't match. Please re-enter them.");
     setBusy(true);
     const { error } = await createClient().auth.updateUser({ password });
     setBusy(false);
@@ -26,6 +27,10 @@ export default function ResetPasswordPage() {
         <div>
           <Label htmlFor="password">New password</Label>
           <Input id="password" name="password" type="password" required minLength={8} autoComplete="new-password" />
+        </div>
+        <div>
+          <Label htmlFor="confirm_password">Confirm new password</Label>
+          <Input id="confirm_password" name="confirm_password" type="password" required minLength={8} autoComplete="new-password" />
         </div>
         {error && <Alert tone="danger">{error}</Alert>}
         <Button type="submit" size="lg" disabled={busy}>

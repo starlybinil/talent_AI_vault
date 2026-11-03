@@ -41,6 +41,7 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
       }
       if (mode === "register") {
         if (password.length < 8) throw new Error("Use a password with at least 8 characters.");
+        if (password !== String(fd.get("confirm_password") || "")) throw new Error("The passwords don't match. Please re-enter them.");
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -97,6 +98,12 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
               minLength={mode === "register" ? 8 : undefined}
               placeholder={mode === "register" ? "At least 8 characters" : "••••••••"}
             />
+          </div>
+        )}
+        {!useMagic && mode === "register" && (
+          <div>
+            <Label htmlFor="confirm_password">Confirm password</Label>
+            <Input id="confirm_password" name="confirm_password" type="password" autoComplete="new-password" required minLength={8} placeholder="Re-enter your password" />
           </div>
         )}
         {error && <Alert tone="danger">{error}</Alert>}
