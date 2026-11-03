@@ -66,24 +66,36 @@ type AnswerSource = {
   acknowledged_at?: string | null;
 };
 
-/** The applicant's answers as [label, value] rows, in form order. Role & pay rows appear only when answered. */
-export function answerRows(a: AnswerSource, labels: { education: Record<string, string>; visa: Record<string, string> }): Array<[string, string]> {
-  const rows: Array<[string, string]> = [
-    ["18+ by end of program", yesNo(a.will_be_18_by_completion)],
-    ["Authorized to work in the U.S.", yesNo(a.work_authorized)],
-    ["Will require visa sponsorship", a.visa_sponsorship ? labels.visa[a.visa_sponsorship] ?? a.visa_sponsorship : "—"],
-    ["Work experience", a.work_experience ? WORK_EXPERIENCE_LABEL[a.work_experience] ?? a.work_experience : "—"],
-    ["Highest education", a.highest_education ? labels.education[a.highest_education] ?? a.highest_education : "—"],
-    ["STEM bachelor’s or higher completed", a.stem_degree_completed ? CLEANROOM_LABEL[a.stem_degree_completed] : "—"],
-    ["Enrolled in a STEM bachelor’s or higher", a.stem_degree_enrolled ? CLEANROOM_LABEL[a.stem_degree_enrolled] : "—"],
+/**
+ * The applicant's answers as [label, value, match] rows, in form order. Role & pay rows appear only when answered.
+ * match: true = the answer admissions is looking for, false = the opposite, null = no preference (or Unsure / not answered).
+ */
+export type AnswerRow = [string, string, boolean | null];
+
+const fromBool = (v: boolean | null | undefined, wanted: boolean) => (v == null ? null : v === wanted);
+const fromText = (v: string | null | undefined, wanted: "yes" | "no") => (v === "yes" || v === "no" ? v === wanted : null);
+
+export function answerRows(a: AnswerSource, labels: { education: Record<string, string>; visa: Record<string, string> }): AnswerRow[] {
+  const rows: AnswerRow[] = [
+    ["18+ by end of program", yesNo(a.will_be_18_by_completion), fromBool(a.will_be_18_by_completion, true)],
+    ["Authorized to work in the U.S.", yesNo(a.work_authorized), fromBool(a.work_authorized, true)],
+    [
+      "Will require visa sponsorship",
+      a.visa_sponsorship ? labels.visa[a.visa_sponsorship] ?? a.visa_sponsorship : "—",
+      a.visa_sponsorship ? a.visa_sponsorship === "no" : null,
+    ],
+    ["Work experience", a.work_experience ? WORK_EXPERIENCE_LABEL[a.work_experience] ?? a.work_experience : "—", null],
+    ["Highest education", a.highest_education ? labels.education[a.highest_education] ?? a.highest_education : "—", null],
+    ["STEM bachelor’s or higher completed", a.stem_degree_completed ? CLEANROOM_LABEL[a.stem_degree_completed] : "—", fromText(a.stem_degree_completed, "no")],
+    ["Enrolled in a STEM bachelor’s or higher", a.stem_degree_enrolled ? CLEANROOM_LABEL[a.stem_degree_enrolled] : "—", fromText(a.stem_degree_enrolled, "no")],
   ];
-  if (a.major) rows.push(["Major (earlier form)", a.major]);
+  if (a.major) rows.push(["Major (earlier form)", a.major, null]);
   if (a.role_interest != null || a.cleanroom_willing || a.shift_willing != null || a.pay_range_accepted != null) {
     rows.push(
-      ["Interested in the role", yesNo(a.role_interest)],
-      ["Willing to work in a cleanroom", a.cleanroom_willing ? CLEANROOM_LABEL[a.cleanroom_willing] : "—"],
-      ["Available for required shifts", yesNo(a.shift_willing)],
-      ["Accepts the pay range", yesNo(a.pay_range_accepted)],
+      ["Interested in the role", yesNo(a.role_interest), fromBool(a.role_interest, true)],
+      ["Willing to work in a cleanroom", a.cleanroom_willing ? CLEANROOM_LABEL[a.cleanroom_willing] : "—", fromText(a.cleanroom_willing, "yes")],
+      ["Available for required shifts", yesNo(a.shift_willing), fromBool(a.shift_willing, true)],
+      ["Accepts the pay range", yesNo(a.pay_range_accepted), fromBool(a.pay_range_accepted, true)],
     );
   }
   return rows;

@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { answerRows, eligibilityFlags } from "@/lib/application-questions";
+import { answerRows, eligibilityFlags, type AnswerRow } from "@/lib/application-questions";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Download, FileText } from "lucide-react";
+import { ArrowLeft, Check, Download, FileText, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
 import { can } from "@/lib/rbac";
@@ -161,13 +161,25 @@ export default async function AdminApplicationPage({ params }: { params: Promise
             <dl className="mt-4 grid gap-x-8 gap-y-4 sm:grid-cols-2">
               {[
                 ...answerRows(app, { education: EDUCATION_LABEL, visa: VISA_LABEL }),
-                ["Shares with employers", app.share_with_employers ? "Yes" : "No"],
-                ["Acknowledgement", app.acknowledged_at ? `Certified ${formatDate(app.acknowledged_at)}` : "—"],
-                ["Assessment", app.exam_result ? app.exam_result : app.exam_invited_at ? `Invited ${formatDate(app.exam_invited_at)}${app.exam_self_reported_at ? " · applicant says complete" : ""}${app.exam_reminders_sent ? ` · ${app.exam_reminders_sent} reminder(s)` : ""}` : "—"],
-              ].map(([k, v]) => (
+                ["Shares with employers", app.share_with_employers ? "Yes" : "No", !!app.share_with_employers] as AnswerRow,
+                ["Acknowledgement", app.acknowledged_at ? `Certified ${formatDate(app.acknowledged_at)}` : "—", app.acknowledged_at ? true : null] as AnswerRow,
+                ["Assessment", app.exam_result ? app.exam_result : app.exam_invited_at ? `Invited ${formatDate(app.exam_invited_at)}${app.exam_self_reported_at ? " · applicant says complete" : ""}${app.exam_reminders_sent ? ` · ${app.exam_reminders_sent} reminder(s)` : ""}` : "—", null] as AnswerRow,
+              ].map(([k, v, match]) => (
                 <div key={k}>
                   <dt className="text-xs font-bold uppercase tracking-wider text-ink/50">{k}</dt>
-                  <dd className="mt-1 font-medium">{v}</dd>
+                  <dd className="mt-1 flex items-center gap-2 font-medium">
+                    {match === true && (
+                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-white" title="What admissions is looking for">
+                        <Check className="h-3.5 w-3.5" strokeWidth={3} aria-label="Meets expectation" />
+                      </span>
+                    )}
+                    {match === false && (
+                      <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-red-600 text-white" title="Opposite of what admissions is looking for">
+                        <X className="h-3 w-3" strokeWidth={3} aria-label="Does not meet expectation" />
+                      </span>
+                    )}
+                    {v}
+                  </dd>
                 </div>
               ))}
             </dl>
