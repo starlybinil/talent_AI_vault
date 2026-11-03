@@ -5,7 +5,7 @@ import { safeNext } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string }> }) {
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string; error?: string; email?: string }> }) {
   const sp = await searchParams;
   const next = safeNext(sp.next, "/portal");
   return (
@@ -15,7 +15,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           We couldn&apos;t complete sign-in. Please try again.
         </p>
       )}
-      <AuthForm mode="login" next={next} />
+      <AuthForm mode="login" next={next} defaultEmail={sp.email?.slice(0, 200)} />
     </AuthShell>
   );
 }

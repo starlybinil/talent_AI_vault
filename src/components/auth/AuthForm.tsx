@@ -16,6 +16,7 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
   const [error, setError] = React.useState<string | null>(null);
   const [info, setInfo] = React.useState<string | null>(null);
   const [useMagic, setUseMagic] = React.useState(false);
+  const [existing, setExisting] = React.useState<string | null>(null);
 
   const callback = (path = next) =>
     `${window.location.origin}/auth/callback?next=${encodeURIComponent(path)}`;
@@ -48,6 +49,12 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
           options: { emailRedirectTo: callback(), data: { full_name: fullName } },
         });
         if (error) throw error;
+        // Supabase answers a sign-up for an existing email with a user that has no identities and sends no email.
+        if (data.user && (data.user.identities?.length ?? 0) === 0) {
+          setError("An account with this email already exists. Sign in instead, or use \"Forgot password?\" on the sign-in page.");
+          setExisting(email);
+          return;
+        }
         if (!data.session) {
           setInfo(`Check your inbox — we sent a confirmation link to ${email}. Click it to activate your account and continue your application.`);
           return;
@@ -106,7 +113,16 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
             <Input id="confirm_password" name="confirm_password" type="password" autoComplete="new-password" required minLength={8} placeholder="Re-enter your password" />
           </div>
         )}
-        {error && <Alert tone="danger">{error}</Alert>}
+        {error && (
+          <Alert tone="danger">
+            {error}
+            {existing && (
+              <Link href={`/login?next=${encodeURIComponent(next)}&email=${encodeURIComponent(existing)}`} className="ml-1 font-bold underline">
+                Go to sign in
+              </Link>
+            )}
+          </Alert>
+        )}
         {info && <Alert tone="success">{info}</Alert>}
         <Button type="submit" size="lg" disabled={!!busy} className="w-full">
           {busy === "email" && <Loader2 className="h-5 w-5 animate-spin" />}
