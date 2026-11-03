@@ -395,20 +395,6 @@ export function ApplicationForm({
                   ))}
                 </dl>
 
-                <label className="flex items-start gap-3 rounded-2xl bg-mist p-4 text-sm">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5 h-5 w-5 shrink-0 accent-maroon"
-                    checked={values.share_with_employers}
-                    onChange={(e) => set("share_with_employers", e.target.checked)}
-                  />
-                  <span>
-                    <strong>Share my application with partner employers.</strong> I agree that this program&apos;s partners{employerPartner ? ` (such as ${employerPartner})` : ""}{" "}
-                    may view selected details of my application, like my name, education, admissions progress and resume, to consider me
-                    for employment. You can ask admissions to withdraw this consent at any time.
-                  </span>
-                </label>
-
                 <div className={cn("rounded-2xl border p-5", errors.acknowledged ? "border-red-300 bg-red-50/50" : "border-ink/15")}>
                   <p className="font-black text-ink">Application acknowledgement</p>
                   <p className="mt-1 text-sm text-ink/70">By submitting this application, I acknowledge that:</p>
