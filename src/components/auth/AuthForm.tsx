@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Alert, Button, Input, Label } from "@/components/ui";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,8 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
   const [info, setInfo] = React.useState<string | null>(null);
   const [useMagic, setUseMagic] = React.useState(false);
   const [existing, setExisting] = React.useState<string | null>(null);
+  // Credentials accepted: keep the form locked and show progress while the next page loads.
+  const [signedIn, setSignedIn] = React.useState(false);
 
   const callback = (path = next) =>
     `${window.location.origin}/auth/callback?next=${encodeURIComponent(path)}`;
@@ -30,6 +32,7 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
     const password = String(fd.get("password") || "");
     const fullName = String(fd.get("full_name") || "").trim();
     setBusy("email");
+    let done = false;
     try {
       if (useMagic) {
         const { error } = await supabase.auth.signInWithOtp({
@@ -63,13 +66,15 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
       }
+      done = true;
+      setSignedIn(true);
       router.replace(`/auth/after?next=${encodeURIComponent(next)}`);
       router.refresh();
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(/invalid login credentials/i.test(msg) ? "That email and password don't match. Try again or use a sign-in link." : msg);
     } finally {
-      setBusy(null);
+      if (!done) setBusy(null);
     }
   }
 
@@ -124,9 +129,28 @@ export function AuthForm({ mode, next, defaultEmail }: { mode: Mode; next: strin
           </Alert>
         )}
         {info && <Alert tone="success">{info}</Alert>}
-        <Button type="submit" size="lg" disabled={!!busy} className="w-full">
+        {signedIn && (
+          <Alert tone="success">
+            <span className="flex items-center gap-2 font-bold">
+              <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden /> {mode === "register" ? "Account created!" : "Signed in!"} Loading your portal…
+            </span>
+          </Alert>
+        )}
+        <Button type="submit" size="lg" disabled={!!busy} className="w-full" aria-live="polite">
           {busy === "email" && <Loader2 className="h-5 w-5 animate-spin" />}
-          {useMagic ? "Email me a sign-in link" : mode === "register" ? "Create my account" : "Sign in"}
+          {signedIn
+            ? "Opening your portal…"
+            : busy === "email"
+              ? useMagic
+                ? "Sending link…"
+                : mode === "register"
+                  ? "Creating your account…"
+                  : "Checking your details…"
+              : useMagic
+                ? "Email me a sign-in link"
+                : mode === "register"
+                  ? "Create my account"
+                  : "Sign in"}
         </Button>
         <button
           type="button"
