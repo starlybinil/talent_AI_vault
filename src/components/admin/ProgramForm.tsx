@@ -5,7 +5,7 @@ import { EMPLOYER_FIELD_OPTIONS } from "@/lib/validation";
 import type { Program } from "@/lib/data";
 
 /** Edits program content. Admissions-only fields (exam link, employer visibility, active) are shown to program admins. */
-export function ProgramForm({ program, adminFields }: { program?: Partial<Program> & { default_exam_url?: string | null }; adminFields: boolean }) {
+export function ProgramForm({ program, adminFields }: { program?: Partial<Program> & { default_exam_url?: string | null; verification_scheduling_url?: string | null; employer_application_url?: string | null }; adminFields: boolean }) {
   const p = program ?? {};
   const json = (v: unknown) => JSON.stringify(v ?? [], null, 2);
   return (
@@ -137,6 +137,14 @@ export function ProgramForm({ program, adminFields }: { program?: Partial<Progra
           <div>
             <Label>Default TestGorilla assessment link</Label>
             <Input name="default_exam_url" type="url" defaultValue={p.default_exam_url ?? ""} placeholder="https://app.testgorilla.com/…" />
+          </div>
+          <div>
+            <Label>Verification call scheduling link (screening step 1)</Label>
+            <Input name="verification_scheduling_url" type="url" defaultValue={p.verification_scheduling_url ?? ""} placeholder="https://calendly.com/… or a Microsoft Bookings page" />
+          </div>
+          <div>
+            <Label>Employer application link (screening step 2)</Label>
+            <Input name="employer_application_url" type="url" defaultValue={p.employer_application_url ?? ""} placeholder="https://… (e.g. the TSMC Arizona application page)" />
           </div>
           <fieldset>
             <legend className="text-sm font-bold">Fields partner employers can see (for consenting applicants)</legend>

@@ -20,6 +20,8 @@ import { ROLE_LABEL, ROLES, type Role } from "@/lib/rbac";
 
 export type AdminOp =
   | "start_screening"
+  | "verification_invite"
+  | "verify_and_send_application"
   | "pass_and_invite"
   | "send_invite"
   | "send_reminder"
@@ -40,12 +42,25 @@ async function defaultExamUrl(supabase: SupabaseClient, appId: string): Promise<
   return (Array.isArray(p) ? p[0] : p)?.default_exam_url ?? null;
 }
 
+/** The program's default link for a screening step. */
+async function programLink(supabase: SupabaseClient, appId: string, col: "verification_scheduling_url" | "employer_application_url") {
+  const { data } = await supabase.from("applications").select(`programs(${col})`).eq("id", appId).maybeSingle();
+  const p = data?.programs as Record<string, string | null> | Array<Record<string, string | null>> | null | undefined;
+  return (Array.isArray(p) ? p[0] : p)?.[col] ?? null;
+}
+
 async function emailPromoted(supabase: SupabaseClient, ids: string[] | null | undefined) {
   for (const id of ids ?? []) await notifyTemplate(supabase, id, "waitlist_promoted");
 }
 
 /** Runs one workflow operation on one application. Returns an error message or null. */
-async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note: string | null, extra: { examUrl?: string; cohortId?: string }) {
+async function runOp(
+  supabase: SupabaseClient,
+  appId: string,
+  op: AdminOp,
+  note: string | null,
+  extra: { examUrl?: string; cohortId?: string; stepUrl?: string },
+) {
   const transition = async (to: Status) => {
     const { error } = await supabase.rpc("admin_transition", { p_app: appId, p_to: to, p_note: note });
     return error;
@@ -56,10 +71,27 @@ async function runOp(supabase: SupabaseClient, appId: string, op: AdminOp, note:
     case "start_screening":
       error = await transition("screening");
       break;
+    // Screening step 1: invite to a video call to verify information. Step 2: verified, send the employer application.
+    case "verification_invite":
+    case "verify_and_send_application": {
+      const isInvite = op === "verification_invite";
+      if (!isInvite) {
+        const { data } = await supabase.from("applications").select("verification_invited_at").eq("id", appId).maybeSingle();
+        if (!data?.verification_invited_at) return "Send the verification call invite (step 1) first.";
+      }
+      const url =
+        extra.stepUrl?.trim() ||
+        (await programLink(supabase, appId, isInvite ? "verification_scheduling_url" : "employer_application_url"));
+      if (!url) return isInvite ? "Add a scheduling link (or a default one on the program)." : "Add the employer application link (or a default one on the program).";
+      ({ error } = await supabase.rpc("admin_screening_step", { p_app: appId, p_step: isInvite ? "verification_invite" : "verified", p_url: url }));
+      if (!error) await notifyTemplate(supabase, appId, isInvite ? "verification_invite" : "employer_application", note ? { note } : {});
+      break;
+    }
     case "pass_and_invite":
     case "send_invite": {
       if (op === "pass_and_invite") {
-        const { data } = await supabase.from("applications").select("status").eq("id", appId).maybeSingle();
+        const { data } = await supabase.from("applications").select("status, verified_at").eq("id", appId).maybeSingle();
+        if (!data?.verified_at) return "Verify the applicant's information (screening steps 1 and 2) before passing screening.";
         if (data?.status === "submitted") error = await transition("screening");
         if (!error) error = await transition("screening_passed");
         if (error) break;
@@ -177,6 +209,7 @@ export async function adminAct(_prev: ActionState, formData: FormData): Promise<
   const err = await runOp(supabase, appId, op, note, {
     examUrl: String(formData.get("exam_url") || ""),
     cohortId: String(formData.get("cohort_id") || ""),
+    stepUrl: String(formData.get("step_url") || ""),
   });
   if (err) return fail(err);
   await audit(supabase, `workflow.${op}`, "application", appId, note ? { note } : {});
@@ -274,7 +307,7 @@ export async function bulkAct(_prev: ActionState, formData: FormData): Promise<A
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   const op = String(formData.get("op") || "") as AdminOp;
   // "Not selected" needs a per-applicant reason, so it's done from the application page.
-  const allowed: AdminOp[] = ["pass_and_invite", "send_invite", "send_reminder", "cohort_reminder", "accept", "confirm"];
+  const allowed: AdminOp[] = ["verification_invite", "verify_and_send_application", "pass_and_invite", "send_invite", "send_reminder", "cohort_reminder", "accept", "confirm"];
   if (!allowed.includes(op)) return fail("Choose a bulk action.");
   if (!ids.length) return fail("Select at least one application.");
   const supabase = await createClient();
@@ -684,6 +717,10 @@ export async function saveProgram(_prev: ActionState, formData: FormData): Promi
     const valid = new Set<string>(EMPLOYER_FIELD_OPTIONS.map((f) => f.key));
     content.employer_visible_fields = fields.filter((f) => valid.has(f));
     content.default_exam_url = String(formData.get("default_exam_url") || "").trim() || null;
+    content.verification_scheduling_url = String(formData.get("verification_scheduling_url") || "").trim() || null;
+    content.employer_application_url = String(formData.get("employer_application_url") || "").trim() || null;
+    for (const k of ["verification_scheduling_url", "employer_application_url"] as const)
+      if (content[k] && !/^https:\/\//.test(String(content[k]))) return fail("Screening links must start with https://");
     content.active = formData.get("active") === "on";
     content.featured = formData.get("featured") === "on";
     if (content.default_exam_url && !/^https:\/\//.test(String(content.default_exam_url))) return fail("Exam link must start with https://");

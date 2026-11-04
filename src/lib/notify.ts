@@ -12,6 +12,8 @@ type AppRow = {
   first_name: string;
   status: Status;
   exam_url: string | null;
+  verification_url: string | null;
+  employer_application_url: string | null;
   assigned_cohort_id: string | null;
   completed_on: string | null;
   completion_note: string | null;
@@ -26,7 +28,7 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
   const { data } = await supabase
     .from("applications")
     .select(
-      "id, email, first_name, status, exam_url, assigned_cohort_id, completed_on, completion_note, hired_employer_name, hired_job_title, hired_start_date, programs(short_name, employer_partner, slug)",
+      "id, email, first_name, status, exam_url, verification_url, employer_application_url, assigned_cohort_id, completed_on, completion_note, hired_employer_name, hired_job_title, hired_start_date, programs(short_name, employer_partner, slug)",
     )
     .eq("id", applicationId)
     .maybeSingle<AppRow>();
@@ -59,6 +61,8 @@ export async function emailContext(supabase: SupabaseClient, applicationId: stri
     employerPartner: program?.employer_partner ?? null,
     programSlug: program?.slug ?? null,
     examUrl: data.exam_url,
+    verificationUrl: data.verification_url,
+    employerApplicationUrl: data.employer_application_url,
     cohort,
     outcome: {
       completedOn: data.completed_on,

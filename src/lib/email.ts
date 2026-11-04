@@ -18,6 +18,9 @@ export type EmailContext = {
   /** Used to link back to the program's application form. */
   programSlug?: string | null;
   examUrl?: string | null;
+  /** Screening: link to book the verification video call, and the employer's application link. */
+  verificationUrl?: string | null;
+  employerApplicationUrl?: string | null;
   cohort?: {
     name: string;
     format: string;
@@ -156,6 +159,42 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         ],
         cta: { label: "Enroll now", href: `${portal(ctx.applicationId)}?tab=enrollment` },
       };
+    case "verification_invite":
+      return {
+        subject: `Next step: schedule a short video call to verify your information`,
+        heading: "Let's verify your information",
+        paragraphs: [
+          hi,
+          `Thanks for applying to the <strong>${esc(ctx.programName)}</strong>. As part of screening, we'd like to meet you on a short video call to verify the information in your application.`,
+          "Please pick a time that works for you using the button below. Have a <strong>photo ID</strong> ready, along with any documents that show your education (for example a diploma, GED certificate or transcript).",
+          ...note,
+          ctx.verificationUrl
+            ? `<span style="font-size:13px;color:#5a5a5a">Scheduling link: <a href="${attr(ctx.verificationUrl)}" style="color:#8C1D40">${esc(ctx.verificationUrl)}</a></span>`
+            : "",
+        ].filter(Boolean),
+        cta: ctx.verificationUrl ? { label: "Schedule my verification call", href: ctx.verificationUrl } : { label: "Open my portal", href: portal(ctx.applicationId) },
+        secondary: { label: "View my application", href: portal(ctx.applicationId) },
+      };
+    case "employer_application": {
+      const employer = ctx.employerPartner ?? "our employer partner";
+      return {
+        subject: `You're verified: complete your ${employer} application`,
+        heading: "Information verified: one more application",
+        paragraphs: [
+          hi,
+          `Thank you for meeting with us. Your information for the <strong>${esc(ctx.programName)}</strong> has been verified.`,
+          `Next, please complete the <strong>${esc(employer)}</strong> application using the button below. This is a separate application with ${esc(employer)}; once it's in, admissions will move you on to the online assessment.`,
+          ...note,
+          ctx.employerApplicationUrl
+            ? `<span style="font-size:13px;color:#5a5a5a">Application link: <a href="${attr(ctx.employerApplicationUrl)}" style="color:#8C1D40">${esc(ctx.employerApplicationUrl)}</a></span>`
+            : "",
+        ].filter(Boolean),
+        cta: ctx.employerApplicationUrl
+          ? { label: `Start the ${employer} application`, href: ctx.employerApplicationUrl }
+          : { label: "Open my portal", href: portal(ctx.applicationId) },
+        secondary: { label: "View my application", href: portal(ctx.applicationId) },
+      };
+    }
     case "cohort_reminder":
       return {
         subject: `Reminder: choose your cohorts for the ${ctx.programName}`,

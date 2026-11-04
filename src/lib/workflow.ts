@@ -336,6 +336,8 @@ export type EmailTemplate =
   | "role_granted"
   | "cohort_announcement"
   | "cohort_reminder"
+  | "verification_invite"
+  | "employer_application"
   | "status_update";
 
 export const EMAIL_FOR_STATUS: Partial<Record<Status, EmailTemplate>> = {

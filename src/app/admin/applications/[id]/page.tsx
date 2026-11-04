@@ -21,20 +21,53 @@ import { audit } from "@/lib/audit";
 
 export const metadata = { title: "Application review" };
 
-type Op = { op: string; label: string; variant?: "gold" | "dark" | "outline" | "danger"; confirm?: string; needsUrl?: boolean };
+type Op = {
+  op: string;
+  label: string;
+  variant?: "gold" | "dark" | "outline" | "danger";
+  confirm?: string;
+  needsUrl?: boolean;
+  /** A link the admin can confirm or change before the email goes out (screening steps). */
+  link?: { label: string; value: string; placeholder: string; hint?: string };
+};
+
+/** Where an application is within screening: 1 verification call, 2 verified + employer application, 3 assessment. */
+type Screening = {
+  invitedAt: string | null;
+  verifiedAt: string | null;
+  verificationUrl: string;
+  applicationUrl: string;
+};
 
 /**
  * Workflow actions, in order: screening -> assessment -> acceptance -> enrollment (placement is handled by the
  * Enrollment decision block) -> confirmation. Only removal carries a note.
  */
-function opsFor(status: Status, employer: string | null, applicantName: string): Op[] {
+function opsFor(status: Status, employer: string | null, applicantName: string, sc: Screening): Op[] {
   const ops: Op[] = [];
   switch (status) {
     case "submitted": // legacy: new applications start in screening
       ops.push({ op: "start_screening", label: "Start screening", variant: "dark" });
       break;
     case "screening":
-      ops.push({ op: "pass_and_invite", label: "Pass screening & send assessment", needsUrl: true });
+      // Screening runs in order: verification call, then verified + employer application, then the assessment.
+      if (!sc.verifiedAt) {
+        ops.push({
+          op: "verification_invite",
+          label: sc.invitedAt ? "Resend verification call invite" : "1. Schedule video call to verify information",
+          variant: sc.invitedAt ? "outline" : "gold",
+          link: { label: "Scheduling link", value: sc.verificationUrl, placeholder: "https://calendly.com/…", hint: "Emailed to the applicant so they can book a time." },
+        });
+      }
+      if (sc.invitedAt && !sc.verifiedAt) {
+        ops.push({
+          op: "verify_and_send_application",
+          label: `2. Verified & send ${employer ?? "employer"} application link`,
+          confirm: `Confirm you've verified ${applicantName}'s information on the video call? They'll be emailed the ${employer ?? "employer"} application link.`,
+          link: { label: `${employer ?? "Employer"} application link`, value: sc.applicationUrl, placeholder: "https://…" },
+        });
+      }
+      if (sc.verifiedAt) ops.push({ op: "pass_and_invite", label: "3. Pass screening & send assessment", needsUrl: true });
       ops.push({ op: "not_selected", label: "Not selected", variant: "outline", confirm: "Mark this applicant as not selected? They'll be emailed that a decision was made; the reason is visible only in their portal." });
       break;
     case "screening_passed":
@@ -82,7 +115,7 @@ export default async function AdminApplicationPage({ params }: { params: Promise
   const canManage = can(session.roles, "admissions.manage");
   const supabase = await createClient();
 
-  const { data: app } = await supabase.from("applications").select("*, programs(id, name, short_name, default_exam_url, employer_partner)").eq("id", id).maybeSingle();
+  const { data: app } = await supabase.from("applications").select("*, programs(id, name, short_name, default_exam_url, employer_partner, verification_scheduling_url, employer_application_url)").eq("id", id).maybeSingle();
   if (!app) notFound();
   const program = Array.isArray(app.programs) ? app.programs[0] : app.programs;
   const status = app.status as Status;
@@ -131,7 +164,13 @@ export default async function AdminApplicationPage({ params }: { params: Promise
   const showDecision = canManage && PLACEMENT_STATUSES.includes(status);
   const requiredTemplates = (templates ?? []).filter((t) => t.required);
   const signedRequired = requiredTemplates.filter((t) => (sigs ?? []).some((x) => x.template_id === t.id && x.template_version === t.version)).length;
-  const ops = canManage ? opsFor(status, program?.employer_partner ?? null, `${app.first_name} ${app.last_name}`) : [];
+  const screening: Screening = {
+    invitedAt: app.verification_invited_at,
+    verifiedAt: app.verified_at,
+    verificationUrl: app.verification_url ?? program?.verification_scheduling_url ?? "",
+    applicationUrl: app.employer_application_url ?? program?.employer_application_url ?? "",
+  };
+  const ops = canManage ? opsFor(status, program?.employer_partner ?? null, `${app.first_name} ${app.last_name}`, screening) : [];
   const sigByTpl = new Map((sigs ?? []).map((s) => [s.template_id, s]));
 
   await audit(supabase, "application.view", "application", id);
@@ -351,6 +390,23 @@ export default async function AdminApplicationPage({ params }: { params: Promise
               <h2 className="font-black">Move through the workflow</h2>
               <p className="mt-1 text-sm text-ink/60">The applicant sees each change in their portal and gets an email.</p>
               <div className="mt-5 space-y-4">
+                {(status === "screening" || status === "submitted") && (
+                  <ol className="grid gap-1.5 rounded-2xl bg-mist p-4 text-sm">
+                    {[
+                      ["Verification call invite sent", screening.invitedAt],
+                      ["Information verified & employer application sent", screening.verifiedAt],
+                      ["Passed screening & assessment sent", null],
+                    ].map(([label, at], i) => (
+                      <li key={i} className={`flex items-center gap-2 ${at ? "font-bold text-emerald-800" : "text-ink/60"}`}>
+                        <span className={`inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-black ${at ? "bg-emerald-600 text-white" : "bg-white text-ink/50 ring-1 ring-ink/15"}`}>
+                          {at ? <Check className="h-3 w-3" strokeWidth={3} aria-hidden /> : i + 1}
+                        </span>
+                        {label}
+                        {at && <span className="font-normal text-ink/50">· {formatDate(at)}</span>}
+                      </li>
+                    ))}
+                  </ol>
+                )}
                 {WAITING[status] && (
                   <div className="rounded-2xl bg-mist p-4 text-sm text-ink/70">
                     <p className="font-bold">{WAITING[status]}</p>
@@ -377,6 +433,13 @@ export default async function AdminApplicationPage({ params }: { params: Promise
                   <ActionForm key={o.op} action={adminAct} confirm={o.confirm} className="rounded-2xl border border-ink/10 p-4">
                     <input type="hidden" name="application_id" value={app.id} />
                     <input type="hidden" name="op" value={o.op} />
+                    {o.link && (
+                      <div className="mb-3">
+                        <Label htmlFor={`link-${o.op}`}>{o.link.label}</Label>
+                        <Input id={`link-${o.op}`} name="step_url" type="url" required defaultValue={o.link.value} placeholder={o.link.placeholder} />
+                        {o.link.hint && <p className="mt-1 text-xs text-ink/50">{o.link.hint}</p>}
+                      </div>
+                    )}
                     {o.needsUrl && (
                       <div className="mb-3">
                         <Label htmlFor={`url-${o.op}`}>TestGorilla link</Label>

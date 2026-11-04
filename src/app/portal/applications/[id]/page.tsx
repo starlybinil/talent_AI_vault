@@ -17,7 +17,7 @@ import { InProgram, type CohortAnnouncement, type CohortInstructor, type Program
 import { StepCompleteDialog } from "@/components/portal/StepCompleteDialog";
 import { PracticePromo } from "@/components/practice/PracticePromo";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
-import { Alert, Badge, ButtonLink, Card, Input, Label, Textarea } from "@/components/ui";
+import { Alert, Badge, ButtonLink, buttonClass, Card, Input, Label, Textarea } from "@/components/ui";
 import { changeCohort, sendApplicantMessage, signAgreement, withdrawApplication } from "@/app/portal/actions";
 import type { CohortAvailability } from "@/lib/data";
 import {
@@ -84,7 +84,28 @@ export default async function ApplicationPage({
   const cohorts = ((cohortsRes.data ?? []) as CohortAvailability[]).filter((c) => c.status === "open");
   const cohortById = Object.fromEntries(((cohortsRes.data ?? []) as CohortAvailability[]).map((c) => [c.cohort_id, c]));
   const assigned = app.assigned_cohort_id ? cohortById[app.assigned_cohort_id] : null;
-  const next = applicantNextAction(status);
+  const baseNext = applicantNextAction(status);
+  // Screening steps: book the verification call, then complete the employer's application.
+  const next =
+    status === "screening" && app.verified_at && app.employer_application_url
+      ? {
+          ...baseNext,
+          title: `Complete your ${program?.employer_partner ?? "employer"} application`,
+          body: `Your information has been verified. Please complete the ${program?.employer_partner ?? "employer"} application; admissions will then send your online assessment. Meanwhile, keep practicing in the Practice Lab.`,
+          href: app.employer_application_url as string,
+          cta: "Start the application",
+          external: true,
+        }
+      : status === "screening" && app.verification_invited_at && app.verification_url
+        ? {
+            ...baseNext,
+            title: "Schedule your verification call",
+            body: "Book a short video call so admissions can verify the information in your application. Have a photo ID and proof of education (diploma, GED certificate or transcript) ready.",
+            href: app.verification_url as string,
+            cta: "Schedule my call",
+            external: true,
+          }
+        : { ...baseNext, external: false };
   // Why they weren't selected: shown here (signed in) and never in email.
   const decisionReason =
     status === "not_selected" ? [...((events ?? []) as Array<{ to_status: string; note: string | null }>)].reverse().find((e) => e.to_status === "not_selected")?.note ?? null : null;
@@ -216,11 +237,16 @@ export default async function ApplicationPage({
                     <p className="mt-1 text-sm font-bold text-ink">{decisionReason}</p>
                   </div>
                 )}
-                {(next.tab || next.href) && (
-                  <ButtonLink href={next.href ?? `?tab=${next.tab}`} className="mt-4">
-                    {next.cta ?? "Continue"}
-                  </ButtonLink>
-                )}
+                {(next.tab || next.href) &&
+                  (next.external ? (
+                    <a href={next.href} target="_blank" rel="noopener noreferrer" className={buttonClass("gold", "md", "mt-4")}>
+                      {next.cta} <ExternalLink className="h-4 w-4" aria-hidden />
+                    </a>
+                  ) : (
+                    <ButtonLink href={next.href ?? `?tab=${next.tab}`} className="mt-4">
+                      {next.cta ?? "Continue"}
+                    </ButtonLink>
+                  ))}
                 {status === "withdrawn" && (
                   <div className="mt-4 flex flex-wrap gap-2">
                     <ButtonLink href={`/portal/apply/${program?.slug}`}>Apply again</ButtonLink>

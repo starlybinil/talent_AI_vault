@@ -152,6 +152,8 @@ export default async function ApplicationsPage({ searchParams }: { searchParams:
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <Select name="op" defaultValue="" className="mt-0 h-10 w-auto" aria-label="Bulk action">
                 <option value="">Bulk action…</option>
+                <option value="verification_invite">Screening 1: invite to verification call (program link)</option>
+                <option value="verify_and_send_application">Screening 2: verified, send employer application (program link)</option>
                 <option value="pass_and_invite">Pass screening & send assessment invite</option>
                 <option value="send_invite">Send assessment invite</option>
                 <option value="send_reminder">Send assessment reminder</option>
