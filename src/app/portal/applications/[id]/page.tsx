@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { RichText } from "@/components/ui/RichText";
+import { ProgressCard, type ModuleScore } from "@/components/tracking/ProgressCard";
+import { statsByStudent } from "@/lib/tracking-data";
+import { statsFromCounts, type StudentStats } from "@/lib/tracking";
 import { answerRows } from "@/lib/application-questions";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Download, ExternalLink, FileSignature, PartyPopper } from "lucide-react";
@@ -114,6 +117,7 @@ export default async function ApplicationPage({
   let resources: ProgramResource[] = [];
   let instructors: CohortInstructor[] = [];
   let announcements: CohortAnnouncement[] = [];
+  let progress: { stats: StudentStats | null; modules: ModuleScore[] } | null = null;
   if (tab === "program" && isTrainee(status)) {
     const { data: rows } = await supabase
       .from("program_resources")
@@ -145,6 +149,17 @@ export default async function ApplicationPage({
         r.instructors ? [{ id: r.id, role: r.role, ...r.instructors }] : [],
       );
       announcements = ann ?? [];
+      // Grades and attendance (RLS: the trainee's own rows only).
+      const [{ data: mods }, { data: myGrades }, statRows] = await Promise.all([
+        supabase.from("cohort_modules").select("id, name").eq("cohort_id", app.assigned_cohort_id).order("sort").order("created_at"),
+        supabase.from("module_grades").select("module_id, score").eq("application_id", app.id),
+        statsByStudent(supabase, [app.assigned_cohort_id]),
+      ]);
+      const score = new Map((myGrades ?? []).map((g) => [g.module_id, Number(g.score)]));
+      progress = {
+        stats: statRows.get(app.id) ?? null,
+        modules: (mods ?? []).map((m) => ({ name: m.name, score: score.get(m.id) ?? null })),
+      };
     }
   }
   const signedIds = new Map((signatures ?? []).map((s) => [s.template_id, s]));
@@ -522,6 +537,11 @@ export default async function ApplicationPage({
           </Card>
         )}
 
+        {tab === "program" && isTrainee(status) && progress && (progress.modules.length > 0 || progress.stats) && (
+          <div className="mb-6">
+            <ProgressCard title="Your progress" audience="trainee" stats={progress.stats ?? statsFromCounts({ grade: null, graded: 0, present: 0, late: 0, absent: 0, excused: 0 })} modules={progress.modules} />
+          </div>
+        )}
         {tab === "program" && isTrainee(status) && (
           <InProgram appId={app.id} status={status} programName={program?.name ?? ""} cohort={assigned} resources={resources} instructors={instructors} announcements={announcements} />
         )}

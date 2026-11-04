@@ -124,7 +124,15 @@ export default async function CohortDetail({ params }: { params: Promise<{ id: s
         <ArrowLeft className="h-4 w-4" /> All cohorts
       </Link>
       <div className="mt-4">
-        <PageHeader eyebrow={cohort.format} title={cohort.name} />
+        <PageHeader
+          eyebrow={cohort.format}
+          title={cohort.name}
+          actions={
+            <Link href={`/cohorts/${id}`} className="inline-flex items-center gap-2 rounded-full bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-maroon">
+              Grades &amp; attendance →
+            </Link>
+          }
+        />
       </div>
       {a && (
         <Card className="mb-6">

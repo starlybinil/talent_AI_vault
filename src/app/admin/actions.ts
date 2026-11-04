@@ -810,9 +810,15 @@ export async function grantRole(_prev: ActionState, formData: FormData): Promise
   const org = String(formData.get("employer_org_id") || "") || null;
   if (!ROLES.includes(role)) return fail("Choose a role.");
   if (role === "employer" && !org) return fail("Choose the employer organization.");
+  const programIds = formData.getAll("program_ids").map(String).filter(Boolean);
+  if (role === "cohort_manager" && !programIds.length) return fail("Choose at least one program for the cohort manager.");
   const supabase = await createClient();
   const { data: userId, error } = await supabase.rpc("it_grant_role", { p_email: email, p_role: role, p_org: org });
   if (error) return fail(errorMessage(error));
+  if (role === "cohort_manager") {
+    const { error: pErr } = await supabase.rpc("it_set_manager_programs", { p_email: email, p_programs: programIds });
+    if (pErr) return fail(errorMessage(pErr));
+  }
   revalidatePath("/admin/users");
   // Let the person know: an invitation to register, or a note that their access changed.
   const orgName = org ? (await supabase.from("employer_orgs").select("name").eq("id", org).maybeSingle()).data?.name ?? null : null;
@@ -828,6 +834,22 @@ export async function grantRole(_prev: ActionState, formData: FormData): Promise
   const emailNote = sent.status === "sent" ? " An email is on its way." : sent.status === "simulated" ? " (Email simulated: Resend isn't connected yet.)" : " The email couldn't be sent; see the Email log.";
   if (!userId) return ok(`${email} has no account yet: invitation sent to register. The ${ROLE_LABEL[role]} role applies automatically when they sign up.${emailNote}`);
   return ok(`Granted ${ROLE_LABEL[role]} to ${email}.${emailNote}`);
+}
+
+/** Which programs a cohort manager covers (they see every cohort in these programs). */
+export async function setManagerPrograms(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("users.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const email = String(formData.get("email") || "");
+  const programIds = formData.getAll("program_ids").map(String).filter(Boolean);
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("it_set_manager_programs", { p_email: email, p_programs: programIds });
+  if (error) return fail(errorMessage(error));
+  revalidatePath("/admin/users");
+  return ok(programIds.length ? "Programs saved." : "Programs cleared: this cohort manager sees no cohorts until programs are chosen.");
 }
 
 export async function cancelPendingGrant(_prev: ActionState, formData: FormData): Promise<ActionState> {

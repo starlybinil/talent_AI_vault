@@ -61,6 +61,13 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 
 9. **Email templates** (Admin → Email templates). Program admins edit the subject, heading, text and button label of every applicant email, with placeholders such as `{{first_name}}`, `{{program_name}}`, `{{scheduling_link}}`, `{{employer_application_link}}`, `{{assessment_link}}` and `{{cohort_details}}`; a paragraph whose placeholder is empty for an applicant is left out. Customized wording is stored in `email_templates`; "Restore default wording" deletes it. The links those emails send (verification scheduling, employer application, TestGorilla) are set on each program's page and pre-filled whenever admissions sends that step.
 
+10. **Cohort tracking** (`/cohorts`, role **Cohort manager**; program admins also have access). IT grants the role on Users & roles and picks the programs; the manager sees every cohort in those programs.
+   - **Grades:** each cohort has its own module list; one score (0–100) per student per module in a spreadsheet-style grid (Enter moves down). Overall grade = average of graded modules.
+   - **Attendance:** sessions are created from the cohort's dates and meeting days (add make-up days, cancel holidays). Mark Present / Late / Absent / Excused (everyone starts Present). Attendance % = (present + late) ÷ (present + late + absent); excused sessions don't count.
+   - **At risk:** grade below 70% or attendance below 90% is highlighted on the roster, grade grid, attendance sheet and student page.
+   - **Email:** the whole cohort (also saved as an announcement), at-risk students only, or students selected on the roster.
+   - **Visibility:** trainees see their own grades and attendance on the In program tab; partner employers see full detail (module scores + attendance) on a consenting trainee's candidate page; program admins see and edit everything. Enforced by RLS (`manages_cohort()`), with per-student totals from `tracking_student_stats()`.
+
 Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.
 

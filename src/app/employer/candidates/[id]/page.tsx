@@ -10,6 +10,9 @@ import { FIELD_LABEL, candidateName, displayField, isOutcomeKey, outcomeOf, type
 import { OutcomeCard } from "@/components/portal/OutcomeCard";
 import { audit } from "@/lib/audit";
 import { formatDateTime } from "@/lib/utils";
+import { ProgressCard } from "@/components/tracking/ProgressCard";
+import { statsFromCounts, type AttendanceStatus } from "@/lib/tracking";
+import { todayInArizona } from "@/lib/schedule";
 
 export default async function CandidatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,6 +28,23 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   const { data: resumePath } = c.fields.resume ? await supabase.rpc("employer_resume_path", { p_app: id }) : { data: null };
   const resumeHref = resumePath ? `/api/files?path=${encodeURIComponent(resumePath as string)}` : null;
   await audit(supabase, "employer.candidate.view", "application", id);
+  // Program performance (module grades + attendance) for consenting trainees of partnered programs.
+  const { data: perf } = await supabase.rpc("employer_trainee_performance", { p_app: id });
+  const performance = perf as { modules: Array<{ name: string; score: number | null }>; attendance: Array<{ date: string; status: AttendanceStatus }> } | null;
+  const today = todayInArizona();
+  const perfStats = performance
+    ? statsFromCounts({
+        grade: (() => {
+          const xs = performance.modules.flatMap((m) => (m.score === null ? [] : [Number(m.score)]));
+          return xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+        })(),
+        graded: performance.modules.filter((m) => m.score !== null).length,
+        ...(["present", "late", "absent", "excused"] as const).reduce(
+          (acc, st) => ({ ...acc, [st]: performance.attendance.filter((a) => a.status === st && a.date <= today).length }),
+          { present: 0, late: 0, absent: 0, excused: 0 },
+        ),
+      })
+    : null;
 
   return (
     <div>
@@ -49,6 +69,16 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
         <div className="mb-6">
           <OutcomeCard audience="employer" outcome={outcome} name={candidateName(c)} />
           {c.fields.hired_by_you === true && <p className="mt-2 text-sm font-bold text-success">Hired by your organization.</p>}
+        </div>
+      )}
+      {performance && perfStats && (performance.modules.length > 0 || performance.attendance.length > 0) && (
+        <div className="mb-6">
+          <ProgressCard
+            title="Program performance"
+            audience="employer"
+            stats={perfStats}
+            modules={performance.modules.map((m) => ({ name: m.name, score: m.score === null ? null : Number(m.score) }))}
+          />
         </div>
       )}
       <div className="grid gap-6 lg:grid-cols-[1fr_380px]">

@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
-import { cancelPendingGrant, createEmployerOrg, deleteUser, grantRole, revokeRole, setUserActive } from "@/app/admin/actions";
+import { cancelPendingGrant, createEmployerOrg, deleteUser, grantRole, revokeRole, setManagerPrograms, setUserActive } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Badge, Card, Input, Label, PageHeader, Select, buttonClass } from "@/components/ui";
 import { ROLES, ROLE_LABEL, type Role } from "@/lib/rbac";
@@ -25,11 +25,26 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   let query = supabase.from("profiles").select("id, email, full_name, active, created_at, user_roles(id, role, employer_org_id)").order("created_at", { ascending: false }).limit(200);
   const term = (sp.q ?? "").replace(/[^\p{L}\p{N}@.\-_ ]/gu, "").trim();
   if (term) query = query.or(`email.ilike.%${term}%,full_name.ilike.%${term}%`);
-  const [{ data: users }, { data: orgs }, { data: pending }] = await Promise.all([
+  const [{ data: users }, { data: orgs }, { data: pending }, { data: programs }, { data: managed }] = await Promise.all([
     query,
     supabase.from("employer_orgs").select("id, name").order("name"),
-    supabase.from("pending_role_grants").select("id, email, role, employer_org_id, created_at").order("created_at", { ascending: false }),
+    supabase.from("pending_role_grants").select("id, email, role, employer_org_id, program_ids, created_at").order("created_at", { ascending: false }),
+    supabase.from("programs").select("id, short_name").order("sort"),
+    supabase.from("cohort_manager_programs").select("user_id, program_id"),
   ]);
+  const programName = Object.fromEntries((programs ?? []).map((p) => [p.id as string, p.short_name as string]));
+  const managedBy = (managed ?? []).reduce((m, r) => m.set(r.user_id, [...(m.get(r.user_id) ?? []), r.program_id]), new Map<string, string[]>());
+  /** Program checkboxes for the cohort manager role. */
+  const ProgramPicks = ({ picked, prefix }: { picked: string[]; prefix: string }) => (
+    <div className="flex flex-wrap gap-x-4 gap-y-1">
+      {(programs ?? []).map((p) => (
+        <label key={p.id} className="flex items-center gap-1.5 text-xs font-bold">
+          <input type="checkbox" name="program_ids" value={p.id} defaultChecked={picked.includes(p.id)} className="h-3.5 w-3.5 accent-maroon" id={`${prefix}-${p.id}`} />
+          {p.short_name}
+        </label>
+      ))}
+    </div>
+  );
   const orgName = Object.fromEntries((orgs ?? []).map((o) => [o.id, o.name]));
   let rows = (users ?? []) as U[];
   if (sp.role && (ROLES as readonly string[]).includes(sp.role)) rows = rows.filter((u) => u.user_roles.some((r) => r.role === sp.role));
@@ -69,6 +84,10 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                 </Select>
               </div>
             </div>
+            <fieldset className="rounded-xl bg-mist p-3">
+              <legend className="px-1 text-xs font-bold text-ink/60">Programs (cohort manager role only: they see every cohort in these programs)</legend>
+              <ProgramPicks picked={[]} prefix="grant" />
+            </fieldset>
             <SubmitButton variant="dark" className="justify-self-start">Grant role</SubmitButton>
           </ActionForm>
           {(pending ?? []).length > 0 && (
@@ -82,7 +101,8 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                       <span className="block truncate font-bold">{g.email}</span>
                       <span className="text-xs text-ink/50">
                         {ROLE_LABEL[g.role as Role]}
-                        {g.employer_org_id ? ` · ${orgName[g.employer_org_id] ?? "employer"}` : ""} · invited {formatDate(g.created_at)}
+                        {g.employer_org_id ? ` · ${orgName[g.employer_org_id] ?? "employer"}` : ""}
+                        {g.program_ids?.length ? ` · ${(g.program_ids as string[]).map((id) => programName[id]).filter(Boolean).join(", ")}` : ""} · invited {formatDate(g.created_at)}
                       </span>
                     </span>
                     <ActionForm action={cancelPendingGrant} confirm={`Cancel the pending ${ROLE_LABEL[g.role as Role]} role for ${g.email}?`}>
@@ -168,6 +188,21 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                       </ActionForm>
                     ))}
                   </div>
+                  {u.user_roles.some((r) => r.role === "cohort_manager") && (
+                    <ActionForm action={setManagerPrograms} className="mt-2 grid gap-1.5 rounded-xl bg-mist p-2.5">
+                      <input type="hidden" name="email" value={u.email ?? ""} />
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-ink/50">
+                        Cohort manager programs:{" "}
+                        <span className="normal-case tracking-normal text-ink">
+                          {(managedBy.get(u.id) ?? []).map((id) => programName[id]).filter(Boolean).join(", ") || "none yet"}
+                        </span>
+                      </p>
+                      <ProgramPicks picked={managedBy.get(u.id) ?? []} prefix={u.id} />
+                      <SubmitButton size="sm" variant="outline" className="justify-self-start" pendingText="Saving…">
+                        Save programs
+                      </SubmitButton>
+                    </ActionForm>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-ink/60">{formatDate(u.created_at)}</td>
                 <td className="px-4 py-3">
