@@ -90,7 +90,6 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin/instructors", label: "Instructors", permission: "cohorts.manage", icon: "teacher" },
   { href: "/admin/locations", label: "Training locations", permission: "cohorts.manage", icon: "map" },
   { href: "/admin/programs", label: "Programs", permission: "programs.manage", icon: "layers" },
-  { href: "/admin/agreements", label: "Agreements", permission: "programs.manage", icon: "file" },
   { href: "/admin/users", label: "Users & roles", permission: "users.manage", icon: "users" },
   { href: "/admin/audit", label: "Audit log", permission: "audit.read", icon: "shield" },
   { href: "/admin/email-log", label: "Email log", permission: "email_log.read", icon: "mail" },
