@@ -250,3 +250,47 @@ export async function emailStudents(_prev: ActionState, formData: FormData): Pro
   refresh(cohortId);
   return ok(`Email sent to ${ids.length} student${ids.length === 1 ? "" : "s"}.`);
 }
+
+/**
+ * Copy a cohort's module list to other cohorts. Modules a target already has (same name, any case) are skipped,
+ * so copying twice never creates duplicates; scores are never copied.
+ */
+export async function copyModules(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await guard();
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const direction = String(formData.get("direction") || "to");
+  const here = String(formData.get("cohort_id") || "");
+  const picked = formData.getAll("cohort_ids").map(String).filter(Boolean);
+  const source = direction === "from" ? picked[0] : here;
+  const targets = direction === "from" ? [here] : picked;
+  if (!source || !targets.length) return fail(direction === "from" ? "Choose a cohort to copy from." : "Choose at least one cohort to copy to.");
+  const supabase = await createClient();
+  const { data: src } = await supabase.from("cohort_modules").select("name").eq("cohort_id", source).order("sort").order("created_at");
+  const names = (src ?? []).map((m) => m.name as string);
+  if (!names.length) return fail("That cohort has no modules to copy.");
+  let added = 0;
+  const done: string[] = [];
+  for (const t of targets) {
+    const { data: existing } = await supabase.from("cohort_modules").select("name").eq("cohort_id", t);
+    const have = new Set((existing ?? []).map((m) => String(m.name).trim().toLowerCase()));
+    const missing = names.filter((n) => !have.has(n.trim().toLowerCase()));
+    if (missing.length) {
+      const { error } = await supabase.from("cohort_modules").insert(missing.map((name, i) => ({ cohort_id: t, name, sort: (existing?.length ?? 0) + i })));
+      if (error) return fail(errorMessage(error));
+      added += missing.length;
+    }
+    done.push(t);
+    refresh(t);
+  }
+  await audit(supabase, "tracking.modules.copy", "cohort", source, { targets: done, added });
+  refresh(here);
+  if (direction === "from") return ok(added ? `Copied ${added} module${added === 1 ? "" : "s"} into this cohort.` : "This cohort already has all of those modules.");
+  return ok(
+    added
+      ? `Copied to ${done.length} cohort${done.length === 1 ? "" : "s"} (${added} module${added === 1 ? "" : "s"} added; ones they already had were skipped).`
+      : "Those cohorts already have all of these modules.",
+  );
+}

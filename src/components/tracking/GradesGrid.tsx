@@ -77,7 +77,7 @@ export function GradesGrid({
     }
   }
 
-  if (!modules.length) return <p className="rounded-2xl bg-white p-6 text-sm text-ink/60">Add the cohort&apos;s modules above to start entering grades.</p>;
+  if (!modules.length) return <p className="rounded-2xl bg-white p-6 text-sm text-ink/60">Set up the cohort&apos;s modules on the Modules tab to start entering grades.</p>;
 
   return (
     <div className="grid gap-3">

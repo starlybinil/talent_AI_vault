@@ -9,6 +9,7 @@ import { Badge, Card, Input, Label, PageHeader, Select, Textarea } from "@/compo
 import { GradesGrid } from "@/components/tracking/GradesGrid";
 import { AttendanceSheet } from "@/components/tracking/AttendanceSheet";
 import { RosterTable, type RosterRow } from "@/components/tracking/RosterTable";
+import { ModuleCopy } from "@/components/tracking/ModuleCopy";
 import { Pct } from "@/components/tracking/Metric";
 import { cohortRoster, fetchAll, statsByStudent, trackedCohort } from "@/lib/tracking-data";
 import { ATTENDANCE_MIN, GRADE_MIN, type AttendanceStatus } from "@/lib/tracking";
@@ -20,6 +21,7 @@ export const metadata = { title: "Cohort tracking" };
 const TABS = [
   { key: "roster", label: "Roster" },
   { key: "grades", label: "Grades" },
+  { key: "modules", label: "Modules" },
   { key: "attendance", label: "Attendance" },
   { key: "email", label: "Email" },
 ] as const;
@@ -97,6 +99,17 @@ export default async function CohortTracking({ params, searchParams }: { params:
     marks = Object.fromEntries((m ?? []).map((x) => [x.application_id, x.status as AttendanceStatus]));
     recordedBySession = all.reduce((acc, x) => acc.set(x.session_id, (acc.get(x.session_id) ?? 0) + 1), new Map<string, number>());
   }
+  // Other cohorts this user manages in the same program, for copying the module list.
+  const { data: siblingRows } =
+    tab === "modules"
+      ? await supabase.from("cohorts").select("id, name, start_date, cohort_modules(count)").eq("program_id", cohort.program_id).neq("id", id).neq("status", "archived").order("start_date")
+      : { data: [] };
+  const siblings = ((siblingRows ?? []) as unknown as Array<{ id: string; name: string; start_date: string; cohort_modules: Array<{ count: number }> }>).map((c) => ({
+    id: c.id,
+    name: c.name,
+    start: c.start_date,
+    modules: c.cohort_modules?.[0]?.count ?? 0,
+  }));
   const { data: announcements } =
     tab === "email" ? await supabase.from("cohort_announcements").select("id, subject, recipients, created_at").eq("cohort_id", id).order("created_at", { ascending: false }).limit(10) : { data: [] };
 
@@ -147,7 +160,30 @@ export default async function CohortTracking({ params, searchParams }: { params:
       )}
 
       {tab === "grades" && (
-        <div className="grid gap-6">
+        <div className="grid gap-4">
+          {mods.length === 0 ? (
+            <Card>
+              <p className="text-sm text-ink/70">This cohort has no modules yet.</p>
+              <Link href={`/cohorts/${id}?tab=modules`} className="mt-3 inline-flex rounded-full bg-ink px-4 py-2 text-sm font-bold text-white hover:bg-maroon">
+                Set up modules →
+              </Link>
+            </Card>
+          ) : (
+            <>
+              <p className="text-sm text-ink/60">
+                {mods.length} modules.{" "}
+                <Link href={`/cohorts/${id}?tab=modules`} className="font-bold text-maroon hover:underline">
+                  Edit or copy modules
+                </Link>
+              </p>
+              <GradesGrid cohortId={id} students={rows.map((r) => ({ id: r.id, name: r.name }))} modules={mods} initial={grades} />
+            </>
+          )}
+        </div>
+      )}
+
+      {tab === "modules" && (
+        <div className="grid gap-6 lg:grid-cols-[1fr_380px]">
           <Card>
             <h2 className="font-black">Modules ({mods.length})</h2>
             <p className="mt-1 text-sm text-ink/60">Each module gets one score per student. The overall grade is the average of the modules graded so far.</p>
@@ -186,14 +222,14 @@ export default async function CohortTracking({ params, searchParams }: { params:
               <input type="hidden" name="cohort_id" value={id} />
               <div>
                 <Label htmlFor="new-module">Add modules</Label>
-                <Textarea id="new-module" name="name" required className="min-h-12 text-sm" placeholder={"One per line, e.g.\nElectrical fundamentals\nVacuum systems"} />
+                <Textarea id="new-module" name="name" required className="min-h-24 text-sm" placeholder={"One per line, e.g.\nElectrical fundamentals\nVacuum systems"} />
               </div>
               <SubmitButton size="sm" variant="dark" pendingText="Adding…">
                 Add
               </SubmitButton>
             </ActionForm>
           </Card>
-          <GradesGrid cohortId={id} students={rows.map((r) => ({ id: r.id, name: r.name }))} modules={mods} initial={grades} />
+          <ModuleCopy cohortId={id} hasModules={mods.length > 0} others={siblings} />
         </div>
       )}
 
