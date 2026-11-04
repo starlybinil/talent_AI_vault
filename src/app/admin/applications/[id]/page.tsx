@@ -43,6 +43,9 @@ type Screening = {
  * Workflow actions, in order: screening -> assessment -> acceptance -> enrollment (placement is handled by the
  * Enrollment decision block) -> confirmation. Only removal carries a note.
  */
+/** "TSMC-Arizona" → "TSMC" for compact button labels. */
+const employerShort = (employer: string | null) => (employer ?? "Employer").replace(/[\s-]+Arizona$/i, "").trim() || "Employer";
+
 function opsFor(status: Status, employer: string | null, applicantName: string, sc: Screening): Op[] {
   const ops: Op[] = [];
   switch (status) {
@@ -62,7 +65,7 @@ function opsFor(status: Status, employer: string | null, applicantName: string, 
       if (sc.invitedAt && !sc.verifiedAt) {
         ops.push({
           op: "verify_and_send_application",
-          label: `2. Verified & send ${employer ?? "employer"} application link`,
+          label: `2. Verified and Send ${employerShort(employer)} App Link`,
           confirm: `Confirm you've verified ${applicantName}'s information on the video call? They'll be emailed the ${employer ?? "employer"} application link.`,
           link: { label: `${employer ?? "Employer"} application link`, value: sc.applicationUrl, placeholder: "https://…" },
         });

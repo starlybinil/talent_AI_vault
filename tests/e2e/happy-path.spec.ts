@@ -95,7 +95,7 @@ test("admissions screens, invites, records a passing assessment and accepts", as
   await page.goto(applicationPath);
   await page.getByLabel(/application link/).fill("https://careers.example.com/apply");
   page.once("dialog", (d) => d.accept());
-  await page.getByRole("button", { name: /^2\. Verified & send/ }).click();
+  await page.getByRole("button", { name: /^2\. Verified and Send/ }).click();
   await page.getByRole("button", { name: /^(Yes, continue|Confirm)$/ }).click().catch(() => {});
   await page.waitForURL(/[?&]done=/);
   // Step 3.
