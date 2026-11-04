@@ -1141,27 +1141,3 @@ export async function resetEmailTemplate(_prev: ActionState, formData: FormData)
   revalidatePath("/admin/email-templates");
   redirect(`/admin/email-templates/${key}?reset=1`);
 }
-
-const LINK_FIELDS = ["default_exam_url", "verification_scheduling_url", "employer_application_url"] as const;
-
-/** The links emails send for a program (pre-filled whenever admissions sends that step). */
-export async function saveProgramLinks(_prev: ActionState, formData: FormData): Promise<ActionState> {
-  try {
-    await assertPermission("programs.manage");
-  } catch (e) {
-    return fail(errorMessage(e));
-  }
-  const programId = String(formData.get("program_id") || "");
-  const row: Record<string, string | null> = {};
-  for (const k of LINK_FIELDS) {
-    const v = String(formData.get(k) || "").trim();
-    if (v && !/^https:\/\/\S+$/.test(v)) return fail("Links must start with https:// and contain no spaces.");
-    row[k] = v || null;
-  }
-  const supabase = await createClient();
-  const { error } = await supabase.from("programs").update(row).eq("id", programId);
-  if (error) return fail(errorMessage(error));
-  await audit(supabase, "program.links.save", "program", programId, {});
-  revalidatePath("/admin/email-templates");
-  return ok("Links saved. They're pre-filled whenever admissions sends these steps.");
-}
