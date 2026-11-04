@@ -336,6 +336,7 @@ export type EmailTemplate =
   | "role_granted"
   | "cohort_announcement"
   | "cohort_reminder"
+  | "trainee_message"
   | "verification_invite"
   | "employer_application"
   | "status_update";

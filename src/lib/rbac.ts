@@ -3,12 +3,13 @@
  * SECURITY DEFINER RPCs; this matrix drives route guards and which UI is shown.
  */
 
-export const ROLES = ["applicant", "employer", "program_admin", "it_admin", "web_developer"] as const;
+export const ROLES = ["applicant", "employer", "cohort_manager", "program_admin", "it_admin", "web_developer"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABEL: Record<Role, string> = {
   applicant: "Applicant",
   employer: "Employer partner",
+  cohort_manager: "Cohort manager",
   program_admin: "Program admin",
   it_admin: "IT admin",
   web_developer: "Web developer",
@@ -30,12 +31,14 @@ export const PERMISSIONS = [
   "flags.manage",
   "system.read",
   "employer.portal",
+  "cohorts.track",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   applicant: ["application.apply"],
   employer: ["employer.portal"],
+  cohort_manager: ["cohorts.track"],
   program_admin: [
     "admissions.read",
     "admissions.manage",
@@ -43,6 +46,7 @@ export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
     "cohorts.manage",
     "programs.manage",
     "email_log.read",
+    "cohorts.track",
   ],
   it_admin: [
     "admissions.read",
@@ -77,6 +81,7 @@ export function isStaff(roles: readonly Role[]): boolean {
 /** Where a user lands after signing in, based on their most privileged role. */
 export function homeFor(roles: readonly Role[]): string {
   if (isStaff(roles)) return "/admin";
+  if (roles.includes("cohort_manager")) return "/cohorts";
   if (roles.includes("employer")) return "/employer";
   return "/portal";
 }
@@ -87,6 +92,7 @@ export const ADMIN_NAV: NavItem[] = [
   { href: "/admin", label: "Dashboard", permission: "analytics.read", icon: "chart" },
   { href: "/admin/applications", label: "Applications", permission: "admissions.read", icon: "inbox" },
   { href: "/admin/cohorts", label: "Cohorts", permission: "admissions.read", icon: "calendar" },
+  { href: "/cohorts", label: "Cohort tracking", permission: "cohorts.track", icon: "gauge" },
   { href: "/admin/instructors", label: "Instructors", permission: "cohorts.manage", icon: "teacher" },
   { href: "/admin/locations", label: "Training locations", permission: "cohorts.manage", icon: "map" },
   { href: "/admin/programs", label: "Programs", permission: "programs.manage", icon: "layers" },
@@ -121,6 +127,7 @@ const ROUTE_RULES: Array<[string, Permission | "staff" | "signed_in"]> = [
   ["/admin/system", "system.read"],
   ["/admin", "staff"],
   ["/employer", "employer.portal"],
+  ["/cohorts", "cohorts.track"],
   ["/portal", "signed_in"],
 ];
 

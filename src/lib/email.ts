@@ -202,6 +202,22 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         secondary: { label: "View my application", href: portal(ctx.applicationId) },
       };
     }
+    case "trainee_message":
+      return {
+        subject: ctx.announcement?.subject ?? "A message from your program team",
+        heading: ctx.announcement?.subject ?? "A message from your program team",
+        paragraphs: [
+          hi,
+          ...(ctx.announcement?.body ?? "")
+            .split(/\n{2,}/)
+            .map((p) => p.trim())
+            .filter(Boolean)
+            .map((p) => esc(p).replace(/\n/g, "<br/>")),
+          `<span style="font-size:13px;color:#5a5a5a">From your cohort manager · ${esc(ctx.programName)}${ctx.cohort ? ` · ${esc(ctx.cohort.name)}` : ""}. Your grades and attendance are on the <em>In program</em> tab of your portal.</span>`,
+        ],
+        cta: { label: "Open my progress", href: `${portal(ctx.applicationId)}?tab=program` },
+        footer: "You're receiving this because you're enrolled in a FoundryReady training cohort.",
+      };
     case "cohort_reminder":
       return {
         subject: `Reminder: choose your cohorts for the ${ctx.programName}`,
@@ -540,6 +556,7 @@ export const EMAIL_TEMPLATE_INFO: Array<{ key: EmailTemplate; name: string; when
   { key: "agreements_submitted", name: "Agreements received", when: "Applicant signs all agreements", group: "Enrollment & program" },
   { key: "confirmed", name: "Accepted into cohort (confirmed)", when: "Admissions confirms enrollment", group: "Enrollment & program" },
   { key: "cohort_announcement", name: "Cohort announcement", when: "Message this cohort", group: "Enrollment & program" },
+  { key: "trainee_message", name: "Message from cohort manager", when: "Cohort manager emails at-risk or selected students", group: "Enrollment & program" },
   { key: "program_completed", name: "Program completed", when: "Completion recorded", group: "Enrollment & program" },
   { key: "hired", name: "Hired", when: "Hire recorded", group: "Enrollment & program" },
   { key: "status_update", name: "Status updated", when: "Other status changes", group: "Accounts & messages" },
