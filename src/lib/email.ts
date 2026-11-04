@@ -7,6 +7,7 @@ import type { EmailTemplate } from "@/lib/workflow";
 import { formatDate } from "@/lib/utils";
 import { buildIcs } from "@/lib/ics";
 import { BRAND } from "@/lib/brand";
+import { parseRichText, type Inline } from "@/lib/richtext";
 
 export type EmailContext = {
   applicationId: string | null;
@@ -60,21 +61,27 @@ type Rendered = {
   statusLabel?: string | null;
 };
 
+/** Placeholder tokens like {{first_name}} pass through formatting untouched (used to build editable defaults). */
+const isToken = (v?: string | null) => !!v && v.startsWith("{{");
+const fd = (d: string) => (isToken(d) ? d : formatDate(d));
+
 const portal = (id: string | null) => `${SITE_URL}/portal${id ? `/applications/${id}` : ""}`;
 
 function choiceLines(choices: EmailContext["choices"]): string[] {
   if (!choices?.length) return [];
+  if (isToken(choices[0].name)) return ["{{choices}}"];
   return [
     choices
-      .map((c) => `<strong>Choice #${c.rank}:</strong> ${esc(c.name)}<br/><span style="color:#5a5a5a;font-size:14px">${formatDate(c.start_date)} – ${formatDate(c.end_date)} · ${esc(c.location)}</span>`)
+      .map((c) => `<strong>Choice #${c.rank}:</strong> ${esc(c.name)}<br/><span style="color:#5a5a5a;font-size:14px">${fd(c.start_date)} – ${fd(c.end_date)} · ${esc(c.location)}</span>`)
       .join("<br/><br/>"),
   ];
 }
 
 function cohortLines(c: EmailContext["cohort"]): string[] {
   if (!c) return [];
+  if (isToken(c.name)) return ["{{cohort_details}}"];
   return [
-    `<strong>${esc(c.name)}</strong> — ${esc(c.format)}<br/>${formatDate(c.start_date)} – ${formatDate(c.end_date)}<br/>${esc(
+    `<strong>${esc(c.name)}</strong> — ${esc(c.format)}<br/>${fd(c.start_date)} – ${fd(c.end_date)}<br/>${esc(
       c.schedule,
     )}<br/>${esc(c.location)}${c.address ? ` · ${esc(c.address)}` : ""}`,
   ];
@@ -315,7 +322,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
         paragraphs: [
           hi,
           `You've successfully completed the <strong>${esc(ctx.programName)}</strong>${
-            ctx.outcome?.completedOn ? ` as of ${formatDate(ctx.outcome.completedOn)}` : ""
+            ctx.outcome?.completedOn ? ` as of ${fd(ctx.outcome.completedOn)}` : ""
           }.`,
           ...(ctx.outcome?.completionNote ? [`<strong>Credentials earned:</strong> ${esc(ctx.outcome.completionNote)}`] : []),
           "Our partner employers can now see that you've finished the program. Keep an eye on your inbox for interview invitations.",
@@ -330,7 +337,7 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           hi,
           `Congratulations on joining <strong>${esc(ctx.outcome?.employer ?? "your new employer")}</strong>${
             ctx.outcome?.jobTitle ? ` as <strong>${esc(ctx.outcome.jobTitle)}</strong>` : ""
-          }${ctx.outcome?.startDate ? `, starting ${formatDate(ctx.outcome.startDate)}` : ""}.`,
+          }${ctx.outcome?.startDate ? `, starting ${fd(ctx.outcome.startDate)}` : ""}.`,
           "Everyone at FoundryReady is proud of you. Thank you for being part of the program, and best of luck in your new career.",
         ],
         cta: { label: "View my record", href: portal(ctx.applicationId) },
@@ -407,7 +414,9 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
 }
 
 export function renderHtml(r: Rendered): string {
-  const body = r.paragraphs.map((p) => `<p style="margin:0 0 16px;line-height:1.6">${p}</p>`).join("");
+  const body = r.paragraphs
+    .map((p) => (/^<(ul|ol)\b/.test(p) ? `<div style="margin:0 0 16px;line-height:1.6">${p}</div>` : `<p style="margin:0 0 16px;line-height:1.6">${p}</p>`))
+    .join("");
   const cta = r.cta
     ? `<p style="margin:28px 0"><a href="${attr(r.cta.href)}" style="background:#FFC627;color:#191919;padding:14px 24px;border-radius:999px;font-weight:700;text-decoration:none;display:inline-block">${esc(
         r.cta.label,
@@ -451,7 +460,14 @@ export async function sendEmail(
   template: EmailTemplate,
   ctx: EmailContext,
 ): Promise<{ status: "sent" | "simulated" | "failed"; error?: string }> {
-  const rendered = { ...renderEmail(template, ctx), statusLabel: ctx.statusLabel ?? null };
+  // Admin-customized wording, when there is one (falls back to the built-in text on any error).
+  const { data: ov } = await supabase
+    .from("email_templates")
+    .select("subject, heading, body, cta_label")
+    .eq("key", template)
+    .maybeSingle<TemplateOverride>()
+    .then((r) => r, () => ({ data: null }));
+  const rendered = { ...renderWithOverride(template, ctx, ov), statusLabel: ctx.statusLabel ?? null };
   const html = renderHtml(rendered);
   const apiKey = process.env.RESEND_API_KEY;
   let status: "sent" | "simulated" | "failed" = "simulated";
@@ -496,4 +512,256 @@ export async function sendEmail(
   });
 
   return { status, error: error ?? undefined };
+}
+
+// ---------------------------------------------------------------------------
+// Editable templates: program admins can override the subject, heading, body and button label of any email.
+// The body uses the light formatting from src/lib/richtext.ts plus {{placeholders}}.
+// ---------------------------------------------------------------------------
+
+export type TemplateOverride = { subject: string; heading: string; body: string; cta_label: string | null };
+
+export const EMAIL_TEMPLATE_INFO: Array<{ key: EmailTemplate; name: string; when: string; group: "Admissions" | "Enrollment & program" | "Accounts & messages" }> = [
+  { key: "application_received", name: "Application received", when: "Right after an applicant submits", group: "Admissions" },
+  { key: "verification_invite", name: "Verification call invite", when: "Screening step 1", group: "Admissions" },
+  { key: "employer_application", name: "Verified: employer application", when: "Screening step 2", group: "Admissions" },
+  { key: "screening_passed", name: "Screening passed", when: "Screening passed without an assessment link", group: "Admissions" },
+  { key: "exam_invite", name: "Assessment invite", when: "Screening step 3 / assessment sent", group: "Admissions" },
+  { key: "exam_reminder", name: "Assessment reminder", when: "Manual or automatic reminder", group: "Admissions" },
+  { key: "exam_passed", name: "Assessment passed", when: "Admissions records a pass", group: "Admissions" },
+  { key: "exam_failed", name: "Assessment not passed", when: "Admissions records a fail", group: "Admissions" },
+  { key: "not_selected", name: "Not selected", when: "Admissions marks Not selected", group: "Admissions" },
+  { key: "accepted", name: "Accepted: time to enroll", when: "Accept into program", group: "Enrollment & program" },
+  { key: "cohort_reminder", name: "Reminder to choose cohorts", when: "Cohort reminder (single or bulk)", group: "Enrollment & program" },
+  { key: "choices_received", name: "Cohort choices received", when: "Applicant submits cohort choices", group: "Enrollment & program" },
+  { key: "cohort_registered", name: "Cohort seat held", when: "Registered in a cohort", group: "Enrollment & program" },
+  { key: "waitlisted", name: "Waitlisted", when: "All chosen cohorts are full", group: "Enrollment & program" },
+  { key: "waitlist_promoted", name: "Promoted from waitlist", when: "A seat opens up", group: "Enrollment & program" },
+  { key: "agreements_submitted", name: "Agreements received", when: "Applicant signs all agreements", group: "Enrollment & program" },
+  { key: "confirmed", name: "Accepted into cohort (confirmed)", when: "Admissions confirms enrollment", group: "Enrollment & program" },
+  { key: "cohort_announcement", name: "Cohort announcement", when: "Message this cohort", group: "Enrollment & program" },
+  { key: "program_completed", name: "Program completed", when: "Completion recorded", group: "Enrollment & program" },
+  { key: "hired", name: "Hired", when: "Hire recorded", group: "Enrollment & program" },
+  { key: "status_update", name: "Status updated", when: "Other status changes", group: "Accounts & messages" },
+  { key: "application_reset", name: "Application reset", when: "Reset to start of application process", group: "Accounts & messages" },
+  { key: "new_message", name: "New message", when: "Admissions sends a message", group: "Accounts & messages" },
+  { key: "role_invite", name: "Staff invitation", when: "IT grants a role to someone without an account", group: "Accounts & messages" },
+  { key: "role_granted", name: "Staff access updated", when: "IT grants a role to an existing user", group: "Accounts & messages" },
+];
+
+/** Placeholders admins can use, with what they're replaced by. */
+export const EMAIL_TOKENS: Array<{ token: string; label: string }> = [
+  { token: "first_name", label: "Applicant's first name" },
+  { token: "email", label: "Applicant's email" },
+  { token: "program_name", label: "Program name" },
+  { token: "employer", label: "Employer partner (e.g. TSMC-Arizona)" },
+  { token: "portal_link", label: "Link to the applicant's portal" },
+  { token: "scheduling_link", label: "Verification call scheduling link" },
+  { token: "employer_application_link", label: "Employer application link" },
+  { token: "assessment_link", label: "TestGorilla assessment link" },
+  { token: "admissions_note", label: "Note typed by admissions" },
+  { token: "choices", label: "The applicant's ranked cohort choices" },
+  { token: "cohort_name", label: "Cohort name" },
+  { token: "cohort_start", label: "Cohort start date" },
+  { token: "cohort_end", label: "Cohort end date" },
+  { token: "cohort_location", label: "Cohort location" },
+  { token: "cohort_details", label: "Full cohort details block" },
+  { token: "message_preview", label: "Message text (new message email)" },
+  { token: "announcement_subject", label: "Announcement subject" },
+  { token: "announcement_body", label: "Announcement text" },
+  { token: "completed_on", label: "Completion date" },
+  { token: "credentials", label: "Credentials earned" },
+  { token: "hired_employer", label: "Hiring employer" },
+  { token: "job_title", label: "Job title" },
+  { token: "start_date", label: "Job start date" },
+  { token: "role", label: "Staff role (staff emails)" },
+  { token: "organization", label: "Employer organization (staff emails)" },
+];
+const KNOWN_TOKENS = new Set(EMAIL_TOKENS.map((t) => t.token));
+
+/** A context where every value is its {{placeholder}}: rendering it gives the editable default wording. */
+const TOKEN_CTX: EmailContext = {
+  applicationId: null,
+  to: "{{email}}",
+  firstName: "{{first_name}}",
+  programName: "{{program_name}}",
+  employerPartner: "{{employer}}",
+  programSlug: null,
+  examUrl: "{{assessment_link}}",
+  verificationUrl: "{{scheduling_link}}",
+  employerApplicationUrl: "{{employer_application_link}}",
+  cohort: { name: "{{cohort_name}}", format: "", start_date: "{{cohort_start}}", end_date: "{{cohort_end}}", schedule: "", location: "{{cohort_location}}", address: null },
+  note: "{{admissions_note}}",
+  choices: [{ rank: 1, name: "{{choices}}", start_date: "", end_date: "", location: "" }],
+  messagePreview: "{{message_preview}}",
+  roleLabel: "{{role}}",
+  orgName: "{{organization}}",
+  announcement: { subject: "{{announcement_subject}}", body: "{{announcement_body}}" },
+  outcome: { completedOn: "{{completed_on}}", completionNote: "{{credentials}}", employer: "{{hired_employer}}", jobTitle: "{{job_title}}", startDate: "{{start_date}}" },
+};
+
+const ENTITIES: Record<string, string> = {
+  lt: "<", gt: ">", quot: '"', amp: "&", nbsp: " ", rsquo: "\u2019", lsquo: "\u2018", ldquo: "\u201c", rdquo: "\u201d",
+  mdash: "\u2014", ndash: "\u2013", hellip: "\u2026", middot: "\u00b7", rarr: "\u2192",
+};
+function unescapeHtml(s: string): string {
+  return s.replace(/&(#\d+|[a-z]+);/gi, (m, e: string) =>
+    e.startsWith("#") ? String.fromCharCode(Number(e.slice(1))) : (ENTITIES[e.toLowerCase()] ?? m),
+  );
+}
+
+/** Turns one rendered paragraph back into editable text (bold/italic kept, links shown as their text). */
+function htmlToMarkup(html: string): string {
+  return unescapeHtml(
+    html
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<strong>([\s\S]*?)<\/strong>/gi, "**$1**")
+      .replace(/<em>([\s\S]*?)<\/em>/gi, "*$1*")
+      .replace(/<a\b[^>]*>([\s\S]*?)<\/a>/gi, "$1")
+      .replace(/<[^>]+>/g, ""),
+  )
+    .replace(/[ \t]+\n/g, "\n")
+    .trim();
+}
+
+/** The built-in wording of a template, in the editable form shown to admins. */
+export function defaultTemplate(template: EmailTemplate): TemplateOverride & { hasButton: boolean } {
+  const r = renderEmail(template, TOKEN_CTX);
+  return {
+    subject: r.subject,
+    heading: r.heading,
+    // Links to the portal are per applicant, so they become the {{portal_link}} placeholder.
+    body: r.paragraphs
+      .map(htmlToMarkup)
+      .filter(Boolean)
+      .join("\n\n")
+      .replace(new RegExp(`${SITE_URL.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/portal[^\\s)]*`, "g"), "{{portal_link}}"),
+    cta_label: r.cta?.label ?? null,
+    hasButton: !!r.cta,
+  };
+}
+
+/** Placeholders in a piece of text that the system doesn't know. */
+export function unknownTokens(text: string): string[] {
+  return Array.from(new Set(Array.from(text.matchAll(/\{\{\s*([a-z_]+)\s*\}\}/g), (m) => m[1]).filter((t) => !KNOWN_TOKENS.has(t))));
+}
+
+type TokenValue = { text: string; html?: string };
+
+function link(url: string | null | undefined): TokenValue {
+  if (!url) return { text: "" };
+  return { text: url, html: `<a href="${attr(url)}" style="color:#8C1D40">${esc(url)}</a>` };
+}
+
+function tokenValues(ctx: EmailContext): Record<string, TokenValue> {
+  const c = ctx.cohort;
+  const t = (v: string | null | undefined): TokenValue => ({ text: v ?? "" });
+  return {
+    first_name: t(ctx.firstName),
+    email: t(ctx.to),
+    program_name: t(ctx.programName),
+    employer: t(ctx.employerPartner ?? "our employer partner"),
+    portal_link: link(portal(ctx.applicationId)),
+    scheduling_link: link(ctx.verificationUrl),
+    employer_application_link: link(ctx.employerApplicationUrl),
+    assessment_link: link(ctx.examUrl),
+    admissions_note: t(ctx.note),
+    choices: { text: ctx.choices?.map((x) => `#${x.rank} ${x.name}`).join(", ") ?? "", html: choiceLines(ctx.choices)[0] ?? "" },
+    cohort_name: t(c?.name),
+    cohort_start: t(c ? fd(c.start_date) : ""),
+    cohort_end: t(c ? fd(c.end_date) : ""),
+    cohort_location: t(c?.location),
+    cohort_details: { text: c?.name ?? "", html: cohortLines(c ?? null)[0] ?? "" },
+    message_preview: t(ctx.messagePreview?.slice(0, 280)),
+    announcement_subject: t(ctx.announcement?.subject),
+    announcement_body: { text: ctx.announcement?.body ?? "", html: esc(ctx.announcement?.body ?? "").replace(/\n{2,}/g, "<br/><br/>").replace(/\n/g, "<br/>") },
+    completed_on: t(ctx.outcome?.completedOn ? fd(ctx.outcome.completedOn) : ""),
+    credentials: t(ctx.outcome?.completionNote),
+    hired_employer: t(ctx.outcome?.employer),
+    job_title: t(ctx.outcome?.jobTitle),
+    start_date: t(ctx.outcome?.startDate ? fd(ctx.outcome.startDate) : ""),
+    role: t(ctx.roleLabel),
+    organization: t(ctx.orgName),
+  };
+}
+
+const TOKEN_RE = /\{\{\s*([a-z_]+)\s*\}\}/g;
+
+/** Plain-text substitution (subject, heading, button label). */
+function fillText(s: string, vals: Record<string, TokenValue>): string {
+  return s.replace(TOKEN_RE, (m, k: string) => (k in vals ? vals[k].text : m)).replace(/\s{2,}/g, " ").trim();
+}
+
+/**
+ * Body markup → email paragraphs. A block whose placeholder has no value for this applicant (for example
+ * {{admissions_note}} when admissions wrote no note) is left out rather than sent half-empty.
+ */
+function fillBody(body: string, vals: Record<string, TokenValue>): string[] {
+  const out: string[] = [];
+  const inline = (xs: Inline[], ref: { empty: boolean }) =>
+    xs
+      .map((x) => {
+        const html = esc(x.text).replace(TOKEN_RE, (m, k: string) => {
+          if (!(k in vals)) return m;
+          if (!vals[k].text && !vals[k].html) ref.empty = true;
+          return vals[k].html ?? esc(vals[k].text);
+        });
+        if (x.bold) return `<strong>${html}</strong>`;
+        if (x.italic) return `<em>${html}</em>`;
+        if (x.underline) return `<u>${html}</u>`;
+        return html;
+      })
+      .join("");
+  for (const b of parseRichText(body)) {
+    const ref = { empty: false };
+    let html: string;
+    if (b.type === "heading") html = `<strong style="font-size:17px">${inline(b.inline, ref)}</strong>`;
+    else if (b.type === "paragraph") html = b.lines.map((l) => inline(l, ref)).join("<br/>");
+    else {
+      const tag = b.type === "bullets" ? "ul" : "ol";
+      html = `<${tag} style="margin:0;padding-left:22px">${b.items.map((it) => `<li style="margin:0 0 6px">${inline(it, ref)}</li>`).join("")}</${tag}>`;
+    }
+    if (!ref.empty) out.push(html);
+  }
+  return out;
+}
+
+/** The email as it will be sent: the built-in version, with an admin's customized wording applied when there is one. */
+export function renderWithOverride(template: EmailTemplate, ctx: EmailContext, ov?: TemplateOverride | null): Rendered {
+  const base = renderEmail(template, ctx);
+  if (!ov) return base;
+  const vals = tokenValues(ctx);
+  return {
+    ...base,
+    subject: fillText(ov.subject, vals) || base.subject,
+    heading: fillText(ov.heading, vals) || base.heading,
+    paragraphs: fillBody(ov.body, vals),
+    cta: base.cta ? { ...base.cta, label: (ov.cta_label && fillText(ov.cta_label, vals)) || base.cta.label } : undefined,
+  };
+}
+
+/** Sample data for the template preview. */
+export function sampleContext(programName: string, employer: string | null): EmailContext {
+  return {
+    applicationId: "preview",
+    to: "alex.rivera@example.com",
+    firstName: "Alex",
+    programName,
+    employerPartner: employer,
+    programSlug: null,
+    examUrl: "https://app.testgorilla.com/s/sample",
+    verificationUrl: "https://calendly.com/foundryready/verification",
+    employerApplicationUrl: "https://careers.example.com/apply",
+    cohort: { name: "Accelerator · Mar 2027", format: "5-Week Accelerator", start_date: "2027-03-01", end_date: "2027-04-02", schedule: "Mon–Fri · 8:00 AM – 4:30 PM", location: "Tempe", address: "1151 S Forest Ave, Tempe, AZ" },
+    note: "Please bring a photo ID on the first day.",
+    choices: [
+      { rank: 1, name: "Accelerator · Mar 2027", start_date: "2027-03-01", end_date: "2027-04-02", location: "Tempe" },
+      { rank: 2, name: "Saturday · Apr 2027", start_date: "2027-04-03", end_date: "2027-08-07", location: "Phoenix" },
+    ],
+    messagePreview: "Hi Alex, just checking in about your cohort choices.",
+    roleLabel: "Program admin",
+    orgName: "TSMC Arizona",
+    announcement: { subject: "Lab moves to Building B", body: "Starting Monday, labs meet in Building B, room 120.\n\nParking is in Lot 59." },
+    outcome: { completedOn: "2027-04-02", completionNote: "OSHA-10, IPC-A-610", employer: "TSMC Arizona", jobTitle: "Equipment Technician", startDate: "2027-05-03" },
+  };
 }

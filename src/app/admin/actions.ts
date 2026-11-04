@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { assertPermission } from "@/lib/session";
 import { emailContext, notifyStatus, notifyTemplate } from "@/lib/notify";
-import { sendEmail } from "@/lib/email";
+import { EMAIL_TEMPLATE_INFO, defaultTemplate, sendEmail, unknownTokens } from "@/lib/email";
 import { audit } from "@/lib/audit";
 import { fail, ok, type ActionState } from "@/lib/action-state";
 import { cohortSchema, EMPLOYER_FIELD_OPTIONS, locationSchema } from "@/lib/validation";
@@ -1086,4 +1086,82 @@ export async function toggleFlag(_prev: ActionState, formData: FormData): Promis
   await audit(supabase, "flag.toggle", "feature_flag", key, { enabled });
   revalidatePath("/", "layout");
   return ok(`${key} ${enabled ? "enabled" : "disabled"}.`);
+}
+
+// ---------------------------------------------------------------------------
+// Email templates and the links they send
+// ---------------------------------------------------------------------------
+
+export async function saveEmailTemplate(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  let session;
+  try {
+    session = await assertPermission("programs.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const key = String(formData.get("key") || "");
+  if (!EMAIL_TEMPLATE_INFO.some((t) => t.key === key)) return fail("Unknown email template.");
+  const subject = String(formData.get("subject") || "").trim();
+  const heading = String(formData.get("heading") || "").trim();
+  const body = String(formData.get("body") || "").trim();
+  const ctaLabel = String(formData.get("cta_label") || "").trim();
+  if (subject.length < 3 || subject.length > 200) return fail("Enter a subject (3–200 characters).");
+  if (heading.length < 2 || heading.length > 200) return fail("Enter a heading (2–200 characters).");
+  if (body.length < 3 || body.length > 10000) return fail("Write the email text (up to 10,000 characters).");
+  const unknown = unknownTokens(`${subject} ${heading} ${body} ${ctaLabel}`);
+  if (unknown.length) return fail(`Unknown placeholder${unknown.length > 1 ? "s" : ""}: ${unknown.map((t) => `{{${t}}}`).join(", ")}. Pick from the list on the right.`);
+  const supabase = await createClient();
+  const { error } = await supabase.from("email_templates").upsert({
+    key,
+    subject,
+    heading,
+    body,
+    cta_label: ctaLabel || defaultTemplate(key as Parameters<typeof defaultTemplate>[0]).cta_label,
+    updated_at: new Date().toISOString(),
+    updated_by: session.userId,
+  });
+  if (error) return fail(errorMessage(error));
+  await audit(supabase, "email_template.save", "email_template", key, {});
+  revalidatePath("/admin/email-templates");
+  revalidatePath(`/admin/email-templates/${key}`);
+  return ok("Saved. Emails of this type now use your wording.");
+}
+
+export async function resetEmailTemplate(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("programs.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const key = String(formData.get("key") || "");
+  const supabase = await createClient();
+  const { error } = await supabase.from("email_templates").delete().eq("key", key);
+  if (error) return fail(errorMessage(error));
+  await audit(supabase, "email_template.reset", "email_template", key, {});
+  revalidatePath("/admin/email-templates");
+  redirect(`/admin/email-templates/${key}?reset=1`);
+}
+
+const LINK_FIELDS = ["default_exam_url", "verification_scheduling_url", "employer_application_url"] as const;
+
+/** The links emails send for a program (pre-filled whenever admissions sends that step). */
+export async function saveProgramLinks(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("programs.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const programId = String(formData.get("program_id") || "");
+  const row: Record<string, string | null> = {};
+  for (const k of LINK_FIELDS) {
+    const v = String(formData.get(k) || "").trim();
+    if (v && !/^https:\/\/\S+$/.test(v)) return fail("Links must start with https:// and contain no spaces.");
+    row[k] = v || null;
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("programs").update(row).eq("id", programId);
+  if (error) return fail(errorMessage(error));
+  await audit(supabase, "program.links.save", "program", programId, {});
+  revalidatePath("/admin/email-templates");
+  return ok("Links saved. They're pre-filled whenever admissions sends these steps.");
 }

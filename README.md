@@ -59,6 +59,8 @@ Built with Next.js 15 (App Router, Server Actions), Tailwind CSS 4, Framer Motio
 
 8. **Instructor directory** (Admin → Instructors). Each instructor is added once (name, title, email, phone, short bio) and assigned to any number of cohorts across programs. Each card shows their current and past cohorts and programs. Inactive instructors keep their history but can't be assigned to new cohorts.
 
+9. **Email templates** (Admin → Email templates). Program admins edit the subject, heading, text and button label of every applicant email, with placeholders such as `{{first_name}}`, `{{program_name}}`, `{{scheduling_link}}`, `{{employer_application_link}}`, `{{assessment_link}}` and `{{cohort_details}}`; a paragraph whose placeholder is empty for an applicant is left out. Customized wording is stored in `email_templates`; "Restore default wording" deletes it. The same page holds each program's **links used in emails** (verification scheduling, employer application, TestGorilla), which are pre-filled whenever admissions sends that step.
+
 Applicants can withdraw at any stage up to confirmed; completion and hire can each be undone by admissions if recorded by mistake.
 The rules are enforced in the database (`public.transition_allowed`) and mirrored in `src/lib/workflow.ts`.
 

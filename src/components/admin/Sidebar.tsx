@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Activity, BarChart3, CalendarDays, FileSignature, Flag, Inbox, Layers, Mail, MapPin, PenLine, Presentation, Settings, ShieldCheck, Users, Image as ImageIcon } from "lucide-react";
+import { Activity, BarChart3, CalendarDays, FileSignature, Flag, Inbox, Layers, LayoutTemplate, Mail, MapPin, PenLine, Presentation, Settings, ShieldCheck, Users, Image as ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ICONS = {
@@ -21,6 +21,7 @@ const ICONS = {
   file: FileSignature,
   map: MapPin,
   teacher: Presentation,
+  template: LayoutTemplate,
 } as const;
 
 export function AdminSidebar({ items }: { items: Array<{ href: string; label: string; icon: string }> }) {
