@@ -34,7 +34,7 @@ async function adminOp(page: Page, applicationUrl: string, label: string) {
   await page.goto(applicationUrl);
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: label }).click();
-  await expect(page.getByText("Done — the applicant has been notified")).toBeVisible();
+  await page.waitForURL(/[?&]done=/);
 }
 
 let applicationPath = "";
@@ -90,14 +90,14 @@ test("admissions screens, invites, records a passing assessment and accepts", as
   await page.goto(applicationPath);
   await page.getByLabel("Scheduling link").fill("https://calendly.com/foundryready/verify");
   await page.getByRole("button", { name: "1. Schedule video call to verify information" }).click();
-  await expect(page.getByText("Done — the applicant has been notified")).toBeVisible();
+  await page.waitForURL(/[?&]done=/);
   // Step 2: verified, send the employer application link.
   await page.goto(applicationPath);
   await page.getByLabel(/application link/).fill("https://careers.example.com/apply");
   page.once("dialog", (d) => d.accept());
   await page.getByRole("button", { name: /^2\. Verified & send/ }).click();
   await page.getByRole("button", { name: /^(Yes, continue|Confirm)$/ }).click().catch(() => {});
-  await expect(page.getByText("Done — the applicant has been notified")).toBeVisible();
+  await page.waitForURL(/[?&]done=/);
   // Step 3.
   await adminOp(page, applicationPath, "3. Pass screening & send assessment");
   await adminOp(page, applicationPath, "Record: passed (TSMC Arizona verified)");

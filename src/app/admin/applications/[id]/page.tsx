@@ -104,13 +104,30 @@ function opsFor(status: Status, employer: string | null, applicantName: string, 
   return ops;
 }
 
+/** Confirmation shown after a workflow step (the action redirects back with ?done=<op>). */
+const DONE_MESSAGE: Record<string, string> = {
+  verification_invite: "Step 1 done: the verification call invite was emailed. After the call, use step 2 below.",
+  verify_and_send_application: "Step 2 done: verified, and the employer application link was emailed.",
+  pass_and_invite: "Screening passed: the assessment invite was emailed.",
+  send_invite: "Assessment invite emailed.",
+  send_reminder: "Assessment reminder emailed.",
+  cohort_reminder: "Cohort reminder emailed.",
+};
+
 /** What admissions is waiting on, when there's no decision to make yet. */
 const WAITING: Partial<Record<Status, string>> = {
   cohort_selection: "Accepted. Waiting for the applicant to rank their cohorts and sign agreements.",
 };
 
-export default async function AdminApplicationPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function AdminApplicationPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ done?: string }>;
+}) {
   const { id } = await params;
+  const { done } = await searchParams;
   const session = await requirePermission("admissions.read", `/admin/applications/${id}`);
   const canManage = can(session.roles, "admissions.manage");
   const supabase = await createClient();
@@ -389,6 +406,11 @@ export default async function AdminApplicationPage({ params }: { params: Promise
             <Card className="border-maroon/30">
               <h2 className="font-black">Move through the workflow</h2>
               <p className="mt-1 text-sm text-ink/60">The applicant sees each change in their portal and gets an email.</p>
+              {done && (
+                <Alert tone="success" className="mt-4">
+                  {DONE_MESSAGE[done] ?? "Done — the applicant has been notified where applicable."}
+                </Alert>
+              )}
               <div className="mt-5 space-y-4">
                 {(status === "screening" || status === "submitted") && (
                   <ol className="grid gap-1.5 rounded-2xl bg-mist p-4 text-sm">

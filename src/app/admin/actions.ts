@@ -216,7 +216,8 @@ export async function adminAct(_prev: ActionState, formData: FormData): Promise<
   revalidatePath(`/admin/applications/${appId}`);
   revalidatePath("/admin/applications");
   if (op === "reset") redirect("/admin/applications?reset=1");
-  return ok("Done — the applicant has been notified where applicable.");
+  // Load the updated page so the next step appears right away (and the button never sits in a pending state).
+  redirect(`/admin/applications/${appId}?done=${encodeURIComponent(op)}`);
 }
 
 // ---------------------------------------------------------------------------
