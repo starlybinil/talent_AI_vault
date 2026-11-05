@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Mail, Phone, Presentation, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
-import { assignInstructor, deleteInstructor, saveInstructor, unassignInstructor } from "@/app/admin/actions";
+import { assignInstructor, deleteInstructor, saveInstructor, setInstructorAccess, unassignInstructor } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Badge, Card, EmptyState, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
 import { todayInArizona } from "@/lib/schedule";
@@ -10,7 +10,7 @@ import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Instructors" };
 
-type Instructor = { id: string; name: string; title: string; email: string | null; phone: string | null; bio: string | null; active: boolean };
+type Instructor = { id: string; name: string; title: string; email: string | null; phone: string | null; bio: string | null; active: boolean; user_id: string | null };
 type Cohort = { id: string; name: string; start_date: string; end_date: string; program_id: string };
 type Assignment = { id: string; cohort_id: string; instructor_id: string; role: string };
 
@@ -47,12 +47,14 @@ export default async function InstructorsPage() {
   await requirePermission("cohorts.manage", "/admin/instructors");
   const supabase = await createClient();
   const [{ data: instructors }, { data: cohorts }, { data: programs }, { data: assignments }] = await Promise.all([
-    supabase.from("instructors").select("id, name, title, email, phone, bio, active").order("active", { ascending: false }).order("name"),
+    supabase.from("instructors").select("id, name, title, email, phone, bio, active, user_id").order("active", { ascending: false }).order("name"),
     supabase.from("cohorts").select("id, name, start_date, end_date, program_id").order("start_date"),
     supabase.from("programs").select("id, short_name").order("sort"),
     supabase.from("cohort_instructors").select("id, cohort_id, instructor_id, role"),
   ]);
   const people = (instructors ?? []) as Instructor[];
+  const { data: invites } = await supabase.from("pending_role_grants").select("email").eq("role", "instructor");
+  const invited = new Set((invites ?? []).map((g) => String(g.email).toLowerCase()));
   const allCohorts = (cohorts ?? []) as Cohort[];
   const cohortById = new Map(allCohorts.map((c) => [c.id, c]));
   const programName = new Map((programs ?? []).map((p) => [p.id as string, p.short_name as string]));
@@ -103,6 +105,32 @@ export default async function InstructorsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="font-black text-ink">{i.name}</p>
                   <p className="text-sm font-bold text-maroon">{i.title}</p>
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    {i.user_id ? (
+                      <Badge tone="success">Has sign-in access</Badge>
+                    ) : i.email && invited.has(i.email.toLowerCase()) ? (
+                      <Badge tone="warn">Invited, not registered yet</Badge>
+                    ) : (
+                      <Badge tone="neutral">No sign-in</Badge>
+                    )}
+                    {i.email && (
+                      <ActionForm
+                        action={setInstructorAccess}
+                        confirm={
+                          i.user_id || invited.has(i.email.toLowerCase())
+                            ? { title: `Remove ${i.name}'s sign-in access?`, body: "They can no longer start attendance check-in. Their directory entry and cohort assignments stay.", confirmLabel: "Remove access", tone: "danger" }
+                            : undefined
+                        }
+                      >
+                        <input type="hidden" name="id" value={i.id} />
+                        <input type="hidden" name="grant" value={i.user_id || invited.has(i.email.toLowerCase()) ? "false" : "true"} />
+                        <SubmitButton size="sm" variant={i.user_id || invited.has(i.email.toLowerCase()) ? "ghost" : "outline"} className={i.user_id || invited.has(i.email.toLowerCase()) ? "text-ink/50" : ""} pendingText="…">
+                          {i.user_id || invited.has(i.email.toLowerCase()) ? "Remove access" : "Give sign-in access"}
+                        </SubmitButton>
+                      </ActionForm>
+                    )}
+                    {!i.email && <span className="text-xs text-ink/50">Add an email to give sign-in access.</span>}
+                  </div>
                   <p className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink/60">
                     {i.email && (
                       <a href={`mailto:${i.email}`} className="inline-flex items-center gap-1 hover:text-maroon">

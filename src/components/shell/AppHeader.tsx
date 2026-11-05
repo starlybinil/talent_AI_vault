@@ -5,9 +5,10 @@ import type { Session } from "@/lib/session";
 import { ROLE_LABEL, homeFor, isStaff } from "@/lib/rbac";
 
 /** Top bar shared by the applicant portal, employer portal and admin console. */
-export function AppHeader({ session, area }: { session: Session; area: "portal" | "employer" | "admin" | "cohorts" }) {
+export function AppHeader({ session, area }: { session: Session; area: "portal" | "employer" | "admin" | "cohorts" | "teach" }) {
   const switchers: Array<{ href: string; label: string }> = [];
   if (area !== "admin" && isStaff(session.roles)) switchers.push({ href: "/admin", label: "Admin console" });
+  if (area !== "teach" && session.roles.includes("instructor")) switchers.push({ href: "/teach", label: "Teaching" });
   if (area !== "cohorts" && session.roles.includes("cohort_manager")) switchers.push({ href: "/cohorts", label: "Cohort tracking" });
   if (area !== "employer" && session.roles.includes("employer")) switchers.push({ href: "/employer", label: "Employer portal" });
   if (area !== "portal" && session.roles.includes("applicant")) switchers.push({ href: "/portal", label: "My applications" });
@@ -19,7 +20,7 @@ export function AppHeader({ session, area }: { session: Session; area: "portal" 
         <div className="flex items-center gap-4">
           <Logo dark href={homeFor(session.roles)} />
           <span className="hidden rounded-full bg-gold/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-gold md:inline">
-            {area === "portal" ? "Applicant portal" : area === "employer" ? "Employer portal" : area === "cohorts" ? "Cohort tracking" : "Admin console"}
+            {area === "portal" ? "Applicant portal" : area === "employer" ? "Employer portal" : area === "cohorts" ? "Cohort tracking" : area === "teach" ? "Instructor" : "Admin console"}
           </span>
         </div>
         <div className="flex items-center gap-3">

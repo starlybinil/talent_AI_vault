@@ -523,6 +523,38 @@ export async function deleteInstructor(_prev: ActionState, formData: FormData): 
   return ok("Instructor removed from the directory and all cohorts.");
 }
 
+/** Give or remove an instructor's FoundryReady sign-in (they run QR attendance check-in for their cohorts). */
+export async function setInstructorAccess(_prev: ActionState, formData: FormData): Promise<ActionState> {
+  try {
+    await assertPermission("cohorts.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const id = String(formData.get("id") || "");
+  const grant = formData.get("grant") === "true";
+  const supabase = await createClient();
+  const { data: result, error } = await supabase.rpc("admin_instructor_access", { p_instructor: id, p_grant: grant });
+  if (error) return fail(errorMessage(error));
+  revalidatePath("/admin/instructors");
+  if (!grant) return ok("Sign-in access removed.");
+  const { data: person } = await supabase.from("instructors").select("name, email").eq("id", id).maybeSingle();
+  if (!person?.email) return ok("Access granted.");
+  const sent = await sendEmail(supabase, result === "invited" ? "role_invite" : "role_granted", {
+    applicationId: null,
+    to: person.email.toLowerCase(),
+    firstName: String(person.name ?? "").split(" ")[0],
+    programName: "",
+    roleLabel: "Instructor",
+    orgName: null,
+  });
+  const note = sent.status === "simulated" ? " (Email simulated: Resend isn't connected yet.)" : sent.status === "failed" ? " The email couldn't be sent; see the Email log." : "";
+  return ok(
+    result === "invited"
+      ? `${person.name} has no account yet: invitation sent. Access applies when they register with ${person.email}.${note}`
+      : `${person.name} can now sign in and run attendance check-in.${note}`,
+  );
+}
+
 /** Assign a directory instructor to a cohort, with their role in that cohort. */
 export async function assignInstructor(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {

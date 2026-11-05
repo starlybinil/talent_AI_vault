@@ -3,12 +3,13 @@
  * SECURITY DEFINER RPCs; this matrix drives route guards and which UI is shown.
  */
 
-export const ROLES = ["applicant", "employer", "cohort_manager", "program_admin", "it_admin", "web_developer"] as const;
+export const ROLES = ["applicant", "employer", "instructor", "cohort_manager", "program_admin", "it_admin", "web_developer"] as const;
 export type Role = (typeof ROLES)[number];
 
 export const ROLE_LABEL: Record<Role, string> = {
   applicant: "Applicant",
   employer: "Employer partner",
+  instructor: "Instructor",
   cohort_manager: "Cohort manager",
   program_admin: "Program admin",
   it_admin: "IT admin",
@@ -32,12 +33,14 @@ export const PERMISSIONS = [
   "system.read",
   "employer.portal",
   "cohorts.track",
+  "cohorts.teach",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
 export const ROLE_PERMISSIONS: Record<Role, readonly Permission[]> = {
   applicant: ["application.apply"],
   employer: ["employer.portal"],
+  instructor: ["cohorts.teach"],
   cohort_manager: ["cohorts.track"],
   program_admin: [
     "admissions.read",
@@ -82,6 +85,7 @@ export function isStaff(roles: readonly Role[]): boolean {
 export function homeFor(roles: readonly Role[]): string {
   if (isStaff(roles)) return "/admin";
   if (roles.includes("cohort_manager")) return "/cohorts";
+  if (roles.includes("instructor")) return "/teach";
   if (roles.includes("employer")) return "/employer";
   return "/portal";
 }
@@ -128,6 +132,10 @@ const ROUTE_RULES: Array<[string, Permission | "staff" | "signed_in"]> = [
   ["/admin", "staff"],
   ["/employer", "employer.portal"],
   ["/cohorts", "cohorts.track"],
+  ["/teach", "cohorts.teach"],
+  // Check-in session screens: instructors, cohort managers and program admins (the page checks which sessions).
+  ["/sessions", "signed_in"],
+  ["/checkin", "signed_in"],
   ["/portal", "signed_in"],
 ];
 
