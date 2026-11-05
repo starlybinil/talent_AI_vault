@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowDown, ArrowLeft, ArrowUp, CalendarPlus, Trash2 } from "lucide-react";
+import { AlertTriangle, ArrowDown, ArrowLeft, ArrowUp, CalendarPlus, QrCode, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
 import { addModule, addSession, createSessionsFromSchedule, deleteModule, emailStudents, moveModule, renameModule, setSessionCanceled } from "@/app/cohorts/actions";
@@ -11,8 +11,10 @@ import { AttendanceSheet } from "@/components/tracking/AttendanceSheet";
 import { RosterTable, type RosterRow } from "@/components/tracking/RosterTable";
 import { ModuleCopy } from "@/components/tracking/ModuleCopy";
 import { Pct } from "@/components/tracking/Metric";
-import { cohortRoster, fetchAll, statsByStudent, trackedCohort } from "@/lib/tracking-data";
-import { ATTENDANCE_MIN, GRADE_MIN, type AttendanceStatus } from "@/lib/tracking";
+import { cohortMarks, cohortRoster, cohortWeeks, fetchAll, statsByStudent, trackedCohort } from "@/lib/tracking-data";
+import { LatenessTrend } from "@/components/tracking/LatenessTrend";
+import { type MarkDetail } from "@/components/tracking/AttendanceSheet";
+import { ATTENDANCE_MIN, GRADE_MIN, latenessSummary, type AttendanceStatus } from "@/lib/tracking";
 import { cohortPhase, dateRange, shortDate, todayInArizona } from "@/lib/schedule";
 import { cn, formatDateTime } from "@/lib/utils";
 
@@ -41,12 +43,25 @@ export default async function CohortTracking({ params, searchParams }: { params:
   const tab: Tab = (TABS.find((t) => t.key === sp.tab)?.key ?? "roster") as Tab;
   const today = todayInArizona();
 
-  const [roster, stats, { data: modules }, { data: sessions }] = await Promise.all([
+  const [roster, stats, { data: modules }, { data: sessions }, allMarks, weeks, { data: flagRows }] = await Promise.all([
     cohortRoster(supabase, id),
     statsByStudent(supabase, [id]),
     supabase.from("cohort_modules").select("id, name, sort").eq("cohort_id", id).order("sort").order("created_at"),
     supabase.from("cohort_sessions").select("id, session_date, canceled, note").eq("cohort_id", id).order("session_date"),
+    tab === "roster" ? cohortMarks(supabase, id) : Promise.resolve(new Map()),
+    tab === "roster" ? cohortWeeks(supabase, id) : Promise.resolve([]),
+    // Flagged QR check-ins nobody has reviewed yet (they count as Present until reviewed).
+    supabase
+      .from("session_attendance")
+      .select("session_id, cohort_sessions!inner(cohort_id, session_date)")
+      .eq("cohort_sessions.cohort_id", id)
+      .not("flag", "is", null)
+      .is("flag_reviewed_at", null)
+      .limit(500),
   ]);
+  const flagged = (flagRows ?? []) as unknown as Array<{ session_id: string; cohort_sessions: { session_date: string } }>;
+  const flaggedBySession = flagged.reduce((acc, f) => acc.set(f.session_id, (acc.get(f.session_id) ?? 0) + 1), new Map<string, number>());
+  const firstFlagged = flagged.slice().sort((a, b) => b.cohort_sessions.session_date.localeCompare(a.cohort_sessions.session_date))[0];
   const mods = modules ?? [];
   const sess = sessions ?? [];
   const name = (r: { first_name: string; last_name: string }) => `${r.first_name} ${r.last_name}`.trim();
@@ -67,6 +82,7 @@ export default async function CohortTracking({ params, searchParams }: { params:
       lowGrade: s?.lowGrade ?? false,
       lowAttendance: s?.lowAttendance ?? false,
       atRisk: s?.atRisk ?? false,
+      lateTrend: allMarks.size ? latenessSummary(allMarks.get(r.id) ?? [], today).trend : null,
     };
   });
   const atRisk = rows.filter((r) => r.atRisk).length;
@@ -83,6 +99,7 @@ export default async function CohortTracking({ params, searchParams }: { params:
   }
   let selected: (typeof sess)[number] | undefined;
   let marks: Record<string, AttendanceStatus> = {};
+  let details: Record<string, MarkDetail> = {};
   let recordedBySession = new Map<string, number>();
   if (tab === "attendance" && sess.length) {
     const active = sess.filter((s) => !s.canceled);
@@ -93,10 +110,22 @@ export default async function CohortTracking({ params, searchParams }: { params:
       active[0] ??
       sess[0];
     const [{ data: m }, all] = await Promise.all([
-      supabase.from("session_attendance").select("application_id, status").eq("session_id", selected.id),
+      supabase.from("session_attendance").select("application_id, status, source, checked_in_at, flag, flag_reviewed_at").eq("session_id", selected.id),
       fetchAll<{ session_id: string }>((from, to) => supabase.from("session_attendance").select("session_id").in("session_id", sess.map((s) => s.id)).range(from, to)),
     ]);
     marks = Object.fromEntries((m ?? []).map((x) => [x.application_id, x.status as AttendanceStatus]));
+    details = Object.fromEntries(
+      (m ?? [])
+        .filter((x) => x.source === "qr" || x.flag)
+        .map((x) => [
+          x.application_id,
+          {
+            qrTime: x.checked_in_at ? new Date(x.checked_in_at).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/Phoenix" }) : null,
+            flag: x.flag,
+            reviewed: !!x.flag_reviewed_at,
+          },
+        ]),
+    );
     recordedBySession = all.reduce((acc, x) => acc.set(x.session_id, (acc.get(x.session_id) ?? 0) + 1), new Map<string, number>());
   }
   // Other cohorts this user manages in the same program, for copying the module list.
@@ -137,6 +166,21 @@ export default async function CohortTracking({ params, searchParams }: { params:
         ))}
       </div>
 
+      {flagged.length > 0 && firstFlagged && (
+        <Link
+          href={`/sessions/${firstFlagged.session_id}`}
+          className="mb-6 flex items-center gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm hover:bg-amber-100"
+        >
+          <AlertTriangle className="h-5 w-5 shrink-0 text-amber-700" aria-hidden />
+          <span>
+            <span className="font-black">
+              {flagged.length} QR check-in{flagged.length === 1 ? "" : "s"} need{flagged.length === 1 ? "s" : ""} review
+            </span>{" "}
+            (outside the classroom, no location, or a shared phone). They count as Present until you review them.
+          </span>
+        </Link>
+      )}
+
       <nav className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-ink/10" aria-label="Sections">
         {TABS.map((t) => (
           <Link
@@ -156,6 +200,12 @@ export default async function CohortTracking({ params, searchParams }: { params:
             (Late counts as present; Excused isn&apos;t counted). Select students to email them.
           </p>
           <RosterTable cohortId={id} rows={rows} moduleCount={mods.length} />
+          {weeks.length > 0 && (
+            <Card className="mt-6">
+              <LatenessTrend weeks={weeks} today={today} title="Cohort lateness by week" />
+              <p className="mt-2 text-xs text-ink/50">An arrow next to a trainee&apos;s Late count means they&apos;ve been late more (↑) or less (↓) often in their last 10 sessions.</p>
+            </Card>
+          )}
         </>
       )}
 
@@ -266,7 +316,11 @@ export default async function CohortTracking({ params, searchParams }: { params:
                           {new Date(`${s.session_date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" })} {shortDate(s.session_date)}
                           {s.session_date === today && <span className="ml-1 text-xs font-bold text-maroon">Today</span>}
                         </span>
-                        {s.canceled ? (
+                        {flaggedBySession.get(s.id) ? (
+                          <span className="text-[11px] font-bold text-amber-700" title="Flagged check-ins to review">
+                            ⚑ {flaggedBySession.get(s.id)}
+                          </span>
+                        ) : s.canceled ? (
                           <span className="text-[11px] text-ink/40">Canceled</span>
                         ) : n > 0 ? (
                           <span className="text-[11px] font-bold text-emerald-700">✓ {n}</span>
@@ -296,6 +350,12 @@ export default async function CohortTracking({ params, searchParams }: { params:
                     {new Date(`${selected.session_date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" })}
                     {selected.canceled && <Badge tone="neutral" className="ml-2">Canceled</Badge>}
                   </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                  {!selected.canceled && (
+                    <Link href={`/sessions/${selected.id}`} className="inline-flex items-center gap-1.5 rounded-full bg-gold px-4 py-2 text-sm font-black text-ink hover:brightness-95">
+                      <QrCode className="h-4 w-4" aria-hidden /> {selected.session_date === today ? "QR check-in & review" : "Check-in details & review"}
+                    </Link>
+                  )}
                   <ActionForm
                     action={setSessionCanceled}
                     confirm={selected.canceled ? undefined : { title: "Cancel this session?", body: "Canceled sessions (holidays, closures) don't count toward attendance. Any attendance taken is kept but ignored.", confirmLabel: "Cancel session" }}
@@ -306,6 +366,7 @@ export default async function CohortTracking({ params, searchParams }: { params:
                       {selected.canceled ? "Restore session" : "Cancel session (no class)"}
                     </SubmitButton>
                   </ActionForm>
+                  </div>
                 </div>
                 {selected.canceled ? (
                   <p className="rounded-2xl bg-white p-6 text-sm text-ink/60">This session is canceled and doesn&apos;t count toward attendance.</p>
@@ -315,6 +376,8 @@ export default async function CohortTracking({ params, searchParams }: { params:
                     sessionId={selected.id}
                     students={rows.map((r) => ({ id: r.id, name: r.name, attendance: r.attendance, lowAttendance: r.lowAttendance }))}
                     initial={marks}
+                    details={details}
+                    studentHrefPrefix={`/cohorts/${id}/students/`}
                   />
                 )}
               </>

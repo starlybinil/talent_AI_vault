@@ -101,6 +101,9 @@ export const locationSchema = z.object({
   name: z.string().trim().min(2).max(120),
   address: z.string().trim().min(5).max(200),
   notes: z.string().trim().max(500).optional().default(""),
+  latitude: z.union([z.literal(""), z.coerce.number().min(-90).max(90)]).optional().default(""),
+  longitude: z.union([z.literal(""), z.coerce.number().min(-180).max(180)]).optional().default(""),
+  radius_m: z.union([z.literal(""), z.coerce.number().int().min(20).max(5000)]).optional().default(""),
 });
 
 export const EMPLOYER_FIELD_OPTIONS = [

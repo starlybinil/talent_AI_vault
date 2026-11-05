@@ -42,3 +42,33 @@ describe("parseScore", () => {
     expect(parseScore("abc")).toBe("invalid");
   });
 });
+
+import { latenessSummary, weekStart, weeklyTrend } from "@/lib/tracking";
+
+describe("lateness trends", () => {
+  it("groups by week starting Monday", () => {
+    expect(weekStart("2027-03-03")).toBe("2027-03-01");
+    expect(weekStart("2027-03-07")).toBe("2027-03-01");
+    const w = weeklyTrend(
+      [
+        { date: "2027-03-01", status: "present" },
+        { date: "2027-03-02", status: "late" },
+        { date: "2027-03-08", status: "late" },
+        { date: "2027-03-09", status: "excused" },
+      ],
+      "2027-04-01",
+    );
+    expect(w).toEqual([
+      { week: "2027-03-01", sessions: 2, late: 1, absent: 0, present: 1 },
+      { week: "2027-03-08", sessions: 1, late: 1, absent: 0, present: 0 },
+    ]);
+  });
+
+  it("summarizes the last 10 sessions and the direction", () => {
+    const early = Array.from({ length: 10 }, (_, i) => ({ date: `2027-03-${String(i + 1).padStart(2, "0")}`, status: "present" as const, minutes_after_open: 2 }));
+    const recent = Array.from({ length: 10 }, (_, i) => ({ date: `2027-03-${String(i + 15).padStart(2, "0")}`, status: (i < 4 ? "late" : "present") as "late" | "present", minutes_after_open: i < 4 ? 14 : 3 }));
+    const s = latenessSummary([...early, ...recent], "2027-04-01");
+    expect(s).toMatchObject({ sessions: 20, late: 4, lateRate: 20, recentLate: 4, recentCount: 10, trend: "worse" });
+    expect(s.avgMinutesAfterOpen).toBe(4.7);
+  });
+});

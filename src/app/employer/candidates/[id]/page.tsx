@@ -30,7 +30,7 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
   await audit(supabase, "employer.candidate.view", "application", id);
   // Program performance (module grades + attendance) for consenting trainees of partnered programs.
   const { data: perf } = await supabase.rpc("employer_trainee_performance", { p_app: id });
-  const performance = perf as { modules: Array<{ name: string; score: number | null }>; attendance: Array<{ date: string; status: AttendanceStatus }> } | null;
+  const performance = perf as { modules: Array<{ name: string; score: number | null }>; attendance: Array<{ date: string; status: AttendanceStatus; minutes_after_open?: number | null }> } | null;
   const today = todayInArizona();
   const perfStats = performance
     ? statsFromCounts({
@@ -78,6 +78,8 @@ export default async function CandidatePage({ params }: { params: Promise<{ id: 
             audience="employer"
             stats={perfStats}
             modules={performance.modules.map((m) => ({ name: m.name, score: m.score === null ? null : Number(m.score) }))}
+            marks={performance.attendance}
+            today={today}
           />
         </div>
       )}

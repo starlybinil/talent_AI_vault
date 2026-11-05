@@ -22,6 +22,8 @@ export type EmailContext = {
   /** Screening: link to book the verification video call, and the employer's application link. */
   verificationUrl?: string | null;
   employerApplicationUrl?: string | null;
+  /** Missed-session email: the class date (YYYY-MM-DD). */
+  sessionDate?: string | null;
   cohort?: {
     name: string;
     format: string;
@@ -200,6 +202,20 @@ export function renderEmail(template: EmailTemplate, ctx: EmailContext): Rendere
           ? { label: `Start the ${employer} application`, href: ctx.employerApplicationUrl }
           : { label: "Open my portal", href: portal(ctx.applicationId) },
         secondary: { label: "View my application", href: portal(ctx.applicationId) },
+      };
+    }
+    case "missed_session": {
+      const day = ctx.sessionDate ? fd(ctx.sessionDate) : "today";
+      return {
+        subject: `We missed you in class ${ctx.sessionDate ? `on ${day}` : "today"}`,
+        heading: "We missed you today",
+        paragraphs: [
+          hi,
+          `You weren't checked in for <strong>${esc(ctx.cohort?.name ?? "your cohort")}</strong> on ${esc(day)}. We hope everything is okay.`,
+          "Every session builds hands-on skills you'll use on the job, and attendance counts toward completing the program. If you were there but couldn't check in, or something is getting in the way of attending, let your cohort manager know so we can help.",
+        ],
+        cta: { label: "See my attendance", href: `${portal(ctx.applicationId)}?tab=program` },
+        footer: "You're receiving this because you're enrolled in a FoundryReady training cohort.",
       };
     }
     case "trainee_message":
@@ -557,6 +573,7 @@ export const EMAIL_TEMPLATE_INFO: Array<{ key: EmailTemplate; name: string; when
   { key: "confirmed", name: "Accepted into cohort (confirmed)", when: "Admissions confirms enrollment", group: "Enrollment & program" },
   { key: "cohort_announcement", name: "Cohort announcement", when: "Message this cohort", group: "Enrollment & program" },
   { key: "trainee_message", name: "Message from cohort manager", when: "Cohort manager emails at-risk or selected students", group: "Enrollment & program" },
+  { key: "missed_session", name: "We missed you today", when: "Marked absent after check-in (if the program sends it)", group: "Enrollment & program" },
   { key: "program_completed", name: "Program completed", when: "Completion recorded", group: "Enrollment & program" },
   { key: "hired", name: "Hired", when: "Hire recorded", group: "Enrollment & program" },
   { key: "status_update", name: "Status updated", when: "Other status changes", group: "Accounts & messages" },
@@ -583,6 +600,7 @@ export const EMAIL_TOKENS: Array<{ token: string; label: string }> = [
   { token: "cohort_end", label: "Cohort end date" },
   { token: "cohort_location", label: "Cohort location" },
   { token: "cohort_details", label: "Full cohort details block" },
+  { token: "session_date", label: "Class date (missed-session email)" },
   { token: "message_preview", label: "Message text (new message email)" },
   { token: "announcement_subject", label: "Announcement subject" },
   { token: "announcement_body", label: "Announcement text" },
@@ -609,6 +627,7 @@ const TOKEN_CTX: EmailContext = {
   employerApplicationUrl: "{{employer_application_link}}",
   cohort: { name: "{{cohort_name}}", format: "", start_date: "{{cohort_start}}", end_date: "{{cohort_end}}", schedule: "", location: "{{cohort_location}}", address: null },
   note: "{{admissions_note}}",
+  sessionDate: "{{session_date}}",
   choices: [{ rank: 1, name: "{{choices}}", start_date: "", end_date: "", location: "" }],
   messagePreview: "{{message_preview}}",
   roleLabel: "{{role}}",
@@ -689,6 +708,7 @@ function tokenValues(ctx: EmailContext): Record<string, TokenValue> {
     cohort_end: t(c ? fd(c.end_date) : ""),
     cohort_location: t(c?.location),
     cohort_details: { text: c?.name ?? "", html: cohortLines(c ?? null)[0] ?? "" },
+    session_date: t(ctx.sessionDate ? fd(ctx.sessionDate) : ""),
     message_preview: t(ctx.messagePreview?.slice(0, 280)),
     announcement_subject: t(ctx.announcement?.subject),
     announcement_body: { text: ctx.announcement?.body ?? "", html: esc(ctx.announcement?.body ?? "").replace(/\n{2,}/g, "<br/><br/>").replace(/\n/g, "<br/>") },

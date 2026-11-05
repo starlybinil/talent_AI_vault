@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { TRAINEE_STATUSES, statsFromCounts, type StudentStats } from "@/lib/tracking";
+import { TRAINEE_STATUSES, statsFromCounts, type DayMark, type StudentStats } from "@/lib/tracking";
 import type { Status } from "@/lib/workflow";
 
 export type Trainee = { id: string; first_name: string; last_name: string; email: string; phone: string | null; status: Status };
@@ -70,4 +70,39 @@ export async function fetchAll<T>(page: (from: number, to: number) => PromiseLik
     if (data.length < 1000) break;
   }
   return out;
+}
+
+/** Every trainee's attendance marks in a cohort (with session dates), keyed by application id. */
+export async function cohortMarks(supabase: SupabaseClient, cohortId: string): Promise<Map<string, DayMark[]>> {
+  type Row = { application_id: string; status: DayMark["status"]; minutes_after_open: number | null; cohort_sessions: { session_date: string } | null };
+  const rows = await fetchAll<Row>((from, to) =>
+    supabase
+      .from("session_attendance")
+      .select("application_id, status, minutes_after_open, cohort_sessions!inner(session_date, cohort_id, canceled)")
+      .eq("cohort_sessions.cohort_id", cohortId)
+      .eq("cohort_sessions.canceled", false)
+      .order("session_id")
+      .order("application_id")
+      .range(from, to) as unknown as PromiseLike<{ data: Row[] | null; error: unknown }>,
+  );
+  const out = new Map<string, DayMark[]>();
+  for (const r of rows) {
+    if (!r.cohort_sessions) continue;
+    const list = out.get(r.application_id) ?? [];
+    list.push({ date: r.cohort_sessions.session_date, status: r.status, minutes_after_open: r.minutes_after_open });
+    out.set(r.application_id, list);
+  }
+  return out;
+}
+
+/** A cohort's attendance totals per week, for the cohort-level lateness chart. */
+export async function cohortWeeks(supabase: SupabaseClient, cohortId: string) {
+  const { data } = await supabase.rpc("cohort_weekly_attendance", { p_cohort: cohortId });
+  return ((data ?? []) as Array<{ week_start: string; sessions: number; present: number; late: number; absent: number; excused: number }>).map((w) => ({
+    week: w.week_start,
+    sessions: w.present + w.late + w.absent,
+    present: w.present,
+    late: w.late,
+    absent: w.absent,
+  }));
 }

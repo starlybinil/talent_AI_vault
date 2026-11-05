@@ -83,3 +83,54 @@ export function parseScore(raw: string): number | null | "invalid" {
   if (!Number.isFinite(n) || n < 0 || n > 100) return "invalid";
   return Math.round(n * 100) / 100;
 }
+
+// --- Lateness trends -------------------------------------------------------------------------------------------
+
+export type DayMark = { date: string; status: AttendanceStatus; minutes_after_open?: number | null };
+export type WeekTrend = { week: string; sessions: number; late: number; absent: number; present: number };
+
+/** Monday of the week containing a YYYY-MM-DD date. */
+export function weekStart(date: string): string {
+  const t = toUtc(date);
+  const dow = new Date(t).getUTCDay();
+  return isoDate(t - ((dow + 6) % 7) * 86_400_000);
+}
+
+/** Per-week counts for one trainee's marks (oldest week first). */
+export function weeklyTrend(marks: DayMark[], today: string): WeekTrend[] {
+  const weeks = new Map<string, WeekTrend>();
+  for (const m of marks) {
+    if (m.date > today) continue;
+    const w = weekStart(m.date);
+    const row = weeks.get(w) ?? { week: w, sessions: 0, late: 0, absent: 0, present: 0 };
+    if (m.status !== "excused") row.sessions++;
+    if (m.status === "late") row.late++;
+    else if (m.status === "absent") row.absent++;
+    else if (m.status === "present") row.present++;
+    weeks.set(w, row);
+  }
+  return Array.from(weeks.values()).sort((a, b) => a.week.localeCompare(b.week));
+}
+
+/** Headline lateness numbers: lates in the last 10 sessions, overall rate, and whether it's getting worse. */
+export function latenessSummary(marks: DayMark[], today: string) {
+  const held = marks.filter((m) => m.date <= today && m.status !== "excused").sort((a, b) => a.date.localeCompare(b.date));
+  const last10 = held.slice(-10);
+  const late = held.filter((m) => m.status === "late").length;
+  const recentLate = last10.filter((m) => m.status === "late").length;
+  const earlier = held.slice(0, -10);
+  const earlierRate = earlier.length ? earlier.filter((m) => m.status === "late").length / earlier.length : null;
+  const recentRate = last10.length ? recentLate / last10.length : 0;
+  const trend: "worse" | "better" | "steady" | null =
+    earlierRate === null ? null : recentRate > earlierRate + 0.1 ? "worse" : recentRate < earlierRate - 0.1 ? "better" : "steady";
+  const qrMinutes = held.map((m) => m.minutes_after_open).filter((v): v is number => typeof v === "number");
+  return {
+    sessions: held.length,
+    late,
+    lateRate: held.length ? Math.round((late / held.length) * 100) : null,
+    recentLate,
+    recentCount: last10.length,
+    trend,
+    avgMinutesAfterOpen: qrMinutes.length ? Math.round((qrMinutes.reduce((a, b) => a + b, 0) / qrMinutes.length) * 10) / 10 : null,
+  };
+}

@@ -8,8 +8,9 @@ import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Card, Input, Label, PageHeader, Textarea } from "@/components/ui";
 import { AtRiskBadge, Pct } from "@/components/tracking/Metric";
 import { statsByStudent, trackedCohort } from "@/lib/tracking-data";
-import { ATTENDANCE_LABEL, GRADE_MIN, type AttendanceStatus } from "@/lib/tracking";
+import { ATTENDANCE_LABEL, GRADE_MIN, type AttendanceStatus, type DayMark } from "@/lib/tracking";
 import { shortDate, todayInArizona } from "@/lib/schedule";
+import { LatenessTrend } from "@/components/tracking/LatenessTrend";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "Student progress" };
@@ -29,13 +30,15 @@ export default async function StudentProgress({ params }: { params: Promise<{ id
     supabase.from("cohort_modules").select("id, name").eq("cohort_id", id).order("sort").order("created_at"),
     supabase.from("module_grades").select("module_id, score").eq("application_id", appId),
     supabase.from("cohort_sessions").select("id, session_date, canceled").eq("cohort_id", id).order("session_date"),
-    supabase.from("session_attendance").select("session_id, status").eq("application_id", appId),
+    supabase.from("session_attendance").select("session_id, status, minutes_after_open, checked_in_at, flag").eq("application_id", appId),
   ]);
   const s = stats.get(appId);
   const score = new Map((grades ?? []).map((g) => [g.module_id, Number(g.score)]));
   const mark = new Map((marks ?? []).map((m) => [m.session_id, m.status as AttendanceStatus]));
   const past = (sessions ?? []).filter((x) => !x.canceled && x.session_date <= today);
   const name = `${app.first_name} ${app.last_name}`;
+  const minutes = new Map((marks ?? []).map((m) => [m.session_id, m.minutes_after_open as number | null]));
+  const dayMarks: DayMark[] = past.flatMap((x) => (mark.get(x.id) ? [{ date: x.session_date, status: mark.get(x.id)!, minutes_after_open: minutes.get(x.id) ?? null }] : []));
 
   return (
     <div>
@@ -128,6 +131,10 @@ export default async function StudentProgress({ params }: { params: Promise<{ id
           )}
         </Card>
       </div>
+
+      <Card className="mt-6">
+        <LatenessTrend marks={dayMarks} today={today} />
+      </Card>
 
       <Card className="mt-6">
         <h2 className="font-black">Email {app.first_name}</h2>

@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { assertPermission } from "@/lib/session";
+import { assertPermission, getSession } from "@/lib/session";
+import { can } from "@/lib/rbac";
 import { notifyTemplate } from "@/lib/notify";
 import { audit } from "@/lib/audit";
 import { fail, ok, type ActionState } from "@/lib/action-state";
@@ -188,22 +189,25 @@ export async function setSessionCanceled(_prev: ActionState, formData: FormData)
 }
 
 export async function saveAttendance(cohortId: string, sessionId: string, marks: Array<{ application_id: string; status: AttendanceStatus }>): Promise<ActionState> {
-  let session;
-  try {
-    session = await guard();
-  } catch (e) {
-    return fail(errorMessage(e));
-  }
+  // Cohort managers any day; instructors for their own cohorts on the day of the session (enforced by RLS).
+  const session = await getSession();
+  if (!session || !(can(session.roles, "cohorts.track") || can(session.roles, "cohorts.teach"))) return fail("You don't have permission to do that.");
   if (marks.some((m) => !(ATTENDANCE_STATUSES as readonly string[]).includes(m.status))) return fail("Invalid attendance status.");
   const supabase = await createClient();
   const now = new Date().toISOString();
+  // Only write what changed, so QR check-in details (time, distance, flags) on untouched rows are kept.
+  const { data: existing } = await supabase.from("session_attendance").select("application_id, status").eq("session_id", sessionId);
+  const current = new Map((existing ?? []).map((r) => [r.application_id as string, r.status as string]));
+  const changed = marks.slice(0, 500).filter((m) => current.get(m.application_id) !== m.status);
+  if (!changed.length) return ok("No changes to save.");
   const { error } = await supabase
     .from("session_attendance")
-    .upsert(marks.slice(0, 500).map((m) => ({ session_id: sessionId, application_id: m.application_id, status: m.status, updated_at: now, updated_by: session.userId })));
-  if (error) return fail(errorMessage(error));
+    .upsert(changed.map((m) => ({ session_id: sessionId, application_id: m.application_id, status: m.status, updated_at: now, updated_by: session.userId })));
+  if (error) return fail(/row-level security/i.test(errorMessage(error)) ? "Instructors can only change attendance on the day of the session. Ask the cohort manager." : errorMessage(error));
+  revalidatePath(`/sessions/${sessionId}`);
   await audit(supabase, "tracking.attendance.save", "cohort", cohortId, { session: sessionId, count: marks.length });
   refresh(cohortId);
-  return ok(`Attendance saved for ${marks.length} student${marks.length === 1 ? "" : "s"}.`);
+  return ok(`Attendance saved (${changed.length} change${changed.length === 1 ? "" : "s"}).`);
 }
 
 // --- Email ---------------------------------------------------------------------------------------------------

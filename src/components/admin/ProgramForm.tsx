@@ -5,7 +5,7 @@ import { EMPLOYER_FIELD_OPTIONS } from "@/lib/validation";
 import type { Program } from "@/lib/data";
 
 /** Edits program content. Admissions-only fields (exam link, employer visibility, active) are shown to program admins. */
-export function ProgramForm({ program, adminFields }: { program?: Partial<Program> & { default_exam_url?: string | null; verification_scheduling_url?: string | null; employer_application_url?: string | null }; adminFields: boolean }) {
+export function ProgramForm({ program, adminFields }: { program?: Partial<Program> & { default_exam_url?: string | null; verification_scheduling_url?: string | null; employer_application_url?: string | null; checkin_location?: boolean; checkin_window_minutes?: number; checkin_late_minutes?: number; missed_session_email?: boolean }; adminFields: boolean }) {
   const p = program ?? {};
   const json = (v: unknown) => JSON.stringify(v ?? [], null, 2);
   return (
@@ -156,6 +156,32 @@ export function ProgramForm({ program, adminFields }: { program?: Partial<Progra
                 </label>
               ))}
             </div>
+          </fieldset>
+          <fieldset className="grid gap-3 rounded-xl border border-ink/10 bg-white p-4">
+            <legend className="px-1 text-sm font-bold">Class check-in (QR attendance)</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <Label>Check-in stays open for (minutes)</Label>
+                <Input name="checkin_window_minutes" type="number" min={5} max={240} defaultValue={p.checkin_window_minutes ?? 15} />
+              </div>
+              <div>
+                <Label>Marked Late after (minutes from opening)</Label>
+                <Input name="checkin_late_minutes" type="number" min={0} max={240} defaultValue={p.checkin_late_minutes ?? 10} />
+              </div>
+            </div>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="checkin_location" defaultChecked={p.checkin_location ?? false} className="mt-0.5 h-4 w-4 accent-maroon" />
+              <span>
+                <span className="font-bold">Check trainees are in the room</span> — asks for their phone&apos;s location and flags check-ins outside the training site for review. Set each site&apos;s
+                position under Training locations.
+              </span>
+            </label>
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" name="missed_session_email" defaultChecked={p.missed_session_email ?? true} className="mt-0.5 h-4 w-4 accent-maroon" />
+              <span>
+                <span className="font-bold">Send &ldquo;We missed you today&rdquo; emails</span> when a trainee is marked Absent at the end of check-in (the instructor can turn it off for a session).
+              </span>
+            </label>
           </fieldset>
           <label className="flex items-center gap-2 text-sm font-bold">
             <input type="checkbox" name="active" defaultChecked={p.active ?? false} className="h-4 w-4 accent-maroon" /> Accepting applications (listed publicly)

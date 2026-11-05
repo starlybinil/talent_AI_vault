@@ -425,7 +425,16 @@ export async function saveLocation(_prev: ActionState, formData: FormData): Prom
   const parsed = locationSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return fail(parsed.error.issues.map((i) => `${String(i.path[0])}: ${i.message}`).join(", "));
   const id = String(formData.get("id") || "");
-  const row = { ...parsed.data, notes: parsed.data.notes || null, ...(id ? { active: formData.get("active") === "on" } : {}) };
+  const { latitude, longitude, radius_m, ...rest } = parsed.data;
+  if ((latitude === "") !== (longitude === "")) return fail("Enter both latitude and longitude, or leave both blank.");
+  const row = {
+    ...rest,
+    notes: rest.notes || null,
+    latitude: latitude === "" ? null : latitude,
+    longitude: longitude === "" ? null : longitude,
+    radius_m: radius_m === "" ? 100 : radius_m,
+    ...(id ? { active: formData.get("active") === "on" } : {}),
+  };
   const supabase = await createClient();
   const { error } = id ? await supabase.from("training_locations").update(row).eq("id", id) : await supabase.from("training_locations").insert(row);
   if (error) {
@@ -754,6 +763,14 @@ export async function saveProgram(_prev: ActionState, formData: FormData): Promi
     content.employer_application_url = String(formData.get("employer_application_url") || "").trim() || null;
     for (const k of ["verification_scheduling_url", "employer_application_url"] as const)
       if (content[k] && !/^https:\/\//.test(String(content[k]))) return fail("Screening links must start with https://");
+    const mins = (k: string, d: number, lo: number) => {
+      const n = Math.round(Number(formData.get(k)));
+      return Number.isFinite(n) && formData.get(k) !== "" ? Math.min(240, Math.max(lo, n)) : d;
+    };
+    content.checkin_window_minutes = mins("checkin_window_minutes", 15, 5);
+    content.checkin_late_minutes = mins("checkin_late_minutes", 10, 0);
+    content.checkin_location = formData.get("checkin_location") === "on";
+    content.missed_session_email = formData.get("missed_session_email") === "on";
     content.active = formData.get("active") === "on";
     content.featured = formData.get("featured") === "on";
     if (content.default_exam_url && !/^https:\/\//.test(String(content.default_exam_url))) return fail("Exam link must start with https://");

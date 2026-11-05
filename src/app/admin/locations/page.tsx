@@ -4,11 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
 import { deleteLocation, saveLocation } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
+import { CoordinateFields } from "@/components/checkin/CoordinateFields";
 import { Badge, Card, EmptyState, Input, Label, PageHeader, Textarea } from "@/components/ui";
 
 export const metadata = { title: "Training locations" };
 
-type Location = { id: string; name: string; address: string; notes: string | null; active: boolean };
+type Location = { id: string; name: string; address: string; notes: string | null; active: boolean; latitude: number | null; longitude: number | null; radius_m: number | null };
 
 function LocationFields({ l }: { l?: Location }) {
   const key = l?.id ?? "new";
@@ -27,6 +28,7 @@ function LocationFields({ l }: { l?: Location }) {
         <Label htmlFor={`notes-${key}`}>Notes for admins (optional)</Label>
         <Textarea id={`notes-${key}`} name="notes" defaultValue={l?.notes ?? ""} maxLength={500} placeholder="Parking, building, room, contact…" className="min-h-16 text-sm" />
       </div>
+      <CoordinateFields id={key} latitude={l?.latitude} longitude={l?.longitude} radius={l?.radius_m} />
     </>
   );
 }
@@ -35,7 +37,7 @@ export default async function LocationsPage() {
   await requirePermission("cohorts.manage", "/admin/locations");
   const supabase = await createClient();
   const [{ data: locations }, { data: cohorts }] = await Promise.all([
-    supabase.from("training_locations").select("id, name, address, notes, active").order("name"),
+    supabase.from("training_locations").select("id, name, address, notes, active, latitude, longitude, radius_m").order("name"),
     supabase.from("cohorts").select("id, name, location_id"),
   ]);
   const usedBy = new Map<string, Array<{ id: string; name: string }>>();
@@ -78,6 +80,11 @@ export default async function LocationsPage() {
                 <div className="min-w-0 flex-1">
                   <p className="font-black text-ink">{l.name}</p>
                   <p className="text-sm text-ink/60">{l.address}</p>
+                  {l.latitude !== null && l.longitude !== null && (
+                    <p className="text-xs text-ink/50">
+                      Check-in area: within {l.radius_m ?? 100} m of {l.latitude.toFixed(5)}, {l.longitude.toFixed(5)}
+                    </p>
+                  )}
                 </div>
                 <Badge tone={l.active ? "success" : "neutral"}>{l.active ? "Active" : "Inactive"}</Badge>
                 <Badge tone="neutral">

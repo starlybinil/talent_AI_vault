@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui";
 import { Pct } from "@/components/tracking/Metric";
-import { ATTENDANCE_MIN, GRADE_MIN, type StudentStats } from "@/lib/tracking";
+import { LatenessTrend } from "@/components/tracking/LatenessTrend";
+import { ATTENDANCE_MIN, GRADE_MIN, type DayMark, type StudentStats } from "@/lib/tracking";
 
 export type ModuleScore = { name: string; score: number | null };
 
@@ -10,11 +11,16 @@ export function ProgressCard({
   stats,
   modules,
   audience,
+  marks,
+  today,
 }: {
   title: string;
   stats: Pick<StudentStats, "grade" | "attendance" | "present" | "late" | "absent" | "excused" | "lowGrade" | "lowAttendance">;
   modules: ModuleScore[];
   audience: "trainee" | "employer";
+  /** Dated attendance marks, for the lateness trend (shown when there are any). */
+  marks?: DayMark[];
+  today?: string;
 }) {
   const nothingYet = stats.grade === null && stats.attendance === null && modules.every((m) => m.score === null);
   return (
@@ -50,6 +56,11 @@ export function ProgressCard({
               {stats.lowGrade && `Your grade is below ${GRADE_MIN}%. `}
               Reach out to your cohort manager or instructors. They&apos;re here to help you get back on track.
             </p>
+          )}
+          {marks && today && marks.some((m) => m.date <= today) && (
+            <div className="mt-4 rounded-2xl border border-ink/10 p-4">
+              <LatenessTrend marks={marks} today={today} title={audience === "trainee" ? "Your on-time record" : "Lateness trend"} compact />
+            </div>
           )}
           {modules.length > 0 && (
             <ul className="mt-4 divide-y divide-ink/5">

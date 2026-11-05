@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Mail, Search } from "lucide-react";
+import { Mail, Search, TrendingDown, TrendingUp } from "lucide-react";
 import { emailStudents } from "@/app/cohorts/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Input, Label, Textarea } from "@/components/ui";
@@ -24,6 +24,8 @@ export type RosterRow = {
   lowGrade: boolean;
   lowAttendance: boolean;
   atRisk: boolean;
+  /** Whether this trainee has been late more (or less) often in their last 10 sessions. */
+  lateTrend?: "worse" | "better" | "steady" | null;
 };
 
 /** Every trainee with grade, attendance and flags; select students to email them. */
@@ -119,7 +121,9 @@ export function RosterTable({ cohortId, rows, moduleCount }: { cohortId: string;
                   <Pct value={r.attendance} kind="attendance" />
                 </td>
                 <td className="px-3 py-2.5 text-center text-xs tabular-nums text-ink/60">
-                  {r.present} · <span className={r.late ? "font-bold text-amber-700" : ""}>{r.late}</span> · <span className={r.absent ? "font-bold text-red-700" : ""}>{r.absent}</span> · {r.excused}
+                  {r.present} · <span className={r.late ? "font-bold text-amber-700" : ""}>{r.late}</span>
+                  {r.lateTrend === "worse" && <TrendingUp className="ml-0.5 inline h-3.5 w-3.5 text-red-700" aria-label="Late more often recently" />}
+                  {r.lateTrend === "better" && <TrendingDown className="ml-0.5 inline h-3.5 w-3.5 text-emerald-700" aria-label="Late less often recently" />} · <span className={r.absent ? "font-bold text-red-700" : ""}>{r.absent}</span> · {r.excused}
                 </td>
                 <td className="px-3 py-2.5">
                   {r.atRisk ? <AtRiskBadge lowGrade={r.lowGrade} lowAttendance={r.lowAttendance} /> : <span className="text-xs font-bold text-emerald-700">On track</span>}

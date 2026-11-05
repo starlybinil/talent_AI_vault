@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { RichText } from "@/components/ui/RichText";
+import { CheckInFlow } from "@/components/checkin/CheckInFlow";
 import { ProgressCard, type ModuleScore } from "@/components/tracking/ProgressCard";
 import { statsByStudent } from "@/lib/tracking-data";
-import { statsFromCounts, type StudentStats } from "@/lib/tracking";
+import { todayInArizona } from "@/lib/schedule";
+import { statsFromCounts, type DayMark, type StudentStats } from "@/lib/tracking";
 import { answerRows } from "@/lib/application-questions";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, Download, ExternalLink, FileSignature, PartyPopper } from "lucide-react";
@@ -117,7 +119,10 @@ export default async function ApplicationPage({
   let resources: ProgramResource[] = [];
   let instructors: CohortInstructor[] = [];
   let announcements: CohortAnnouncement[] = [];
-  let progress: { stats: StudentStats | null; modules: ModuleScore[] } | null = null;
+  let progress: { stats: StudentStats | null; modules: ModuleScore[]; marks: DayMark[] } | null = null;
+  // Class check-in open right now for this trainee's cohort (backup to scanning the QR code).
+  const { data: openCheckin } = status === "confirmed" ? await supabase.rpc("trainee_open_checkin") : { data: null };
+  const checkinOpen = openCheckin as { window: string; require_location: boolean; checked_in: boolean } | null;
   if (tab === "program" && isTrainee(status)) {
     const { data: rows } = await supabase
       .from("program_resources")
@@ -150,15 +155,25 @@ export default async function ApplicationPage({
       );
       announcements = ann ?? [];
       // Grades and attendance (RLS: the trainee's own rows only).
-      const [{ data: mods }, { data: myGrades }, statRows] = await Promise.all([
+      const [{ data: mods }, { data: myGrades }, statRows, { data: myMarks }] = await Promise.all([
         supabase.from("cohort_modules").select("id, name").eq("cohort_id", app.assigned_cohort_id).order("sort").order("created_at"),
         supabase.from("module_grades").select("module_id, score").eq("application_id", app.id),
         statsByStudent(supabase, [app.assigned_cohort_id]),
+        supabase
+          .from("session_attendance")
+          .select("status, minutes_after_open, cohort_sessions!inner(session_date, canceled)")
+          .eq("application_id", app.id)
+          .eq("cohort_sessions.canceled", false),
       ]);
       const score = new Map((myGrades ?? []).map((g) => [g.module_id, Number(g.score)]));
       progress = {
         stats: statRows.get(app.id) ?? null,
         modules: (mods ?? []).map((m) => ({ name: m.name, score: score.get(m.id) ?? null })),
+        marks: ((myMarks ?? []) as unknown as Array<{ status: DayMark["status"]; minutes_after_open: number | null; cohort_sessions: { session_date: string } }>).map((m) => ({
+          date: m.cohort_sessions.session_date,
+          status: m.status,
+          minutes_after_open: m.minutes_after_open,
+        })),
       };
     }
   }
@@ -203,6 +218,15 @@ export default async function ApplicationPage({
         </div>
       </Card>
 
+      {checkinOpen && !checkinOpen.checked_in && (
+        <Card className="mt-6 border-emerald-300 bg-emerald-50/60">
+          <p className="text-xs font-bold uppercase tracking-widest text-emerald-800">Class check-in is open</p>
+          <p className="mt-1 text-sm text-ink/70">Scan the QR code on the screen, or type the code shown under it.</p>
+          <div className="mt-4 max-w-sm">
+            <CheckInFlow windowId={null} requireLocation={checkinOpen.require_location} auto={false} />
+          </div>
+        </Card>
+      )}
       <nav className="mt-6 flex gap-1 overflow-x-auto rounded-2xl bg-white p-1.5 shadow-sm" aria-label="Application sections">
         {TABS.filter((t) => t.key !== "program" || isTrainee(status)).map((t) => (
           <Link
@@ -539,7 +563,7 @@ export default async function ApplicationPage({
 
         {tab === "program" && isTrainee(status) && progress && (progress.modules.length > 0 || progress.stats) && (
           <div className="mb-6">
-            <ProgressCard title="Your progress" audience="trainee" stats={progress.stats ?? statsFromCounts({ grade: null, graded: 0, present: 0, late: 0, absent: 0, excused: 0 })} modules={progress.modules} />
+            <ProgressCard title="Your progress" audience="trainee" stats={progress.stats ?? statsFromCounts({ grade: null, graded: 0, present: 0, late: 0, absent: 0, excused: 0 })} modules={progress.modules} marks={progress.marks} today={todayInArizona()} />
           </div>
         )}
         {tab === "program" && isTrainee(status) && (
