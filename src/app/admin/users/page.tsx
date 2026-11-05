@@ -1,7 +1,7 @@
 import { Search } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { requirePermission } from "@/lib/session";
-import { cancelPendingGrant, createEmployerOrg, deleteUser, grantRole, revokeRole, setManagerPrograms, setUserActive } from "@/app/admin/actions";
+import { cancelPendingGrant, createEmployerOrg, deleteUser, grantRole, removeOrphanFiles, revokeRole, setManagerPrograms, setUserActive } from "@/app/admin/actions";
 import { ActionForm, SubmitButton } from "@/components/ui/forms";
 import { Badge, Card, Input, Label, PageHeader, Select, buttonClass } from "@/components/ui";
 import { ROLES, ROLE_LABEL, type Role } from "@/lib/rbac";
@@ -32,6 +32,8 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
     supabase.from("programs").select("id, short_name").order("sort"),
     supabase.from("cohort_manager_programs").select("user_id, program_id"),
   ]);
+  const { data: orphans } = await supabase.rpc("it_orphan_files");
+  const orphanCount = ((orphans ?? []) as string[]).length;
   const programName = Object.fromEntries((programs ?? []).map((p) => [p.id as string, p.short_name as string]));
   const managedBy = (managed ?? []).reduce((m, r) => m.set(r.user_id, [...(m.get(r.user_id) ?? []), r.program_id]), new Map<string, string[]>());
   /** Program checkboxes for the cohort manager role. */
@@ -52,6 +54,22 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
   return (
     <div>
       <PageHeader eyebrow="IT administration" title="Users & roles" description="Grant staff and employer access. If the person has no account yet, the role is saved and applied automatically when they register with that email." />
+
+      {orphanCount > 0 && (
+        <Card className="mb-6 flex flex-wrap items-center justify-between gap-3 border-amber-300 bg-amber-50">
+          <p className="text-sm text-amber-900">
+            <strong>
+              {orphanCount} file{orphanCount === 1 ? "" : "s"}
+            </strong>{" "}
+            (resumes, signatures, signed agreements) are still in storage from accounts that were already deleted.
+          </p>
+          <ActionForm action={removeOrphanFiles} confirm={`Permanently delete ${orphanCount} leftover file${orphanCount === 1 ? "" : "s"}?`}>
+            <SubmitButton size="sm" variant="dark" pendingText="Removing…">
+              Delete leftover files
+            </SubmitButton>
+          </ActionForm>
+        </Card>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
@@ -210,25 +228,47 @@ export default async function UsersPage({ searchParams }: { searchParams: Promis
                     <Badge tone="info">You</Badge>
                   ) : (
                     <div className="flex flex-wrap items-start gap-2">
-                      <ActionForm action={setUserActive} confirm={u.active ? `Deactivate ${u.email}? They lose all access.` : undefined}>
-                        <input type="hidden" name="user_id" value={u.id} />
-                        <input type="hidden" name="active" value={u.active ? "0" : "1"} />
-                        <SubmitButton size="sm" variant={u.active ? "outline" : "dark"}>
-                          {u.active ? "Deactivate" : "Reactivate"}
-                        </SubmitButton>
-                      </ActionForm>
+                      {u.active ? (
+                        <details className="group">
+                          <summary className="inline-flex h-9 cursor-pointer list-none items-center rounded-full border border-ink/15 px-4 text-sm font-bold hover:bg-mist">Deactivate</summary>
+                          <ActionForm
+                            action={setUserActive}
+                            confirm={`Deactivate ${u.email}? Their applications, files and all other data are deleted now and can't be recovered.`}
+                            className="mt-2 grid w-64 gap-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-3"
+                          >
+                            <input type="hidden" name="user_id" value={u.id} />
+                            <input type="hidden" name="active" value="0" />
+                            <p className="text-xs text-amber-900">
+                              Signs them out, blocks sign-in, removes their roles and <strong>permanently deletes their files and data</strong>. The empty login is kept so it can be reactivated. Type{" "}
+                              <strong>{u.email}</strong> to confirm.
+                            </p>
+                            <Input name="confirm_email" type="email" required placeholder={u.email ?? "email"} aria-label="Confirm email" className="mt-0 h-9 text-sm" />
+                            <SubmitButton size="sm" variant="dark" pendingText="Deactivating…">
+                              Deactivate and delete data
+                            </SubmitButton>
+                          </ActionForm>
+                        </details>
+                      ) : (
+                        <ActionForm action={setUserActive}>
+                          <input type="hidden" name="user_id" value={u.id} />
+                          <input type="hidden" name="active" value="1" />
+                          <SubmitButton size="sm" variant="dark" pendingText="Reactivating…">
+                            Reactivate
+                          </SubmitButton>
+                        </ActionForm>
+                      )}
                       <details className="group">
                         <summary className="inline-flex h-9 cursor-pointer list-none items-center rounded-full border border-red-200 px-4 text-sm font-bold text-red-700 hover:bg-red-50">
                           Delete
                         </summary>
                         <ActionForm
                           action={deleteUser}
-                          confirm={`Permanently delete ${u.email}? This removes their account, applications, messages and signed agreements. It cannot be undone.`}
+                          confirm={`Permanently delete ${u.email}? This removes their account and all of its files and data. It cannot be undone.`}
                           className="mt-2 grid w-64 gap-2 rounded-2xl border border-red-200 bg-red-50/60 p-3"
                         >
                           <input type="hidden" name="user_id" value={u.id} />
                           <p className="text-xs text-red-800">
-                            Permanently removes the account and everything tied to it. Type <strong>{u.email}</strong> to confirm.
+                            Permanently removes the account and everything tied to it: applications, uploaded files, signed agreements, messages, grades, attendance, practice results and email history. Type <strong>{u.email}</strong> to confirm.
                           </p>
                           <Input name="confirm_email" type="email" required placeholder={u.email ?? "email"} aria-label="Confirm email" className="mt-0 h-9 text-sm" />
                           <SubmitButton size="sm" variant="danger" pendingText="Deleting…">

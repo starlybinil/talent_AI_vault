@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { createClient, createServiceClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { assertPermission } from "@/lib/session";
 import { emailContext, notifyStatus, notifyTemplate } from "@/lib/notify";
 import { EMAIL_TEMPLATE_INFO, defaultTemplate, sendEmail, unknownTokens } from "@/lib/email";
@@ -13,6 +13,7 @@ import { cohortSchema, EMPLOYER_FIELD_OPTIONS, locationSchema } from "@/lib/vali
 import { STATUS_LABEL, type Status } from "@/lib/workflow";
 import { errorMessage } from "@/lib/utils";
 import { ROLE_LABEL, ROLES, type Role } from "@/lib/rbac";
+import { removePaths, removeUserFiles } from "@/lib/user-files";
 
 // ---------------------------------------------------------------------------
 // Admissions workflow
@@ -927,23 +928,48 @@ export async function revokeRole(_prev: ActionState, formData: FormData): Promis
   return ok("Role revoked.");
 }
 
+/**
+ * Deactivate (sign out, block sign-in, delete all of the user's files and data, keep the empty login) or reactivate
+ * a user (IT admins). Deactivating needs the user's email typed to confirm.
+ */
 export async function setUserActive(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertPermission("users.manage");
   } catch (e) {
     return fail(errorMessage(e));
   }
+  const userId = String(formData.get("user_id") || "");
+  const active = formData.get("active") === "1";
   const supabase = await createClient();
-  const { error } = await supabase.rpc("it_set_user_active", {
-    p_user: String(formData.get("user_id") || ""),
-    p_active: formData.get("active") === "1",
-  });
+  if (active) {
+    const { error } = await supabase.rpc("it_set_user_active", { p_user: userId, p_active: true });
+    if (error) return fail(errorMessage(error));
+    revalidatePath("/admin/users");
+    return ok("Account reactivated. It starts empty, as an applicant account; grant other roles if needed.");
+  }
+  const confirmEmail = String(formData.get("confirm_email") || "").trim();
+  const removed = await removeFilesFirst(supabase, userId, confirmEmail);
+  if (typeof removed === "string") return fail(removed);
+  const { data, error } = await supabase.rpc("it_set_user_active", { p_user: userId, p_active: false, p_confirm_email: confirmEmail });
   if (error) return fail(errorMessage(error));
+  await emailPromoted(supabase, data as string[]);
   revalidatePath("/admin/users");
-  return ok("User updated.");
+  return ok(`Account deactivated. They were signed out, and their data and ${removed} file${removed === 1 ? "" : "s"} were deleted.`);
 }
 
-/** Permanently delete a user account (IT admins). The user's email must be typed to confirm. */
+/** Check the confirmation, then delete the user's files (before their data, so nothing is left behind unreferenced). */
+async function removeFilesFirst(supabase: SupabaseClient, userId: string, confirmEmail: string): Promise<number | string> {
+  if (!userId || !confirmEmail) return "Type the user's email address to confirm.";
+  const { error: checkError } = await supabase.rpc("it_check_user", { p_user: userId, p_confirm_email: confirmEmail });
+  if (checkError) return errorMessage(checkError);
+  try {
+    return await removeUserFiles(supabase, userId);
+  } catch (e) {
+    return `Their files couldn't be deleted, so nothing was changed: ${errorMessage(e)}`;
+  }
+}
+
+/** Permanently delete a user account and all of its files and data (IT admins). The user's email must be typed to confirm. */
 export async function deleteUser(_prev: ActionState, formData: FormData): Promise<ActionState> {
   try {
     await assertPermission("users.manage");
@@ -952,26 +978,34 @@ export async function deleteUser(_prev: ActionState, formData: FormData): Promis
   }
   const userId = String(formData.get("user_id") || "");
   const confirmEmail = String(formData.get("confirm_email") || "").trim();
-  if (!userId || !confirmEmail) return fail("Type the user's email address to confirm.");
   const supabase = await createClient();
+  const removed = await removeFilesFirst(supabase, userId, confirmEmail);
+  if (typeof removed === "string") return fail(removed);
   const { data, error } = await supabase.rpc("it_delete_user", { p_user: userId, p_confirm_email: confirmEmail });
   if (error) return fail(errorMessage(error));
-
-  // Uploaded files (resume, signatures, signed PDFs) live under the user's folder; removing them needs the
-  // server-only service key. Without it the account is still deleted and the files are left in storage.
-  let filesNote = "";
-  const admin = createServiceClient();
-  if (admin) {
-    const bucket = admin.storage.from("applicant-files");
-    const { data: files } = await bucket.list(userId, { limit: 1000 });
-    const paths = (files ?? []).map((f) => `${userId}/${f.name}`);
-    if (paths.length) await bucket.remove(paths);
-  } else {
-    filesNote = " Uploaded files were kept in storage (add SUPABASE_SERVICE_ROLE_KEY to remove them automatically).";
-  }
   await emailPromoted(supabase, data as string[]);
   revalidatePath("/admin/users");
-  return ok(`Account deleted.${filesNote}`);
+  return ok(`Account deleted, with all of its data and ${removed} file${removed === 1 ? "" : "s"}.`);
+}
+
+/** Remove files still in storage from accounts that no longer exist (IT admins). */
+export async function removeOrphanFiles(): Promise<ActionState> {
+  try {
+    await assertPermission("users.manage");
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("it_orphan_files");
+  if (error) return fail(errorMessage(error));
+  try {
+    const n = await removePaths(supabase, (data ?? []) as string[]);
+    await audit(supabase, "storage.cleanup", "storage", null, { files_removed: n });
+    revalidatePath("/admin/users");
+    return ok(`Removed ${n} leftover file${n === 1 ? "" : "s"}.`);
+  } catch (e) {
+    return fail(errorMessage(e));
+  }
 }
 
 // ---------------------------------------------------------------------------

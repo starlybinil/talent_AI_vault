@@ -1,5 +1,6 @@
 "use server";
 
+import { removeUserFiles } from "@/lib/user-files";
 import { cookies, headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -235,8 +236,6 @@ export async function applicantFileUrl(path: string): Promise<string | null> {
   return data?.signedUrl ?? null;
 }
 
-const FILE_FOLDERS = ["resumes", "signatures", "agreements"] as const;
-
 /** Permanently deletes the signed-in applicant's account, files and application data. */
 export async function deleteAccount(_prev: ActionState, formData: FormData): Promise<ActionState> {
   const session = await getSession();
@@ -247,15 +246,10 @@ export async function deleteAccount(_prev: ActionState, formData: FormData): Pro
   if (session.roles.some((r) => r !== "applicant")) return fail("Staff and employer accounts are managed by your IT administrator.");
 
   const supabase = await createClient();
-  const bucket = supabase.storage.from("applicant-files");
-  for (const folder of FILE_FOLDERS) {
-    const { data: files, error } = await bucket.list(`${session.userId}/${folder}`, { limit: 1000 });
-    if (error) return fail(`We couldn't remove your files: ${errorMessage(error)}`);
-    const paths = (files ?? []).filter((f) => f.id).map((f) => `${session.userId}/${folder}/${f.name}`);
-    if (paths.length) {
-      const { error: removeError } = await bucket.remove(paths);
-      if (removeError) return fail(`We couldn't remove your files: ${errorMessage(removeError)}`);
-    }
+  try {
+    await removeUserFiles(supabase, session.userId);
+  } catch (e) {
+    return fail(`We couldn't remove your files: ${errorMessage(e)}`);
   }
 
   const { data: promoted, error } = await supabase.rpc("delete_my_account", { p_confirm_email: typed });
