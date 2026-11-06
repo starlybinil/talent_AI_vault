@@ -12,7 +12,11 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
     <AuthShell title="Welcome back" subtitle="Sign in to continue your application or manage your program.">
       {sp.error && (
         <p className="mb-6 rounded-xl bg-red-50 px-4 py-3 text-sm font-medium text-red-800">
-          We couldn&apos;t complete sign-in. Please try again.
+          {sp.error === "reset_link"
+            ? "That password reset link has expired or was already used. Request a new one below (Forgot password)."
+            : sp.error === "link" || sp.error === "callback"
+              ? "That sign-in link has expired or was already used. Enter your email to get a new one, or sign in with your password."
+              : "We couldn't complete sign-in. Please try again."}
         </p>
       )}
       <AuthForm mode="login" next={next} defaultEmail={sp.email?.slice(0, 200)} />

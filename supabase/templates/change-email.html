@@ -43,10 +43,10 @@
 <p style="margin:16px 0 0;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.6;color:#191919">Confirm the change and all application updates will go to your new address.</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px">
   <tr><td align="center" bgcolor="#FFC627" style="border-radius:999px;mso-padding-alt:16px 34px">
-    <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#191919;text-decoration:none;border-radius:999px;background:#FFC627">Confirm new email &rarr;</a>
+    <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&redirect_to={{ .RedirectTo }}" target="_blank" style="display:inline-block;padding:16px 34px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#191919;text-decoration:none;border-radius:999px;background:#FFC627">Confirm new email &rarr;</a>
   </td></tr>
 </table>
-<p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8a8a94">Button not working? Copy and paste this link into your browser:<br><a href="{{ .ConfirmationURL }}" style="color:#8C1D40;word-break:break-all">{{ .ConfirmationURL }}</a></p>
+<p style="margin:0 0 20px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.6;color:#8a8a94">Button not working? Copy and paste this link into your browser:<br><a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&redirect_to={{ .RedirectTo }}" style="color:#8C1D40;word-break:break-all">{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email_change&redirect_to={{ .RedirectTo }}</a></p>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 8px">
   <tr><td style="padding:14px 16px;border-left:4px solid #8C1D40;background:#f7f7f9;border-radius:0 10px 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.55;color:#5c5c66">Didn&rsquo;t request this change? Don&rsquo;t click the button: your email stays the same.</td></tr>
 </table>

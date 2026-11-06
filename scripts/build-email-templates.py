@@ -21,6 +21,11 @@ def p(html: str, size: int = 16, color: str = INK, margin: str = "0 0 16px") -> 
     return f'<p style="margin:{margin};font-family:{FONT};font-size:{size}px;line-height:1.6;color:{color}">{html}</p>'
 
 
+def link(kind: str) -> str:
+    """A sign-in link the server verifies itself, so it works in any browser (not only the one that asked for it)."""
+    return "{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=" + kind + "&redirect_to={{ .RedirectTo }}"
+
+
 def button(label: str, href: str = "{{ .ConfirmationURL }}") -> str:
     # Table-based "bulletproof" button: renders in Gmail, Outlook and Apple Mail.
     return f"""<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 24px">
@@ -46,9 +51,9 @@ def steps(title: str, items: list[str]) -> str:
 </table>"""
 
 
-def fallback_link() -> str:
+def fallback_link(href: str = "{{ .ConfirmationURL }}") -> str:
     return p(
-        f'Button not working? Copy and paste this link into your browser:<br><a href="{{{{ .ConfirmationURL }}}}" style="color:{MAROON};word-break:break-all">{{{{ .ConfirmationURL }}}}</a>',
+        f'Button not working? Copy and paste this link into your browser:<br><a href="{href}" style="color:{MAROON};word-break:break-all">{href}</a>',
         size=12,
         color="#8a8a94",
         margin="0 0 20px",
@@ -135,13 +140,13 @@ TEMPLATES = {
             f'<h1 class="h1" style="margin:0 0 18px;font-family:{FONT};font-size:28px;line-height:1.2;color:{INK}">Welcome to FoundryReady!</h1>',
             p("Thanks for creating your account. You&rsquo;re one step away from starting your application to no-cost, hands-on training for advanced manufacturing careers."),
             p("Please confirm your email address to activate your account."),
-            button("Confirm my email"),
+            button("Confirm my email", link("signup")),
             steps("What happens next", [
                 "<strong>Finish your application</strong>: about 5 minutes. Have your resume ready.",
                 "<strong>Screening &amp; assessment</strong>: admissions reviews it and sends your online assessment.",
                 "<strong>Enroll</strong>: choose your cohorts, sign your agreements, and you&rsquo;re in.",
             ]),
-            fallback_link(),
+            fallback_link(link("signup")),
             notice("For your security, this link expires after a limited time and can only be used once."),
         ]),
     ),
@@ -154,8 +159,8 @@ TEMPLATES = {
         body="\n".join([
             f'<h1 class="h1" style="margin:0 0 18px;font-family:{FONT};font-size:28px;line-height:1.2;color:{INK}">Sign in to FoundryReady</h1>',
             p("Here&rsquo;s the secure sign-in link you asked for. Tap the button to go straight to your portal: no password needed."),
-            button("Sign me in"),
-            fallback_link(),
+            button("Sign me in", link("magiclink")),
+            fallback_link(link("magiclink")),
             notice("This link works once and expires shortly. If you didn&rsquo;t request it, you can ignore this email: your account is safe."),
         ]),
     ),
@@ -168,8 +173,8 @@ TEMPLATES = {
         body="\n".join([
             f'<h1 class="h1" style="margin:0 0 18px;font-family:{FONT};font-size:28px;line-height:1.2;color:{INK}">Reset your password</h1>',
             p("We received a request to reset the password for your FoundryReady account. Click below to choose a new one."),
-            button("Choose a new password"),
-            fallback_link(),
+            button("Choose a new password", link("recovery")),
+            fallback_link(link("recovery")),
             notice("<strong style=\"color:#191919\">Didn&rsquo;t ask for this?</strong> Ignore this email and your password stays the same. The link expires after a limited time and can only be used once."),
         ]),
     ),
@@ -187,8 +192,8 @@ TEMPLATES = {
   <tr><td style="padding:12px 16px;font-family:{FONT};font-size:14px;color:{MUTED}">To&nbsp;&nbsp;<strong style="color:{MAROON}">{{{{ .NewEmail }}}}</strong></td></tr>
 </table>""",
             p("Confirm the change and all application updates will go to your new address.", margin="16px 0 0"),
-            button("Confirm new email"),
-            fallback_link(),
+            button("Confirm new email", link("email_change")),
+            fallback_link(link("email_change")),
             notice("Didn&rsquo;t request this change? Don&rsquo;t click the button: your email stays the same."),
         ]),
     ),
@@ -202,8 +207,8 @@ TEMPLATES = {
             f'<h1 class="h1" style="margin:0 0 18px;font-family:{FONT};font-size:28px;line-height:1.2;color:{INK}">You&rsquo;re invited</h1>',
             p("A FoundryReady administrator has invited you to join the platform that runs admissions for our advanced manufacturing training programs."),
             p("Accept the invitation to set up your account. Your access (admissions, employer partner, IT or content) is ready as soon as you sign in."),
-            button("Accept invitation"),
-            fallback_link(),
+            button("Accept invitation", link("invite")),
+            fallback_link(link("invite")),
             notice("This invitation link expires after a limited time. Ask your administrator to resend it if it has expired."),
         ]),
     ),
